@@ -104,6 +104,16 @@ class BAF_Admin {
             array( $this, 'render_entries_page' )
         );
 
+        // Import from CSV
+        add_submenu_page(
+            'baf-forms',
+            __( 'Import from CSV', 'bits-accessible-forms' ),
+            __( 'Import CSV', 'bits-accessible-forms' ),
+            'manage_options',
+            'baf-csv-import',
+            array( $this, 'render_csv_import_page' )
+        );
+
         // Settings
         add_submenu_page(
             'baf-forms',
@@ -138,6 +148,24 @@ class BAF_Admin {
             wp_enqueue_style(
                 'baf-form-builder',
                 BAF_PLUGIN_URL . 'admin/css/baf-form-builder.css',
+                array( 'baf-admin' ),
+                BAF_VERSION
+            );
+
+            // Field type converter styles
+            wp_enqueue_style(
+                'baf-field-converter',
+                BAF_PLUGIN_URL . 'admin/css/baf-field-converter.css',
+                array( 'baf-admin' ),
+                BAF_VERSION
+            );
+        }
+
+        // CSV import wizard styles
+        if ( strpos( $hook, 'baf-csv-import' ) !== false ) {
+            wp_enqueue_style(
+                'baf-csv-import',
+                BAF_PLUGIN_URL . 'admin/css/baf-csv-import.css',
                 array( 'baf-admin' ),
                 BAF_VERSION
             );
@@ -203,6 +231,88 @@ class BAF_Admin {
                     'noFieldsYet'      => __( 'No fields yet. Add a field from the palette to get started.', 'bits-accessible-forms' ),
                 ),
             ) );
+
+            // Field type converter script
+            wp_enqueue_script(
+                'baf-field-converter',
+                BAF_PLUGIN_URL . 'admin/js/baf-field-converter.js',
+                array( 'jquery', 'baf-form-builder' ),
+                BAF_VERSION,
+                true
+            );
+
+            // Get converter data
+            $converter = new BAF_Field_Type_Converter();
+            wp_localize_script( 'baf-field-converter', 'bafConverterData', array(
+                'ajaxUrl'       => admin_url( 'admin-ajax.php' ),
+                'nonce'         => wp_create_nonce( 'baf_converter_nonce' ),
+                'compatibility' => $converter->get_compatibility_matrix(),
+                'fieldTypes'    => $converter->get_all_field_types(),
+            ) );
+
+            // Accessibility Coach script
+            wp_enqueue_script(
+                'baf-accessibility-coach',
+                BAF_PLUGIN_URL . 'admin/js/baf-accessibility-coach.js',
+                array( 'jquery', 'baf-form-builder' ),
+                BAF_VERSION,
+                true
+            );
+
+            // Accessibility Coach styles
+            wp_enqueue_style(
+                'baf-accessibility-coach',
+                BAF_PLUGIN_URL . 'admin/css/baf-accessibility-coach.css',
+                array( 'baf-admin' ),
+                BAF_VERSION
+            );
+
+            // Add coach i18n to builder data
+            wp_localize_script( 'baf-form-builder', 'bafBuilderCoach', array(
+                'accessibilityCoach' => __( 'Accessibility Coach', 'bits-accessible-forms' ),
+                'refreshAnalysis'    => __( 'Refresh analysis', 'bits-accessible-forms' ),
+                'closeCoach'         => __( 'Close accessibility coach', 'bits-accessible-forms' ),
+                'accessibilityScore' => __( 'Accessibility Score', 'bits-accessible-forms' ),
+                'errors'             => __( 'Errors', 'bits-accessible-forms' ),
+                'warnings'           => __( 'Warnings', 'bits-accessible-forms' ),
+                'suggestions'        => __( 'Suggestions', 'bits-accessible-forms' ),
+                'analyzing'          => __( 'Analyzing...', 'bits-accessible-forms' ),
+                'noIssuesFound'      => __( 'No accessibility issues found. Great job!', 'bits-accessible-forms' ),
+                'autoAnalyze'        => __( 'Auto-analyze on changes', 'bits-accessible-forms' ),
+                'suggestion'         => __( 'Suggestion', 'bits-accessible-forms' ),
+                'coachOpened'        => __( 'Accessibility coach opened', 'bits-accessible-forms' ),
+                'coachClosed'        => __( 'Accessibility coach closed', 'bits-accessible-forms' ),
+                'analyzeError'       => __( 'Analysis failed. Please try again.', 'bits-accessible-forms' ),
+            ) );
+        }
+
+        // CSV import wizard scripts
+        if ( strpos( $hook, 'baf-csv-import' ) !== false ) {
+            wp_enqueue_script(
+                'baf-csv-import',
+                BAF_PLUGIN_URL . 'admin/js/baf-csv-import.js',
+                array( 'jquery', 'wp-util', 'baf-admin' ),
+                BAF_VERSION,
+                true
+            );
+
+            wp_localize_script( 'baf-csv-import', 'bafCsvImport', array(
+                'ajaxUrl' => admin_url( 'admin-ajax.php' ),
+                'nonce'   => wp_create_nonce( 'baf_csv_import' ),
+                'i18n'    => array(
+                    'uploading'      => __( 'Uploading...', 'bits-accessible-forms' ),
+                    'analyzing'      => __( 'Analyzing...', 'bits-accessible-forms' ),
+                    'creating'       => __( 'Creating form...', 'bits-accessible-forms' ),
+                    'uploadError'    => __( 'Upload failed. Please try again.', 'bits-accessible-forms' ),
+                    'analyzeError'   => __( 'Analysis failed.', 'bits-accessible-forms' ),
+                    'createError'    => __( 'Failed to create form.', 'bits-accessible-forms' ),
+                    'dropFile'       => __( 'Drop file here', 'bits-accessible-forms' ),
+                    'copied'         => __( 'Copied to clipboard!', 'bits-accessible-forms' ),
+                    'highConfidence' => __( 'High', 'bits-accessible-forms' ),
+                    'medConfidence'  => __( 'Medium', 'bits-accessible-forms' ),
+                    'lowConfidence'  => __( 'Low', 'bits-accessible-forms' ),
+                ),
+            ) );
         }
     }
 
@@ -247,5 +357,12 @@ class BAF_Admin {
      */
     public function render_settings_page() {
         include BAF_PLUGIN_DIR . 'admin/partials/settings-page.php';
+    }
+
+    /**
+     * Render CSV import wizard page
+     */
+    public function render_csv_import_page() {
+        include BAF_PLUGIN_DIR . 'admin/partials/csv-import-wizard.php';
     }
 }

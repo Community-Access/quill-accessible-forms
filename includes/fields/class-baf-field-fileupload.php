@@ -37,6 +37,8 @@ class BAF_Field_FileUpload extends BAF_Field {
     public function get_default_config() {
         return array_merge( parent::get_default_config(), array(
             'allowed_types'    => array( 'jpg', 'jpeg', 'png', 'gif', 'pdf', 'doc', 'docx' ),
+            'accept'           => '', // MIME types or extensions, e.g., 'image/*,.pdf'
+            'capture'          => '', // 'user', 'environment', or empty
             'max_size'         => 10,
             'max_files'        => 1,
             'enable_preview'   => true,
@@ -186,7 +188,10 @@ class BAF_Field_FileUpload extends BAF_Field {
         }
 
         // File input (always available as keyboard alternative)
-        $accept = '.' . implode( ',.', $types );
+        // Use custom accept attribute if provided, otherwise build from allowed_types
+        $accept = ! empty( $this->config['accept'] ) 
+            ? $this->config['accept']
+            : '.' . implode( ',.', $types );
         
         $html .= '<div class="baf-file-input-wrapper">';
         $html .= '<input type="file"';
@@ -195,6 +200,11 @@ class BAF_Field_FileUpload extends BAF_Field {
         $html .= ' class="baf-file-input"';
         $html .= ' accept="' . esc_attr( $accept ) . '"';
         $html .= ' aria-describedby="' . esc_attr( implode( ' ', $described_by ) ) . '"';
+        
+        // Capture attribute for mobile camera access
+        if ( ! empty( $this->config['capture'] ) ) {
+            $html .= ' capture="' . esc_attr( $this->config['capture'] ) . '"';
+        }
         
         if ( $max_files > 1 ) {
             $html .= ' multiple';

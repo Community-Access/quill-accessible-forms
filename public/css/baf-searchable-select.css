@@ -1,0 +1,384 @@
+/**
+ * BAF Searchable Select Styles
+ * 
+ * Accessible, high-contrast styles for the searchable select component.
+ * 
+ * @package BAF
+ * @since 1.0.0
+ */
+
+/* Container */
+.baf-searchable-select {
+    position: relative;
+    width: 100%;
+}
+
+/* Input wrapper */
+.baf-ss-input-wrapper {
+    display: flex;
+    align-items: center;
+    position: relative;
+    border: 2px solid #767676;
+    border-radius: 4px;
+    background: #fff;
+    transition: border-color 0.15s ease, box-shadow 0.15s ease;
+}
+
+.baf-ss-input-wrapper:focus-within {
+    border-color: #0073aa;
+    box-shadow: 0 0 0 3px rgba(0, 115, 170, 0.25);
+}
+
+.baf-ss--open .baf-ss-input-wrapper {
+    border-bottom-left-radius: 0;
+    border-bottom-right-radius: 0;
+}
+
+/* Input field */
+.baf-ss-input {
+    flex: 1;
+    min-width: 0;
+    padding: 10px 12px;
+    border: none;
+    background: transparent;
+    font-size: 16px;
+    line-height: 1.4;
+    outline: none;
+}
+
+.baf-ss-input::placeholder {
+    color: #666;
+    opacity: 1;
+}
+
+/* Clear button */
+.baf-ss-clear {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    width: 32px;
+    height: 32px;
+    padding: 0;
+    border: none;
+    background: transparent;
+    color: #666;
+    font-size: 18px;
+    cursor: pointer;
+    flex-shrink: 0;
+}
+
+.baf-ss-clear:hover,
+.baf-ss-clear:focus {
+    color: #c00;
+}
+
+.baf-ss-clear:focus {
+    outline: 2px solid #0073aa;
+    outline-offset: -2px;
+}
+
+/* Toggle button */
+.baf-ss-toggle {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    width: 36px;
+    height: 100%;
+    padding: 0;
+    border: none;
+    border-left: 1px solid #ddd;
+    background: #f7f7f7;
+    cursor: pointer;
+    flex-shrink: 0;
+    border-radius: 0 2px 2px 0;
+}
+
+.baf-ss-toggle:hover {
+    background: #eee;
+}
+
+.baf-ss-toggle:focus {
+    outline: 2px solid #0073aa;
+    outline-offset: -2px;
+}
+
+/* Arrow indicator */
+.baf-ss-arrow {
+    display: block;
+    width: 0;
+    height: 0;
+    border-left: 5px solid transparent;
+    border-right: 5px solid transparent;
+    border-top: 6px solid #555;
+    transition: transform 0.15s ease;
+}
+
+.baf-ss--open .baf-ss-arrow {
+    transform: rotate(180deg);
+}
+
+/* Tags container (multiple select) */
+.baf-ss-tags {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 4px;
+    padding: 4px 8px;
+    min-height: 0;
+}
+
+.baf-ss-tags:empty {
+    display: none;
+}
+
+/* Individual tag */
+.baf-ss-tag {
+    display: inline-flex;
+    align-items: center;
+    gap: 4px;
+    padding: 4px 8px;
+    background: #e0e0e0;
+    border-radius: 3px;
+    font-size: 14px;
+    line-height: 1.2;
+}
+
+.baf-ss-tag-label {
+    max-width: 200px;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+}
+
+.baf-ss-tag-remove {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    width: 18px;
+    height: 18px;
+    padding: 0;
+    border: none;
+    background: transparent;
+    color: #666;
+    font-size: 14px;
+    cursor: pointer;
+    border-radius: 2px;
+}
+
+.baf-ss-tag-remove:hover,
+.baf-ss-tag-remove:focus {
+    background: #c00;
+    color: #fff;
+}
+
+.baf-ss-tag-remove:focus {
+    outline: 2px solid #0073aa;
+    outline-offset: 1px;
+}
+
+/* Listbox dropdown */
+.baf-ss-listbox {
+    position: absolute;
+    top: 100%;
+    left: 0;
+    right: 0;
+    max-height: 300px;
+    overflow-y: auto;
+    margin: 0;
+    padding: 0;
+    list-style: none;
+    background: #fff;
+    border: 2px solid #0073aa;
+    border-top: none;
+    border-radius: 0 0 4px 4px;
+    box-shadow: 0 4px 8px rgba(0, 0, 0, 0.15);
+    z-index: 1000;
+}
+
+/* Options */
+.baf-ss-option {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    padding: 10px 12px;
+    cursor: pointer;
+    transition: background-color 0.1s ease;
+}
+
+.baf-ss-option:hover,
+.baf-ss-option--highlighted {
+    background: #f0f0f0;
+}
+
+.baf-ss-option--selected {
+    background: #e6f3ff;
+}
+
+.baf-ss-option--highlighted.baf-ss-option--selected {
+    background: #cce5ff;
+}
+
+.baf-ss-option[aria-disabled="true"] {
+    opacity: 0.5;
+    cursor: not-allowed;
+}
+
+/* Option checkbox indicator (multiple) */
+.baf-ss-checkbox {
+    flex-shrink: 0;
+    font-size: 16px;
+    line-height: 1;
+}
+
+/* Option label */
+.baf-ss-option-label {
+    flex: 1;
+    min-width: 0;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+}
+
+/* Optgroup header */
+.baf-ss-optgroup {
+    padding: 8px 12px 4px;
+    font-size: 12px;
+    font-weight: 600;
+    text-transform: uppercase;
+    color: #666;
+    background: #f7f7f7;
+    border-top: 1px solid #ddd;
+}
+
+.baf-ss-optgroup:first-child {
+    border-top: none;
+}
+
+/* No results message */
+.baf-ss-no-results {
+    padding: 12px;
+    text-align: center;
+    color: #666;
+    font-style: italic;
+}
+
+/* Screen reader only text */
+.baf-sr-only {
+    position: absolute;
+    width: 1px;
+    height: 1px;
+    padding: 0;
+    margin: -1px;
+    overflow: hidden;
+    clip: rect(0, 0, 0, 0);
+    white-space: nowrap;
+    border: 0;
+}
+
+/* High contrast mode support */
+@media (prefers-contrast: high) {
+    .baf-ss-input-wrapper {
+        border-width: 3px;
+    }
+    
+    .baf-ss-input-wrapper:focus-within {
+        outline: 3px solid;
+        outline-offset: 2px;
+    }
+    
+    .baf-ss-option--highlighted {
+        outline: 2px solid;
+        outline-offset: -2px;
+    }
+    
+    .baf-ss-tag {
+        border: 1px solid;
+    }
+}
+
+/* Reduced motion */
+@media (prefers-reduced-motion: reduce) {
+    .baf-ss-arrow,
+    .baf-ss-input-wrapper {
+        transition: none;
+    }
+}
+
+/* Focus visible styles */
+.baf-ss-input:focus-visible {
+    outline: none;
+}
+
+/* Loading state (for cascade) */
+.baf-searchable-select.baf-ss--loading .baf-ss-input {
+    background-image: url('data:image/svg+xml,<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="%23666" stroke-width="2"><circle cx="12" cy="12" r="10" stroke-dasharray="31.4" stroke-dashoffset="10"><animateTransform attributeName="transform" type="rotate" from="0 12 12" to="360 12 12" dur="1s" repeatCount="indefinite"/></circle></svg>');
+    background-repeat: no-repeat;
+    background-position: right 40px center;
+    background-size: 20px 20px;
+}
+
+/* Dark mode support */
+@media (prefers-color-scheme: dark) {
+    .baf-searchable-select {
+        color-scheme: dark;
+    }
+    
+    .baf-ss-input-wrapper {
+        background: #1e1e1e;
+        border-color: #555;
+    }
+    
+    .baf-ss-input {
+        color: #eee;
+    }
+    
+    .baf-ss-input::placeholder {
+        color: #999;
+    }
+    
+    .baf-ss-toggle {
+        background: #2d2d2d;
+        border-color: #444;
+    }
+    
+    .baf-ss-toggle:hover {
+        background: #3d3d3d;
+    }
+    
+    .baf-ss-arrow {
+        border-top-color: #aaa;
+    }
+    
+    .baf-ss-listbox {
+        background: #1e1e1e;
+        border-color: #0073aa;
+    }
+    
+    .baf-ss-option:hover,
+    .baf-ss-option--highlighted {
+        background: #2d2d2d;
+    }
+    
+    .baf-ss-option--selected {
+        background: #1a3a4d;
+    }
+    
+    .baf-ss-optgroup {
+        background: #252525;
+        border-color: #444;
+        color: #aaa;
+    }
+    
+    .baf-ss-tag {
+        background: #3d3d3d;
+        color: #eee;
+    }
+    
+    .baf-ss-clear,
+    .baf-ss-tag-remove {
+        color: #aaa;
+    }
+    
+    .baf-ss-no-results {
+        color: #999;
+    }
+}

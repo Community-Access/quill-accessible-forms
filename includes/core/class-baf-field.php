@@ -185,12 +185,22 @@ abstract class BAF_Field {
             
             // Validation
             'validation_rules'      => array(),
+            'pattern'               => '', // HTML5 pattern for regex validation
+            'unique'                => false,
+            'unique_scope'          => 'form', // form|global
+            'unique_message'        => '',
             
             // Advanced
             'read_only'             => false,
             'disabled'              => false,
             'allow_prefill'         => true,
             'prefill_parameter'     => '',
+            
+            // HTML5 attributes
+            'autofocus'             => false,
+            'spellcheck'            => null, // null = browser default, true/false to force
+            'inputmode'             => '', // none, text, decimal, numeric, tel, search, email, url
+            'enterkeyhint'          => '', // enter, done, go, next, previous, search, send
         );
     }
 
@@ -509,6 +519,45 @@ abstract class BAF_Field {
         // Disabled state
         if ( ! empty( $this->config['disabled'] ) ) {
             $attrs['aria-disabled'] = 'true';
+        }
+
+        return $attrs;
+    }
+
+    /**
+     * Get common HTML5 input attributes
+     *
+     * Returns attributes like pattern, autofocus, spellcheck, inputmode, enterkeyhint
+     * that can be applied to most input fields.
+     *
+     * @return array HTML5 attributes.
+     */
+    protected function get_html5_attributes() {
+        $attrs = array();
+
+        // Pattern for regex validation
+        if ( ! empty( $this->config['pattern'] ) ) {
+            $attrs['pattern'] = $this->config['pattern'];
+        }
+
+        // Autofocus
+        if ( ! empty( $this->config['autofocus'] ) ) {
+            $attrs['autofocus'] = true;
+        }
+
+        // Spellcheck (only set if explicitly configured)
+        if ( $this->config['spellcheck'] !== null ) {
+            $attrs['spellcheck'] = $this->config['spellcheck'] ? 'true' : 'false';
+        }
+
+        // Input mode for mobile keyboards
+        if ( ! empty( $this->config['inputmode'] ) ) {
+            $attrs['inputmode'] = $this->config['inputmode'];
+        }
+
+        // Enter key hint for mobile keyboards
+        if ( ! empty( $this->config['enterkeyhint'] ) ) {
+            $attrs['enterkeyhint'] = $this->config['enterkeyhint'];
         }
 
         return $attrs;

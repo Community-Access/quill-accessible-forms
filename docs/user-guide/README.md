@@ -29,6 +29,17 @@ This guide covers everything from installation to advanced features:
 - Hooks & Filters for Developers
 - Troubleshooting
 
+## Feature Guides
+
+| Guide | Description |
+| ----- | ----------- |
+| [Autocomplete Providers](autocomplete-providers-guide.md) | Address autocomplete, static datasets, Google Places, fallbacks |
+| [Field Type Conversion](field-type-conversion-guide.md) | Converting fields while preserving properties and conditional logic |
+| [Accessibility Coach](accessibility-coach-guide.md) | Real-time accessibility scoring and guidance |
+| [CSV Import](csv-import-guide.md) | Generate forms from CSV files with intelligent type detection |
+| [BFL Language Guide](bfl-language-guide.md) | Beginner-first BFL tutorial with recipes |
+| [Field Types Guide](field-types-guide.md) | Field-by-field beginner walkthrough |
+
 ## Choice Libraries Reference
 
 **Choice Libraries Reference** - Complete reference for all 125+ predefined choice libraries (see `docs/CHOICE-LIBRARIES.md`).
@@ -55,6 +66,7 @@ BAF treats keyboard navigation as a **first-class citizen**:
 - **Focus management**: Predictable, logical focus flow
 - **High contrast support**: Works with Windows High Contrast Mode
 - **Reduced motion**: Respects user preferences
+- **Accessibility Coach**: Real-time scoring and guidance for accessible forms
 
 ## Quick Links
 

@@ -49,14 +49,42 @@ class BAF_BFL_Validator {
     /**
      * Valid modifiers
      *
+     * All modifiers in this list are implemented in BAF_BFL_Parser::parse_field_modifiers()
+     *
      * @var array
      */
     private $valid_modifiers = array(
-        'required', 'placeholder', 'default', 'description', 'desc', 'min', 'max',
-        'minlength', 'maxlength', 'rows', 'size', 'class', 'css', 'readonly', 'disabled',
-        'admin', 'admin-only', 'hidden', 'confirm', 'mask', 'library', 'multiple',
-        'allow-other', 'allowother', 'format', 'step', 'prefix', 'suffix', 'pattern',
-        'autocomplete', 'autofocus', 'spellcheck', 'accept', 'capture', 'cols',
+        // Core field properties
+        'required', 'placeholder', 'default', 'description', 'desc',
+        // Validation constraints
+        'min', 'max', 'minlength', 'maxlength', 'pattern', 'unique',
+        // Appearance
+        'rows', 'cols', 'size', 'class', 'css', 'prefix', 'suffix',
+        // State modifiers
+        'readonly', 'disabled', 'admin', 'admin-only', 'hidden',
+        // Email field
+        'confirm',
+        // Input masking
+        'mask', 'format',
+        // Choice fields
+        'library', 'multiple', 'allow-other', 'allowother', 'searchable',
+        // Numeric fields
+        'step',
+        // HTML5 attributes
+        'autocomplete', 'autofocus', 'spellcheck', 'inputmode', 'enterkeyhint',
+        // File upload attributes
+        'accept', 'capture',
+        // Autocomplete/address providers
+        'autocomplete_provider', 'autocomplete_countries', 'autocomplete_types',
+        // Smart defaults
+        'smart_default', 'unique_scope', 'unique_message',
+        // Cascading dropdowns
+        'cascade_from', 'cascadefrom', 'cascade_library', 'cascadelibrary',
+        'empty_message', 'emptymessage', 'loading_message', 'loadingmessage',
+        // Arbitrary custom attributes
+        'attr',
+        // Repeater settings
+        'min_rows', 'minrows', 'max_rows', 'maxrows',
     );
 
     /**

@@ -253,6 +253,34 @@ Import CSV files to automatically generate forms:
 - [x] Name, role, value programmatically determinable (4.1.2)
 - [x] Status messages announced (4.1.3)
 
+### Accessibility Coach
+
+BAF includes a built-in accessibility coach that analyzes forms in real-time:
+
+**Features:**
+- **Accessibility Score** - 0-100 rating based on issue severity
+- **Issue Detection** - Scans for missing labels, placeholder-as-label, generic labels, missing help text, duplicate IDs, and more
+- **Category Grouping** - Issues organized by Labels, Help Text, Structure, Validation
+- **Fix Suggestions** - Actionable guidance for each issue
+- **Click-to-Navigate** - Jump directly to problem fields
+- **Auto-Analyze Mode** - Optionally re-scan on every form change
+
+**Keyboard Shortcut:** Ctrl+Shift+A (Windows) or Cmd+Shift+A (Mac)
+
+**Checks Performed:**
+| Check | Severity | WCAG Criteria |
+|-------|----------|---------------|
+| Missing field label | Error | 3.3.2, 4.1.2 |
+| Placeholder as label | Error | 3.3.2 |
+| Generic/unclear label | Warning | 2.4.6 |
+| Missing help text (complex fields) | Info | 3.3.2 |
+| Missing validation message | Warning | 3.3.1 |
+| Duplicate field IDs | Error | 4.1.1 |
+| Hidden legend on grouped controls | Error | 1.3.1 |
+| Missing page title (multi-page) | Warning | 2.4.2 |
+
+See the [Accessibility Coach Guide](user-guide/accessibility-coach-guide.md) for complete documentation.
+
 ---
 
 ## Feature Specifications
@@ -699,12 +727,34 @@ Optional `unique_message` overrides the default error text.
 
 Text-like fields can accept `mask` / `@mask` to guide input formatting (progressive enhancement).
 
-#### Address Autocomplete (Google Places)
+#### Autocomplete Provider Model
 
-Address fields can enable autocomplete (`autocomplete: true`) with provider `google_places`.
+BAF uses an extensible provider model for autocomplete functionality:
 
-- If a global Google Maps API key is configured in plugin settings, BAF uses Google Places.
-- If no API key is configured, the address field still works normally (no autocomplete enhancement).
+**Built-in Providers:**
+- `static` - Pre-loaded datasets (countries, states, provinces, timezones, languages, currencies)
+- `browser` - HTML5 autocomplete tokens (personal, contact, address, payment info)
+- `google_places` - Google Places API for address autocomplete
+- `fallback` - Country/state dropdown cascade when external APIs unavailable
+
+**Graceful Degradation:**
+- If Google Places API key is not configured, address fields automatically fall back to static country/state dropdowns
+- All providers are availability-checked before use
+- Custom providers can be registered via `baf_register_autocomplete_providers` action
+
+**Usage in BFL:**
+```bfl
+field text "Country" 
+  autocomplete "country"          // Static dataset
+  
+field text "Address"
+  autocomplete "street-address"   // Browser token
+  
+field address "Full Address"
+  provider "google_places"        // API-based
+```
+
+See the [Autocomplete Providers Guide](user-guide/autocomplete-providers-guide.md) for complete documentation.
 
 
 #### 1. Dynamic Population
@@ -1640,6 +1690,33 @@ const BAFStructureMode = {
 | Ctrl+V | Paste | Pastes after current item |
 | Ctrl+Shift+V | Paste as child | Pastes inside current section |
 | Ctrl+D | Duplicate | Creates copy immediately after item |
+| Ctrl+T | Convert Type | Opens field type conversion modal |
+
+#### Field Type Conversion
+
+Both Structure Mode and Visual Builder support converting fields between types while preserving compatible properties:
+
+**Conversion Categories:**
+- **Lossless** - All data preserved (e.g., text → textarea)
+- **Lossy** - Some data may be lost (e.g., textarea → text truncates content)
+- **Incompatible** - Conversion not supported
+
+**Preserved Property Groups:**
+- Universal: label, description, required, readonly, css_class, conditional_logic
+- Validation: min, max, minlength, maxlength, pattern, step
+- Choices: options, default_value, allow_other
+- Text: autocomplete, spellcheck, inputmode
+- DateTime: date_format, time_format, min_date, max_date
+- File: accept, multiple, max_file_size, capture
+
+**Conditional Logic Safety:**
+When converting a field that is referenced by conditional logic rules, BAF:
+1. Analyzes all conditional rules for compatibility
+2. Shows warnings for potentially broken rules
+3. Offers auto-repair when possible (e.g., updating operators)
+4. Prevents conversion if critical dependencies would break
+
+See the [Field Type Conversion Guide](user-guide/field-type-conversion-guide.md) for complete documentation.
 
 #### Copy Section Behavior
 

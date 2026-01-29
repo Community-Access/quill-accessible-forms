@@ -228,6 +228,9 @@ class BAF_Field_Text extends BAF_Field {
         // Add ARIA attributes
         $attrs = array_merge( $attrs, $this->get_aria_attributes() );
 
+        // Add HTML5 attributes (pattern, autofocus, spellcheck, inputmode, enterkeyhint)
+        $attrs = array_merge( $attrs, $this->get_html5_attributes() );
+
         // Input mask data attribute
         if ( ! empty( $this->config['input_mask'] ) ) {
             $mask = $this->get_input_mask_pattern();

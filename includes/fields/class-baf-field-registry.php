@@ -343,6 +343,97 @@ class BAF_Field_Registry {
             'priority' => 70,
         ) );
 
+        $this->register( 'currency', 'BAF_Field_Currency', array(
+            'label'    => __( 'Currency', 'bits-accessible-forms' ),
+            'category' => 'advanced',
+            'icon'     => 'currency',
+            'priority' => 75,
+        ) );
+
+        $this->register( 'otp', 'BAF_Field_OTP', array(
+            'label'    => __( 'OTP / Verification Code', 'bits-accessible-forms' ),
+            'category' => 'advanced',
+            'icon'     => 'lock',
+            'priority' => 80,
+        ) );
+
+        $this->register( 'typed_signature', 'BAF_Field_Typed_Signature', array(
+            'label'    => __( 'Typed Signature', 'bits-accessible-forms' ),
+            'category' => 'advanced',
+            'icon'     => 'signature',
+            'priority' => 85,
+        ) );
+
+        $this->register( 'slider', 'BAF_Field_Slider', array(
+            'label'    => __( 'Slider', 'bits-accessible-forms' ),
+            'category' => 'advanced',
+            'icon'     => 'slider',
+            'priority' => 90,
+        ) );
+
+        $this->register( 'image_choice', 'BAF_Field_Image_Choice', array(
+            'label'    => __( 'Image Choice', 'bits-accessible-forms' ),
+            'category' => 'choice',
+            'icon'     => 'images-alt2',
+            'priority' => 40,
+        ) );
+
+        $this->register( 'matrix', 'BAF_Field_Matrix', array(
+            'label'    => __( 'Matrix / Grid', 'bits-accessible-forms' ),
+            'category' => 'choice',
+            'icon'     => 'grid-view',
+            'priority' => 45,
+        ) );
+
+        $this->register( 'rich_text', 'BAF_Field_Rich_Text', array(
+            'label'    => __( 'Rich Text Editor', 'bits-accessible-forms' ),
+            'category' => 'advanced',
+            'icon'     => 'editor-paragraph',
+            'priority' => 95,
+        ) );
+
+        $this->register( 'quiz', 'BAF_Field_Quiz', array(
+            'label'    => __( 'Quiz Question', 'bits-accessible-forms' ),
+            'category' => 'advanced',
+            'icon'     => 'welcome-learn-more',
+            'priority' => 100,
+        ) );
+
+        $this->register( 'appointment', 'BAF_Field_Appointment', array(
+            'label'    => __( 'Appointment Picker', 'bits-accessible-forms' ),
+            'category' => 'advanced',
+            'icon'     => 'calendar-alt',
+            'priority' => 105,
+        ) );
+
+        $this->register( 'map', 'BAF_Field_Map', array(
+            'label'    => __( 'Map / Location Picker', 'bits-accessible-forms' ),
+            'category' => 'advanced',
+            'icon'     => 'location-alt',
+            'priority' => 110,
+        ) );
+
+        $this->register( 'social', 'BAF_Field_Social', array(
+            'label'    => __( 'Social Profile', 'bits-accessible-forms' ),
+            'category' => 'contact',
+            'icon'     => 'share',
+            'priority' => 50,
+        ) );
+
+        $this->register( 'table', 'BAF_Field_Table', array(
+            'label'    => __( 'Table Input', 'bits-accessible-forms' ),
+            'category' => 'advanced',
+            'icon'     => 'editor-table',
+            'priority' => 115,
+        ) );
+
+        $this->register( 'payment', 'BAF_Field_Payment', array(
+            'label'    => __( 'Payment', 'bits-accessible-forms' ),
+            'category' => 'ecommerce',
+            'icon'     => 'money-alt',
+            'priority' => 10,
+        ) );
+
         // Pricing Fields
         $this->register( 'product', 'BAF_Field_Product', array(
             'label'    => __( 'Product', 'bits-accessible-forms' ),
@@ -406,6 +497,20 @@ class BAF_Field_Registry {
             'category' => 'layout',
             'icon'     => 'columns',
             'priority' => 40,
+        ) );
+
+        $this->register( 'progress', 'BAF_Field_Progress', array(
+            'label'    => __( 'Progress Indicator', 'bits-accessible-forms' ),
+            'category' => 'layout',
+            'icon'     => 'performance',
+            'priority' => 50,
+        ) );
+
+        $this->register( 'summary', 'BAF_Field_Summary', array(
+            'label'    => __( 'Summary / Review', 'bits-accessible-forms' ),
+            'category' => 'layout',
+            'icon'     => 'list-view',
+            'priority' => 60,
         ) );
 
         // Form Helpers

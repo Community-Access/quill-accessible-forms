@@ -375,39 +375,73 @@ text #phone_masked "Phone" [
 
 These are the field-level modifiers that the parser recognizes today:
 
+**Core Properties:**
 - `@required`
 - `@placeholder "..."`
 - `@default "..."` or `@default 123`
 - `@description "..."` (alias: `@desc`)
-- `@min 0`, `@max 100`
-- `@minlength 2`, `@maxlength 100`
-- `@rows 6`
-- `@size "..."`
+
+**Validation Constraints:**
+- `@min 0`, `@max 100` (numeric values)
+- `@minlength 2`, `@maxlength 100` (text length)
+- `@pattern "[A-Z]{3}-[0-9]{4}"` (HTML5 regex pattern)
+- `@unique` (enforce uniqueness)
+- `@unique_scope form` (or `global`)
+- `@unique_message "..."`
+
+**Appearance:**
+- `@rows 6` (textarea rows)
+- `@cols 80` (textarea columns)
+- `@size "..."` (small, medium, large, full)
 - `@class "..."` (alias: `@css`)
+- `@prefix "..."`
+- `@suffix "..."`
+
+**State Modifiers:**
 - `@readonly`
 - `@disabled`
 - `@admin` / `@admin-only`
 - `@hidden` (sets visibility hidden)
+
+**Email Field:**
 - `@confirm` (email confirmation)
+
+**Input Masking:**
 - `@mask "..."`
-- `@autocomplete` or `@autocomplete "..."`
+- `@format "..."`
+
+**HTML5 Attributes:**
+- `@autocomplete` or `@autocomplete "..."` (browser autocomplete tokens)
+- `@autofocus` (auto-focus on page load)
+- `@spellcheck "true"` or `@spellcheck "false"`
+- `@inputmode "..."` (none, text, decimal, numeric, tel, search, email, url)
+- `@enterkeyhint "..."` (enter, done, go, next, previous, search, send)
+
+**File Upload Attributes:**
+- `@accept "image/*,.pdf"` (MIME types / extensions)
+- `@capture "environment"` or `@capture "user"` (camera access on mobile)
+
+**Autocomplete Providers:**
 - `@autocomplete_provider google`
 - `@autocomplete_countries ["us", "ca"]`
 - `@autocomplete_types ["address"]`
-- `@smart_default "..."`
-- `@unique_scope form` (or another word)
-- `@unique_message "..."`
+
+**Smart Defaults:**
+- `@smart_default "..."` (user:*, today+N, geo)
+
+**Choice Fields:**
 - `@library countries` (choice library)
+- `@multiple`
+- `@allow-other`
+
+**Cascading Dropdowns:**
 - `@cascade_from #other_field` (or a string)
 - `@cascade_library "..."`
 - `@empty_message "..."`
 - `@loading_message "..."`
-- `@multiple`
-- `@allow-other`
-- `@format "..."`
+
+**Numeric Fields:**
 - `@step 1`
-- `@prefix "..."`
-- `@suffix "..."`
 
 > If you write a modifier that's not on this list, the current parser will simply ignore it (no error), because it only handles the cases above.
 
@@ -950,6 +984,158 @@ All these features support four block syntaxes:
 | Conditional fields | ✅ | ✅ | ✅ | ✅ |
 | Column contents | ✅ | ✅ | ✅ | ✅ |
 | Form modifiers | (inline only) | ❌ | ❌ | ❌ |
+
+---
+
+---
+
+## Recipes: common patterns
+
+### Geographic cascade (Country → State)
+
+Use choice libraries with cascade support to create dependent dropdowns:
+
+```bfl
+form "Shipping Address"
+
+select #country "Country"
+  @library countries
+  @required
+  @placeholder "Select your country"
+
+select #state "State/Province"
+  @cascade_from #country
+  @cascade_library states
+  @empty_message "Please select a country first"
+  @loading_message "Loading states..."
+  @required
+```
+
+The `states` cascade library automatically filters to show US states when United States is selected, Canadian provinces when Canada is selected, etc.
+
+### Pattern validation examples
+
+Use `@pattern` for regex validation with clear error feedback:
+
+```bfl
+form "Registration"
+
+// US ZIP code (5 digits or 5+4)
+text #zip "ZIP Code"
+  @pattern "[0-9]{5}(-[0-9]{4})?"
+  @placeholder "12345 or 12345-6789"
+  @description "Enter a valid US ZIP code"
+
+// Product code format
+text #product_code "Product Code"
+  @pattern "[A-Z]{3}-[0-9]{4}"
+  @placeholder "ABC-1234"
+  @description "Format: 3 letters, dash, 4 numbers"
+
+// Username (alphanumeric, 3-20 chars)
+text #username "Username"
+  @pattern "[a-zA-Z0-9_]{3,20}"
+  @minlength 3
+  @maxlength 20
+  @description "Letters, numbers, and underscores only"
+```
+
+### Mobile-optimized inputs
+
+Use `@inputmode` and `@enterkeyhint` for better mobile UX:
+
+```bfl
+form "Contact"
+
+text #phone "Phone Number"
+  @inputmode "tel"
+  @placeholder "(555) 123-4567"
+
+number #age "Age"
+  @inputmode "numeric"
+  @min 0
+  @max 150
+
+email #email "Email"
+  @inputmode "email"
+  @enterkeyhint "next"
+
+text #search "Search"
+  @inputmode "search"
+  @enterkeyhint "search"
+```
+
+### Photo capture on mobile
+
+Use `@capture` for direct camera access:
+
+```bfl
+form "Verification"
+
+// Front-facing camera (selfie)
+fileupload #selfie "Take a Selfie"
+  @accept "image/*"
+  @capture "user"
+  @description "Use your front camera"
+
+// Back camera (documents, environment)
+fileupload #document "Scan Document"
+  @accept "image/*"
+  @capture "environment"
+  @description "Use your back camera to scan"
+```
+
+### Unique email with custom message
+
+```bfl
+form "Newsletter Signup"
+
+email #email "Email Address"
+  @required
+  @unique
+  @unique_scope "global"
+  @unique_message "This email is already subscribed"
+  @placeholder "you@example.com"
+```
+
+### Multi-column address form
+
+```bfl
+form "Address Form"
+
+columns 2 {
+  column {
+    text #street "Street Address"
+      @required
+      @autocomplete "street-address"
+  }
+  column {
+    text #apt "Apt/Suite"
+      @autocomplete "address-line2"
+  }
+}
+
+columns 3 {
+  column {
+    text #city "City"
+      @required
+      @autocomplete "address-level2"
+  }
+  column {
+    select #state "State"
+      @library us_states
+      @required
+      @autocomplete "address-level1"
+  }
+  column {
+    text #zip "ZIP"
+      @required
+      @pattern "[0-9]{5}"
+      @autocomplete "postal-code"
+      @inputmode "numeric"
+  }
+}
+```
 
 ---
 

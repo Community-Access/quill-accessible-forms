@@ -289,6 +289,13 @@ class BAF_Field_Repeater extends BAF_Field {
             $html .= '<span class="baf-repeater-row-title">' . esc_html( $row_label ) . ' ' . $row_num . '</span>';
         }
 
+        // Copy row button
+        $html .= '<button type="button" class="baf-repeater-copy" ';
+        $html .= 'aria-label="' . esc_attr( sprintf( __( 'Copy %s %s', 'bits-accessible-forms' ), $row_label, $row_num ) ) . '">';
+        $html .= '<span class="baf-icon-copy" aria-hidden="true"></span>';
+        $html .= '<span class="baf-copy-text">' . esc_html__( 'Copy', 'bits-accessible-forms' ) . '</span>';
+        $html .= '</button>';
+
         // Remove button
         $html .= '<button type="button" class="baf-repeater-remove" ';
         $html .= 'aria-label="' . esc_attr( sprintf( __( 'Remove %s %s', 'bits-accessible-forms' ), $row_label, $row_num ) ) . '">';

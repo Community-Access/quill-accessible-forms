@@ -201,11 +201,32 @@ final class BITS_Accessible_Forms {
         // Field registry and all field types
         require_once BAF_PLUGIN_DIR . 'includes/fields/class-baf-field-registry.php';
         
+        // Specialty field types (competitive features)
+        require_once BAF_PLUGIN_DIR . 'includes/fields/class-baf-field-currency.php';
+        require_once BAF_PLUGIN_DIR . 'includes/fields/class-baf-field-otp.php';
+        require_once BAF_PLUGIN_DIR . 'includes/fields/class-baf-field-typed-signature.php';
+        require_once BAF_PLUGIN_DIR . 'includes/fields/class-baf-field-slider.php';
+        require_once BAF_PLUGIN_DIR . 'includes/fields/class-baf-field-image-choice.php';
+        require_once BAF_PLUGIN_DIR . 'includes/fields/class-baf-field-matrix.php';
+        require_once BAF_PLUGIN_DIR . 'includes/fields/class-baf-field-rich-text.php';
+        require_once BAF_PLUGIN_DIR . 'includes/fields/class-baf-field-progress.php';
+        require_once BAF_PLUGIN_DIR . 'includes/fields/class-baf-field-summary.php';
+        require_once BAF_PLUGIN_DIR . 'includes/fields/class-baf-field-quiz.php';
+        require_once BAF_PLUGIN_DIR . 'includes/fields/class-baf-field-appointment.php';
+        require_once BAF_PLUGIN_DIR . 'includes/fields/class-baf-field-map.php';
+        require_once BAF_PLUGIN_DIR . 'includes/fields/class-baf-field-social.php';
+        require_once BAF_PLUGIN_DIR . 'includes/fields/class-baf-field-table.php';
+        require_once BAF_PLUGIN_DIR . 'includes/fields/class-baf-field-payment.php';
+        
         // BFL (BITS Form Language)
         require_once BAF_PLUGIN_DIR . 'includes/bfl/class-baf-bfl-lexer.php';
         require_once BAF_PLUGIN_DIR . 'includes/bfl/class-baf-bfl-parser.php';
         require_once BAF_PLUGIN_DIR . 'includes/bfl/class-baf-bfl-compiler.php';
         require_once BAF_PLUGIN_DIR . 'includes/bfl/class-baf-bfl-validator.php';
+        require_once BAF_PLUGIN_DIR . 'includes/bfl/class-baf-bfl-exporter.php';
+        
+        // Field Templates
+        require_once BAF_PLUGIN_DIR . 'includes/core/class-baf-field-templates.php';
         
         // Accessibility
         require_once BAF_PLUGIN_DIR . 'includes/accessibility/class-baf-accessibility-manager.php';
@@ -224,6 +245,28 @@ final class BITS_Accessible_Forms {
         require_once BAF_PLUGIN_DIR . 'includes/import/class-baf-csv-importer.php';
         require_once BAF_PLUGIN_DIR . 'includes/import/class-baf-form-importer.php';
         require_once BAF_PLUGIN_DIR . 'includes/import/class-baf-auto-form-generator.php';
+        require_once BAF_PLUGIN_DIR . 'includes/import/class-baf-csv-form-builder.php';
+        
+        // Field type converter (needed for both admin and public)
+        require_once BAF_PLUGIN_DIR . 'includes/core/class-baf-field-type-converter.php';
+        
+        // Autocomplete providers
+        require_once BAF_PLUGIN_DIR . 'includes/autocomplete/interface-baf-autocomplete-provider.php';
+        require_once BAF_PLUGIN_DIR . 'includes/autocomplete/class-baf-autocomplete-static.php';
+        require_once BAF_PLUGIN_DIR . 'includes/autocomplete/class-baf-autocomplete-browser.php';
+        require_once BAF_PLUGIN_DIR . 'includes/autocomplete/class-baf-autocomplete-google-places.php';
+        require_once BAF_PLUGIN_DIR . 'includes/autocomplete/class-baf-autocomplete-fallback.php';
+        require_once BAF_PLUGIN_DIR . 'includes/autocomplete/class-baf-autocomplete-registry.php';
+        
+        // Admin AJAX handlers (load early for AJAX)
+        if ( is_admin() || ( defined( 'DOING_AJAX' ) && DOING_AJAX ) ) {
+            require_once BAF_PLUGIN_DIR . 'includes/import/class-baf-csv-import-ajax.php';
+            require_once BAF_PLUGIN_DIR . 'includes/admin/class-baf-field-converter-ajax.php';
+            require_once BAF_PLUGIN_DIR . 'includes/admin/class-baf-accessibility-coach-ajax.php';
+        }
+        
+        // Accessibility Coach
+        require_once BAF_PLUGIN_DIR . 'includes/accessibility/class-baf-accessibility-coach.php';
         
         // Views
         require_once BAF_PLUGIN_DIR . 'includes/views/class-baf-view-renderer.php';

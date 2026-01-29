@@ -977,12 +977,195 @@ class BAF_BFL_Parser {
                         $field['suffix'] = $this->advance()['value'];
                     }
                     break;
+
+                // HTML5 pattern attribute for regex validation
+                case 'pattern':
+                    if ( $this->check( BAF_BFL_Lexer::TOKEN_STRING ) ) {
+                        $field['pattern'] = $this->advance()['value'];
+                    }
+                    break;
+
+                // Auto-focus field on page load
+                case 'autofocus':
+                    $field['autofocus'] = true;
+                    break;
+
+                // Enable/disable spellcheck
+                case 'spellcheck':
+                    if ( $this->check( BAF_BFL_Lexer::TOKEN_STRING ) || $this->check( BAF_BFL_Lexer::TOKEN_KEYWORD ) ) {
+                        $value = $this->advance()['value'];
+                        $field['spellcheck'] = in_array( strtolower( $value ), array( 'true', 'yes', '1', 'on' ), true );
+                    } else {
+                        $field['spellcheck'] = true;
+                    }
+                    break;
+
+                // File input accept attribute (MIME types / extensions)
+                case 'accept':
+                    if ( $this->check( BAF_BFL_Lexer::TOKEN_STRING ) ) {
+                        $field['accept'] = $this->advance()['value'];
+                    }
+                    break;
+
+                // File input capture attribute (camera/microphone)
+                case 'capture':
+                    if ( $this->check( BAF_BFL_Lexer::TOKEN_STRING ) || $this->check( BAF_BFL_Lexer::TOKEN_KEYWORD ) ) {
+                        $field['capture'] = $this->advance()['value'];
+                    } else {
+                        $field['capture'] = 'environment';
+                    }
+                    break;
+
+                // Textarea columns
+                case 'cols':
+                    if ( $this->check( BAF_BFL_Lexer::TOKEN_NUMBER ) ) {
+                        $field['cols'] = $this->advance()['value'];
+                    }
+                    break;
+
+                // Input mode for mobile keyboards
+                case 'inputmode':
+                    if ( $this->check( BAF_BFL_Lexer::TOKEN_STRING ) || $this->check( BAF_BFL_Lexer::TOKEN_KEYWORD ) ) {
+                        $field['inputmode'] = $this->advance()['value'];
+                    }
+                    break;
+
+                // Enter key hint for mobile keyboards
+                case 'enterkeyhint':
+                    if ( $this->check( BAF_BFL_Lexer::TOKEN_STRING ) || $this->check( BAF_BFL_Lexer::TOKEN_KEYWORD ) ) {
+                        $field['enterkeyhint'] = $this->advance()['value'];
+                    }
+                    break;
+
+                // Unique constraint
+                case 'unique':
+                    $field['unique'] = true;
+                    break;
+
+                // Searchable select mode
+                case 'searchable':
+                    $field['searchable'] = true;
+                    break;
+
+                // Arbitrary custom attributes
+                // Usage: @attr "data-analytics" "contact-form"
+                //    or: @attr data-analytics "contact-form"
+                case 'attr':
+                    $attr_name = null;
+                    $attr_value = null;
+
+                    // Get attribute name
+                    if ( $this->check( BAF_BFL_Lexer::TOKEN_STRING ) ) {
+                        $attr_name = $this->advance()['value'];
+                    } elseif ( $this->check( BAF_BFL_Lexer::TOKEN_KEYWORD ) || $this->check( BAF_BFL_Lexer::TOKEN_IDENTIFIER ) ) {
+                        $attr_name = $this->advance()['value'];
+                    }
+
+                    $this->skip_whitespace();
+
+                    // Get attribute value
+                    if ( $this->check( BAF_BFL_Lexer::TOKEN_STRING ) ) {
+                        $attr_value = $this->advance()['value'];
+                    } elseif ( $this->check( BAF_BFL_Lexer::TOKEN_NUMBER ) ) {
+                        $attr_value = $this->advance()['value'];
+                    } elseif ( $this->check( BAF_BFL_Lexer::TOKEN_KEYWORD ) ) {
+                        $value = strtolower( $this->peek()['value'] );
+                        if ( in_array( $value, array( 'true', 'false' ), true ) ) {
+                            $attr_value = $value === 'true';
+                            $this->advance();
+                        }
+                    }
+
+                    // Validate and store the attribute
+                    if ( $attr_name !== null && $attr_value !== null ) {
+                        // Security: only allow safe attribute prefixes
+                        if ( $this->is_safe_custom_attribute( $attr_name ) ) {
+                            if ( ! isset( $field['custom_attributes'] ) ) {
+                                $field['custom_attributes'] = array();
+                            }
+                            $field['custom_attributes'][ $attr_name ] = $attr_value;
+                        }
+                    }
+                    break;
+
+                // Repeater min/max rows
+                case 'min_rows':
+                case 'minrows':
+                    if ( $this->check( BAF_BFL_Lexer::TOKEN_NUMBER ) ) {
+                        $field['min_rows'] = (int) $this->advance()['value'];
+                    }
+                    break;
+
+                case 'max_rows':
+                case 'maxrows':
+                    if ( $this->check( BAF_BFL_Lexer::TOKEN_NUMBER ) ) {
+                        $field['max_rows'] = (int) $this->advance()['value'];
+                    }
+                    break;
             }
 
             $this->skip_trivia();
         }
 
         return $field;
+    }
+
+    /**
+     * Check if a custom attribute name is safe to use
+     *
+     * @param string $attr_name Attribute name.
+     * @return bool Whether the attribute is safe.
+     */
+    private function is_safe_custom_attribute( $attr_name ) {
+        // Normalize name
+        $attr_name = strtolower( trim( $attr_name ) );
+
+        // Block event handlers (security critical)
+        if ( strpos( $attr_name, 'on' ) === 0 ) {
+            $event_handlers = array(
+                'onclick', 'ondblclick', 'onmousedown', 'onmouseup', 'onmouseover',
+                'onmousemove', 'onmouseout', 'onmouseenter', 'onmouseleave',
+                'onkeydown', 'onkeyup', 'onkeypress',
+                'onfocus', 'onblur', 'onchange', 'oninput', 'onsubmit', 'onreset',
+                'onload', 'onunload', 'onerror', 'onresize', 'onscroll',
+                'ondrag', 'ondragstart', 'ondragend', 'ondragover', 'ondragenter',
+                'ondragleave', 'ondrop',
+                'oncopy', 'oncut', 'onpaste',
+                'oncontextmenu', 'onwheel', 'ontouchstart', 'ontouchend',
+                'ontouchmove', 'ontouchcancel', 'onpointerdown', 'onpointerup',
+                'onpointermove', 'onpointerenter', 'onpointerleave',
+            );
+            if ( in_array( $attr_name, $event_handlers, true ) ) {
+                return false;
+            }
+        }
+
+        // Block dangerous attributes
+        $blocked = array(
+            'style', 'href', 'src', 'action', 'formaction', 'xlink:href',
+            'srcdoc', 'data', 'dynsrc', 'lowsrc', 'background',
+        );
+        if ( in_array( $attr_name, $blocked, true ) ) {
+            return false;
+        }
+
+        // Allow data-* attributes
+        if ( strpos( $attr_name, 'data-' ) === 0 ) {
+            return true;
+        }
+
+        // Allow aria-* attributes  
+        if ( strpos( $attr_name, 'aria-' ) === 0 ) {
+            return true;
+        }
+
+        // Allow specific safe attributes
+        $allowed = array(
+            'title', 'lang', 'dir', 'translate', 'contenteditable',
+            'draggable', 'spellcheck', 'tabindex', 'accesskey',
+            'role', 'slot', 'part',
+        );
+        return in_array( $attr_name, $allowed, true );
     }
 
     /**

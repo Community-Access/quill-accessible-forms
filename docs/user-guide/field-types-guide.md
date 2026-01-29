@@ -3,6 +3,30 @@ This guide is intentionally **hand-holding**: it tells you *what each field is f
 Quick accessibility rule of thumb:
 - **Single inputs** (text/email/number/etc.) use a label tied to one control.
 - **Grouped choices** (radio/checkbox/likert/ranking/etc.) should be labeled as a group. BAF uses **`<fieldset>` + `<legend>`** for these where appropriate.
+
+---
+
+## HTML5 Attributes (All Text-Based Fields)
+
+These attributes are available on text, email, number, textarea, and other text-based fields via BFL or the Visual Builder's Advanced settings:
+
+| Attribute | BFL Example | Description |
+| --------- | ----------- | ----------- |
+| `pattern` | `@pattern "[A-Z]{3}-[0-9]{4}"` | Regex pattern for validation |
+| `autofocus` | `@autofocus` | Auto-focus field on page load |
+| `spellcheck` | `@spellcheck "false"` | Enable/disable browser spellcheck |
+| `inputmode` | `@inputmode "tel"` | Keyboard type on mobile (numeric, tel, email, url, search, decimal, none) |
+| `enterkeyhint` | `@enterkeyhint "search"` | Enter key label on mobile (enter, done, go, next, previous, search, send) |
+
+### Example: Mobile-Optimized Phone Input
+```bfl
+text "Phone Number"
+  @inputmode "tel"
+  @pattern "[0-9]{3}-[0-9]{3}-[0-9]{4}"
+  @placeholder "123-456-7890"
+  @enterkeyhint "next"
+```
+
 ---
 ## Standard Fields
 ### Single Line Text (`text`)
@@ -1325,6 +1349,586 @@ calculation "Example"
   - `prefix`: Prefix
   - `suffix`: Suffix
   - `hide_empty`: Hide When Empty/Zero
+---
+### Currency (`currency`)
+**When to use it**
+Use this for collecting monetary values with proper currency formatting, symbols, and thousand separators.
+**What users experience**
+They see a text input that automatically formats their entry as currency (e.g., "$1,234.56") while storing the raw numeric value.
+**Accessibility notes**
+- Includes both a formatted display input and hidden raw value input for form submission.
+- Screen readers announce the currency symbol and formatted value.
+**BFL example**
+```bfl
+currency "Annual Salary"
+  @currency_code(USD)
+  @min(0)
+  @max(10000000)
+  @required
+```
+**Visual Builder steps (very literal)**
+1) In the builder, click **Add Field** and choose **Currency**.
+2) Click the field to open its settings panel.
+3) Open the **General** section and set:
+   - **Label** - The field label
+   - **Description** - Help text
+   - **Required** - Whether the field must be filled
+4) Open the **Currency** section:
+   - **Currency Code** - USD, EUR, GBP, etc. (20 currencies supported)
+   - **Symbol Position** - Before or after the amount
+   - **Decimal Places** - Number of decimal places (default: 2)
+   - **Thousand Separator** - Comma, period, or space
+   - **Decimal Separator** - Period or comma
+5) Open the **Validation** section:
+   - **Minimum Value** - Minimum allowed amount
+   - **Maximum Value** - Maximum allowed amount
+
+---
+### OTP / Verification Code (`otp`)
+**When to use it**
+Use this for collecting verification codes, PINs, or one-time passwords sent via SMS or email.
+**What users experience**
+They see a series of individual input boxes (typically 4-6) that auto-advance as they type. Supports paste for convenience.
+**Accessibility notes**
+- Each digit input has proper labeling (e.g., "Digit 1 of 6")
+- Keyboard navigation with arrow keys between digits
+- Backspace moves to previous digit when empty
+- Paste distributes code across all inputs
+**BFL example**
+```bfl
+otp "Verification Code"
+  @length(6)
+  @mode(numeric)
+  @required
+```
+**Visual Builder steps (very literal)**
+1) In the builder, click **Add Field** and choose **OTP / Verification Code**.
+2) Open the **General** section:
+   - **Label** - The field label
+   - **Help Text** - Instructions for the user
+   - **Required** - Must be filled
+3) Open the **OTP Settings** section:
+   - **Code Length** - 4 to 10 digits (default: 6)
+   - **Input Mode** - Numeric, Alpha, or Alphanumeric
+   - **Masked Input** - Hide digits like a password
+   - **Auto-Submit** - Submit form when complete
+
+---
+### Typed Signature (`typed_signature`)
+**When to use it**
+Use this as an accessible alternative to handwritten signatures. Users type their full legal name which is displayed in a signature-style font.
+**What users experience**
+They type their name in a text field and see it rendered in a signature font below, along with the current date and a confirmation checkbox.
+**Accessibility notes**
+- Fully keyboard accessible (no drawing required)
+- Works with all assistive technologies
+- Captures timestamp and IP for legal compliance
+- Confirmation checkbox ensures intentional signing
+**BFL example**
+```bfl
+typed_signature "Electronic Signature"
+  @font_style(cursive)
+  @show_date
+  @require_confirmation
+  @required
+```
+**Visual Builder steps (very literal)**
+1) In the builder, click **Add Field** and choose **Typed Signature**.
+2) Open the **General** section:
+   - **Label** - "Signature" or similar
+   - **Description** - Legal notice or instructions
+   - **Required** - Must be signed
+3) Open the **Signature** section:
+   - **Font Style** - Cursive, Handwritten, or Formal
+   - **Show Signature Preview** - Display live preview
+   - **Show Date** - Display signing date
+4) Open the **Agreement** section:
+   - **Agreement Text** - Terms being agreed to
+   - **Confirmation Text** - Legal statement shown with checkbox
+   - **Require Confirmation Checkbox** - Must check to confirm
+
+---
+### Slider (`slider`)
+**When to use it**
+Use this when you want users to select a value from a continuous range, with an accessible numeric input alternative.
+**What users experience**
+They see a draggable slider with optional min/max labels, a live value display, and a paired numeric input for precise entry.
+**Accessibility notes**
+- Includes paired numeric input for keyboard users
+- Proper ARIA attributes (aria-valuenow, aria-valuemin, aria-valuemax, aria-valuetext)
+- Live region announces value changes
+- Keyboard: Arrow keys adjust value by step amount
+**BFL example**
+```bfl
+slider "Satisfaction Rating"
+  @min(0)
+  @max(100)
+  @step(5)
+  @default(50)
+  @suffix(%)
+  @show_labels
+  @show_input
+```
+**Visual Builder steps (very literal)**
+1) In the builder, click **Add Field** and choose **Slider**.
+2) Open the **General** section:
+   - **Label** - Field label
+   - **Description** - Help text
+   - **Required** - Must select a value
+3) Open the **Range** section:
+   - **Minimum Value** - Slider start value
+   - **Maximum Value** - Slider end value
+   - **Step** - Increment amount (e.g., 5 for 0,5,10,15...)
+   - **Default Value** - Initial position
+4) Open the **Display** section:
+   - **Show Current Value** - Display selected value
+   - **Show Min/Max Labels** - Display range endpoints
+   - **Show Number Input** - Include text input for keyboard entry
+   - **Prefix** - Text before value (e.g., "$")
+   - **Suffix** - Text after value (e.g., "%", "lbs")
+
+---
+### Image Choice (`image_choice`)
+**When to use it**
+Use this when you want users to select from options represented visually with images or icons, such as selecting a product color, style preference, or category.
+**What users experience**
+They see a grid of clickable cards containing images/icons with labels. Selected options are highlighted visually.
+**Accessibility notes**
+- Uses `<fieldset>` + `<legend>` for proper grouping
+- Full keyboard navigation with arrow keys
+- Visual selection indicator (checkmark) alongside border highlight
+- Screen readers announce option labels
+**BFL example**
+```bfl
+image_choice "Select Your Plan"
+  + Basic {icon: "star"} "Free tier"
+  + Pro {icon: "star-filled"} "For professionals"
+  + Enterprise {image: "/images/enterprise.png"} "Full features"
+
+  @layout(grid)
+  @columns(3)
+  @multiple
+```
+**Visual Builder steps (very literal)**
+1) In the builder, click **Add Field** and choose **Image Choice**.
+2) Open the **General** section:
+   - **Label** - Field label
+   - **Description** - Help text
+   - **Required** - Must select at least one
+3) Open the **Options** section:
+   - **Options** - Add/remove choices with images, icons, or text
+   - **Allow Multiple Selection** - Checkboxes instead of radio buttons
+4) Open the **Display** section:
+   - **Layout** - Grid, List, or Inline
+   - **Columns** - Number of columns (for grid layout)
+   - **Image Size** - Width and height of images
+   - **Show Labels** - Display text below images
+
+---
+### Matrix / Grid (`matrix`)
+**When to use it**
+Use this for tabular data entry where users rate or respond to multiple items using the same scale (Likert-style surveys, feature comparisons, scheduling grids).
+**What users experience**
+A table with row headers (questions/items) and column headers (options/ratings). Each cell contains an input appropriate to the configuration.
+**Accessibility notes**
+- Uses proper `<table>` semantics with row and column headers
+- Each cell input has aria-label combining row and column context
+- Keyboard navigation works with Tab and arrow keys
+- Mobile-responsive with stacked card view option
+**BFL example**
+```bfl
+matrix "Rate the following aspects"
+  rows:
+    - Service Quality
+    - Value for Money
+    - Staff Friendliness
+  columns:
+    - Poor
+    - Fair
+    - Good
+    - Excellent
+
+  @input_type(radio)
+  @require_all
+  @alternate_rows
+```
+**Visual Builder steps (very literal)**
+1) In the builder, click **Add Field** and choose **Matrix / Grid**.
+2) Open the **General** section:
+   - **Label** - Field label (used as legend)
+   - **Description** - Instructions for the user
+3) Open the **Rows & Columns** section:
+   - **Rows** - Items to be rated/answered
+   - **Columns** - Response options or categories
+4) Open the **Input Type** section:
+   - **Input Type** - Radio, Checkbox, Text, Number, or Dropdown
+   - **Dropdown Options** - For select type, the options to show
+   - **Require All Rows** - Each row must have a selection
+5) Open the **Display** section:
+   - **Alternate Row Colors** - Zebra striping for readability
+   - **Sticky Header** - Column headers stay visible when scrolling
+   - **Mobile Layout** - Stacked cards or horizontal scroll
+
+---
+### Rich Text Editor (`rich_text`)
+**When to use it**
+Use this when you need users to enter formatted content (blog posts, detailed descriptions, formatted messages).
+**What users experience**
+A WYSIWYG editor with a formatting toolbar (bold, italic, links, lists, headings) and a content area where they can type and see formatting live.
+**Accessibility notes**
+- Toolbar buttons have proper labels and keyboard shortcuts
+- Editor area uses contenteditable with proper ARIA roles
+- Character counter announces updates via live region
+- Hidden textarea syncs content for form submission
+**BFL example**
+```bfl
+rich_text "Your Message"
+  @toolbar(standard)
+  @max_chars(5000)
+  @show_char_count
+  @placeholder "Write your message here..."
+```
+**Visual Builder steps (very literal)**
+1) In the builder, click **Add Field** and choose **Rich Text Editor**.
+2) Open the **General** section:
+   - **Label** - Field label
+   - **Description** - Instructions
+   - **Placeholder** - Text shown when empty
+   - **Required** - Must have content
+3) Open the **Editor** section:
+   - **Toolbar** - Minimal, Standard, or Full
+   - **Editor Height** - Height in pixels
+   - **Show Media Upload** - Allow image insertion
+4) Open the **Validation** section:
+   - **Maximum Characters** - Character limit (0 for unlimited)
+   - **Show Character Count** - Display count below editor
+5) Open the **Security** section:
+   - **Allow HTML Output** - Whether to preserve formatting
+   - **Allowed Tags** - Which HTML tags are permitted
+
+---
+### Progress Indicator (`progress`)
+**When to use it**
+Use this to show users their progress through a multi-page form. Place it at the top or bottom of your form to provide navigation context.
+**What users experience**
+A visual indicator showing current step, completed steps, and remaining steps. May include step numbers, labels, and percentage completion.
+**Accessibility notes**
+- Uses `<nav>` with proper aria-label
+- Completed steps can be clickable (if enabled) for back-navigation
+- Live region announces progress changes
+- Current step marked with aria-current="step"
+**BFL example**
+```bfl
+progress
+  @style(steps)
+  @show_labels
+  @show_numbers
+  @clickable
+  @position(top)
+```
+**Visual Builder steps (very literal)**
+1) In the builder, click **Add Field** and choose **Progress Indicator**.
+2) Open the **Display** section:
+   - **Style** - Steps, Bar, Percentage Circle, or Dots
+   - **Position** - Top, Bottom, or Fixed at Top
+   - **Show Labels** - Display step titles
+   - **Show Numbers** - Display step numbers
+   - **Show Percentage** - Display completion percentage
+3) Open the **Interaction** section:
+   - **Allow Click Navigation** - Let users click to go back
+   - **Animate Progress** - Smooth transitions
+4) Open the **Appearance** section:
+   - **Connector Style** - Solid, Dashed, or None
+   - **Completed Color** - Color for completed steps
+   - **Current Color** - Color for current step
+   - **Pending Color** - Color for future steps
+
+---
+### Summary / Review (`summary`)
+**When to use it**
+Use this on the final page of a form to let users review all their answers before submitting. Essential for long forms and legal documents.
+**What users experience**
+A formatted display of all previously entered data, organized by section or page, with optional edit buttons to make corrections.
+**Accessibility notes**
+- Uses semantic markup (tables, definition lists)
+- Edit buttons are properly labeled for each field
+- Collapsible sections use proper ARIA expanded states
+- Modal edit dialog is fully keyboard accessible
+**BFL example**
+```bfl
+summary "Review Your Application"
+  @layout(table)
+  @group_by(section)
+  @allow_edit
+  @edit_mode(modal)
+```
+**Visual Builder steps (very literal)**
+1) In the builder, click **Add Field** and choose **Summary / Review**.
+2) Open the **General** section:
+   - **Title** - Heading for the review section
+   - **Description** - Instructions ("Review before submitting")
+3) Open the **Display** section:
+   - **Layout** - Table, Cards, or List
+   - **Group By** - Section, Page, or None
+   - **Show Empty Fields** - Include fields with no value
+   - **Show Field Icons** - Display icons for field types
+   - **Collapsible Sections** - Allow expanding/collapsing
+4) Open the **Editing** section:
+   - **Allow Editing** - Show edit buttons
+   - **Edit Mode** - Modal, Inline, or Jump to Field
+
+---
+### Quiz Question (`quiz`)
+**When to use it**
+Use this for assessments, tests, or surveys with correct/incorrect answers. Supports scoring, feedback, and various question types.
+**What users experience**
+A question with answer options, optional hints, and instant feedback upon submission. Supports time limits and partial credit.
+**Accessibility notes**
+- Uses `<fieldset>` + `<legend>` for proper grouping
+- Hint button uses aria-expanded and aria-controls
+- Feedback announced via live region
+- Timer announced to screen readers
+**BFL example**
+```bfl
+quiz "What is the capital of France?"
+  + London
+  + Paris {correct}
+  + Berlin
+  + Rome
+
+  @question_type(multiple_choice)
+  @points(5)
+  @show_feedback
+  @feedback_correct "Correct! Paris is the capital."
+  @explanation "France's capital has been Paris since 987 CE."
+```
+**Visual Builder steps (very literal)**
+1) In the builder, click **Add Field** and choose **Quiz Question**.
+2) Open the **Question** section:
+   - **Question** - The question text
+   - **Question Type** - Multiple Choice, Multiple Answer, True/False, or Short Answer
+   - **Options** - Answer choices with correct answers marked
+3) Open the **Scoring** section:
+   - **Points** - Points for correct answer
+   - **Allow Partial Credit** - For multiple-answer questions
+   - **Case Sensitive** - For short answer questions
+4) Open the **Feedback** section:
+   - **Show Feedback** - Display result after answering
+   - **Correct Feedback** - Message for correct answers
+   - **Incorrect Feedback** - Message for wrong answers
+   - **Explanation** - Detailed explanation shown after
+5) Open the **Hints** section:
+   - **Hint Text** - Hint content
+   - **Show Hint Button** - Let users request hints
+
+---
+### Appointment Picker (`appointment`)
+**When to use it**
+Use this when users need to schedule appointments, meetings, or reserve time slots with availability management.
+**What users experience**
+A calendar for date selection alongside a time slot picker showing available times. Selected datetime is displayed clearly.
+**Accessibility notes**
+- Calendar uses proper grid semantics with navigation
+- Time slots are in a listbox with keyboard navigation
+- Disabled dates/times marked with aria-disabled
+- Selected appointment announced via live region
+**BFL example**
+```bfl
+appointment "Schedule Your Consultation"
+  @duration(60)
+  @min_notice(24)
+  @max_advance(30)
+  @timezone(user)
+  @show_timezone
+```
+**Visual Builder steps (very literal)**
+1) In the builder, click **Add Field** and choose **Appointment Picker**.
+2) Open the **General** section:
+   - **Label** - Field label
+   - **Description** - Instructions
+   - **Required** - Must select an appointment
+3) Open the **Scheduling** section:
+   - **Duration** - Appointment length (15-120 minutes)
+   - **Buffer Time** - Time between appointments
+   - **Minimum Notice** - Hours in advance required
+   - **Max Advance** - Days in future allowed
+   - **Max Per Slot** - For group appointments
+4) Open the **Availability** section:
+   - **Weekly Availability** - Set hours for each day
+   - **Blocked Dates** - Specific dates unavailable
+5) Open the **Display** section:
+   - **Timezone** - Site, User's, or specific
+   - **Date/Time Format** - How dates are displayed
+   - **Show Remaining Spots** - For group appointments
+
+---
+### Map / Location Picker (`map`)
+**When to use it**
+Use this when you need users to select a geographic location - delivery addresses, event venues, property locations, etc.
+**What users experience**
+An interactive map where they can search for addresses, click to place a pin, or use their current location. The selected address is displayed clearly.
+**Accessibility notes**
+- Search input with autocomplete suggestions
+- "Use My Location" button with proper labeling
+- Keyboard-accessible clear button
+- Address components available separately for processing
+**BFL example**
+```bfl
+map "Delivery Address"
+  @provider(leaflet)
+  @show_search
+  @show_current_location
+  @reverse_geocode
+  @restrict_country(US)
+```
+**Visual Builder steps (very literal)**
+1) In the builder, click **Add Field** and choose **Map / Location Picker**.
+2) Open the **General** section:
+   - **Label** - Field label
+   - **Description** - Instructions
+   - **Required** - Must select location
+3) Open the **Map** section:
+   - **Provider** - Leaflet (free) or Google Maps
+   - **Map Style** - Streets, Satellite, or Terrain
+   - **Map Height** - Height in pixels
+4) Open the **Location** section:
+   - **Default Center** - Initial map center coordinates
+   - **Default Zoom** - Initial zoom level
+   - **Restrict to Country** - Limit searches to specific country
+5) Open the **Features** section:
+   - **Show Search** - Address search box
+   - **Use My Location** - Geolocation button
+   - **Show Coordinates** - Display lat/lng fields
+   - **Draggable Marker** - Allow repositioning pin
+
+---
+### Social Profile (`social`)
+**When to use it**
+Use this to collect social media profile links with proper validation for each platform (LinkedIn, Twitter, GitHub, etc.).
+**What users experience**
+Input fields with network icons, automatic URL validation, and optional username-to-URL conversion.
+**Accessibility notes**
+- Network icons have proper labels
+- Validation errors are specific to each platform
+- Multiple-entry mode has proper add/remove controls
+- All inputs properly labeled
+**BFL example**
+```bfl
+social "Your Social Profiles"
+  @mode(specific)
+  @networks(linkedin, twitter, github)
+  @validate_url
+  @allow_username
+```
+**Visual Builder steps (very literal)**
+1) In the builder, click **Add Field** and choose **Social Profile**.
+2) Open the **General** section:
+   - **Label** - Field label
+   - **Description** - Instructions
+   - **Required** - Must provide at least one
+3) Open the **Mode** section:
+   - **Mode** - Single (one network), Specific (choose which), Multiple (any)
+   - **Network** - For single mode, which network
+   - **Networks** - For specific mode, which networks to show
+   - **Max Profiles** - For multiple mode, limit count
+4) Open the **Display** section:
+   - **Show Network Icons** - Display platform icons
+5) Open the **Validation** section:
+   - **Validate URL** - Check URL format
+   - **Allow Username Only** - Accept @handle without full URL
+   - **Normalize to URL** - Convert usernames to full URLs
+
+---
+### Table Input (`table`)
+**When to use it**
+Use this for structured data entry that fits a tabular format - expense reports, item lists, schedules, data grids.
+**What users experience**
+A spreadsheet-like grid where they can enter data in cells, add/remove rows, and optionally reorder entries.
+**Accessibility notes**
+- Proper table semantics with column and row headers
+- Each cell input is individually labeled
+- Add/delete actions have clear labels
+- Mobile view shows stacked cards instead of table
+**BFL example**
+```bfl
+table "Expense Items"
+  columns:
+    - Date {type: date, required}
+    - Description {type: text}
+    - Amount {type: number, required}
+    - Category {type: select, options: "Travel|Food|Supplies|Other"}
+
+  @min_rows(1)
+  @max_rows(20)
+  @allow_add_rows
+  @allow_delete_rows
+  @allow_reorder
+```
+**Visual Builder steps (very literal)**
+1) In the builder, click **Add Field** and choose **Table Input**.
+2) Open the **General** section:
+   - **Label** - Field label
+   - **Description** - Instructions
+   - **Required** - Must have at least minimum rows with data
+3) Open the **Columns** section:
+   - **Columns** - Define each column with ID, Label, Type, Width, Required, Options
+4) Open the **Rows** section:
+   - **Minimum Rows** - Minimum entries required
+   - **Maximum Rows** - Maximum entries allowed
+   - **Default Rows** - Initial number of empty rows
+   - **Allow Adding Rows** - Show add button
+   - **Allow Deleting Rows** - Show delete buttons
+   - **Allow Reordering** - Drag handle for row order
+5) Open the **Display** section:
+   - **Show Row Numbers** - Number column on left
+   - **Header Style** - Sticky, Static, or Hidden
+   - **Striped Rows** - Alternating row colors
+   - **Cell Padding** - Compact, Normal, or Spacious
+
+---
+### Payment (`payment`)
+**When to use it**
+Use this to collect payments within your form using Stripe, PayPal, or Square. Supports various payment methods, tips, and multiple currencies.
+**What users experience**
+A secure payment form with amount display, optional tip selection, payment method choices, and inline card/payment fields powered by the payment provider.
+**Accessibility notes**
+- Payment provider elements are PCI-compliant iframes
+- Tip options use proper radio button semantics
+- Total updates announced via live region
+- Security badge provides reassurance
+**BFL example**
+```bfl
+payment "Complete Your Order"
+  @provider(stripe)
+  @payment_methods(card, apple_pay, google_pay)
+  @amount_type(fixed)
+  @amount(49.99)
+  @currency(USD)
+  @allow_tip
+  @tip_options(10, 15, 20, 25)
+```
+**Visual Builder steps (very literal)**
+1) In the builder, click **Add Field** and choose **Payment**.
+2) Open the **General** section:
+   - **Label** - Field label
+   - **Description** - Order summary text
+   - **Required** - Payment must be completed
+3) Open the **Provider** section:
+   - **Provider** - Stripe, PayPal, or Square
+   - **Payment Methods** - Card, Apple Pay, Google Pay, etc.
+4) Open the **Amount** section:
+   - **Amount Type** - Fixed, From Another Field, or User Input
+   - **Amount** - For fixed type, the price
+   - **Amount Field** - For field type, which field
+   - **Currency** - USD, EUR, GBP, etc.
+5) Open the **Tips** section:
+   - **Allow Tips** - Show tip options
+   - **Tip Percentages** - Preset tip amounts
+   - **Allow Custom Tip** - Let users enter amount
+6) Open the **Display** section:
+   - **Show Order Total** - Display running total
+   - **Theme** - Default, Night, Flat, or Minimal
+
 ---
 ## Pricing Fields
 ### Product (`product`)

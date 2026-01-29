@@ -24,7 +24,8 @@ Welcome to BITS Accessible Forms (BAF), an accessible WordPress form builder. Th
 18. [Security &amp; Spam Prevention](#security--spam-prevention)
 19. [REST API](#rest-api)
 20. [Hooks &amp; Filters for Developers](#hooks--filters-for-developers)
-21. [Troubleshooting](#troubleshooting)
+21. [Additional Feature Guides](#additional-feature-guides)
+22. [Troubleshooting](#troubleshooting)
 
 ---
 
@@ -3276,6 +3277,21 @@ add_filter( 'baf_notification_message', function( $message, $entry, $form ) {
     return $message . "\n\nSent from " . get_bloginfo('name');
 }, 10, 3 );
 ```
+
+---
+
+## Additional Feature Guides
+
+For detailed documentation on specific features, see these dedicated guides:
+
+| Guide | Description |
+|-------|-------------|
+| [Autocomplete Providers](autocomplete-providers-guide.md) | Address autocomplete, static datasets (countries, states, timezones), Google Places integration, and graceful fallbacks |
+| [Field Type Conversion](field-type-conversion-guide.md) | Converting fields between types while preserving properties and conditional logic |
+| [Accessibility Coach](accessibility-coach-guide.md) | Real-time accessibility scoring, issue detection, and fix suggestions |
+| [CSV Import](csv-import-guide.md) | Generate forms from CSV files with intelligent field type detection |
+| [BFL Language Guide](bfl-language-guide.md) | Comprehensive BFL tutorial with recipes for common patterns |
+| [Field Types Guide](field-types-guide.md) | Field-by-field walkthrough with examples |
 
 ---
 

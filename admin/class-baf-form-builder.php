@@ -252,6 +252,16 @@ class BAF_Form_Builder {
                     <span class="baf-sr-only"><?php esc_html_e( 'Duplicate', 'bits-accessible-forms' ); ?></span>
                 </button>
                 
+                <!-- Convert Type Button -->
+                <button type="button" 
+                        class="baf-action-btn baf-field-action-convert" 
+                        data-action="convert"
+                        aria-label="<?php echo esc_attr( sprintf( __( 'Convert %s to different type', 'bits-accessible-forms' ), $field_label ) ); ?>"
+                        aria-haspopup="dialog">
+                    <span aria-hidden="true">🔄</span>
+                    <span class="baf-sr-only"><?php esc_html_e( 'Convert Type', 'bits-accessible-forms' ); ?></span>
+                </button>
+                
                 <!-- Delete Button -->
                 <button type="button" 
                         class="baf-action-btn baf-delete" 

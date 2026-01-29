@@ -234,6 +234,15 @@ class BAF_Structure_Mode {
                     aria-label="<?php echo esc_attr( sprintf( __( 'Edit %s', 'bits-accessible-forms' ), $label ) ); ?>">
                 <span aria-hidden="true">✏️</span>
             </button>
+            <?php if ( 'field' === $type ) : ?>
+            <button type="button" 
+                    class="baf-tree-action baf-tree-convert" 
+                    data-action="convert"
+                    aria-label="<?php echo esc_attr( sprintf( __( 'Convert %s to different type', 'bits-accessible-forms' ), $label ) ); ?>"
+                    aria-haspopup="dialog">
+                <span aria-hidden="true">🔄</span>
+            </button>
+            <?php endif; ?>
             <button type="button" 
                     class="baf-tree-action baf-tree-duplicate" 
                     data-action="duplicate"
@@ -285,5 +294,143 @@ class BAF_Structure_Mode {
         </dl>
         <?php
         return ob_get_clean();
+    }
+
+    /**
+     * Render field type conversion modal
+     *
+     * @return string HTML.
+     */
+    public function render_conversion_modal() {
+        $converter = new BAF_Field_Type_Converter();
+        $field_types = $converter->get_all_field_types();
+
+        ob_start();
+        ?>
+        <div id="baf-conversion-modal" 
+             class="baf-modal" 
+             role="dialog" 
+             aria-modal="true"
+             aria-labelledby="baf-conversion-modal-title"
+             hidden>
+            <div class="baf-modal-overlay" data-close-modal></div>
+            <div class="baf-modal-content">
+                <div class="baf-modal-header">
+                    <h2 id="baf-conversion-modal-title">
+                        <?php esc_html_e( 'Convert Field Type', 'bits-accessible-forms' ); ?>
+                    </h2>
+                    <button type="button" class="baf-modal-close" data-close-modal aria-label="<?php esc_attr_e( 'Close modal', 'bits-accessible-forms' ); ?>">
+                        <span aria-hidden="true">&times;</span>
+                    </button>
+                </div>
+                
+                <div class="baf-modal-body">
+                    <div class="baf-conversion-info" aria-live="polite">
+                        <p class="baf-conversion-current">
+                            <?php esc_html_e( 'Current type:', 'bits-accessible-forms' ); ?>
+                            <strong id="baf-conversion-current-type"></strong>
+                        </p>
+                    </div>
+
+                    <div class="baf-conversion-form">
+                        <fieldset>
+                            <legend><?php esc_html_e( 'Select target field type', 'bits-accessible-forms' ); ?></legend>
+                            
+                            <div class="baf-field-type-grid" role="radiogroup" aria-describedby="baf-conversion-compatibility">
+                                <?php foreach ( $field_types as $group_name => $types ) : ?>
+                                    <div class="baf-type-group">
+                                        <h3 class="baf-type-group-title"><?php echo esc_html( $group_name ); ?></h3>
+                                        <div class="baf-type-options">
+                                            <?php foreach ( $types as $type_id => $type_info ) : ?>
+                                                <label class="baf-type-option" data-type="<?php echo esc_attr( $type_id ); ?>">
+                                                    <input type="radio" 
+                                                           name="baf_target_type" 
+                                                           value="<?php echo esc_attr( $type_id ); ?>"
+                                                           class="baf-sr-only">
+                                                    <span class="baf-type-icon" aria-hidden="true"><?php echo esc_html( $type_info['icon'] ?? '📝' ); ?></span>
+                                                    <span class="baf-type-name"><?php echo esc_html( $type_info['label'] ); ?></span>
+                                                    <span class="baf-type-compat" aria-label="<?php esc_attr_e( 'Compatibility status', 'bits-accessible-forms' ); ?>"></span>
+                                                </label>
+                                            <?php endforeach; ?>
+                                        </div>
+                                    </div>
+                                <?php endforeach; ?>
+                            </div>
+                        </fieldset>
+
+                        <div id="baf-conversion-compatibility" class="baf-conversion-compat-info" hidden>
+                            <h4><?php esc_html_e( 'Compatibility Report', 'bits-accessible-forms' ); ?></h4>
+                            <div class="baf-compat-details">
+                                <div class="baf-compat-status"></div>
+                                <div class="baf-compat-warnings" role="alert"></div>
+                            </div>
+                        </div>
+
+                        <div id="baf-conversion-preview" class="baf-conversion-preview" hidden>
+                            <h4><?php esc_html_e( 'Conversion Preview', 'bits-accessible-forms' ); ?></h4>
+                            <div class="baf-preview-changes">
+                                <div class="baf-preview-preserved">
+                                    <h5><?php esc_html_e( 'Properties Preserved', 'bits-accessible-forms' ); ?></h5>
+                                    <ul id="baf-preview-preserved-list"></ul>
+                                </div>
+                                <div class="baf-preview-lost">
+                                    <h5><?php esc_html_e( 'Properties Removed', 'bits-accessible-forms' ); ?></h5>
+                                    <ul id="baf-preview-lost-list"></ul>
+                                </div>
+                                <div class="baf-preview-added">
+                                    <h5><?php esc_html_e( 'New Defaults Added', 'bits-accessible-forms' ); ?></h5>
+                                    <ul id="baf-preview-added-list"></ul>
+                                </div>
+                            </div>
+                        </div>
+
+                        <div id="baf-conditional-warnings" class="baf-conditional-warnings" hidden role="alert">
+                            <h4><?php esc_html_e( 'Conditional Logic Impact', 'bits-accessible-forms' ); ?></h4>
+                            <div class="baf-conditional-details">
+                                <p class="baf-conditional-message"></p>
+                                <ul class="baf-conditional-affected"></ul>
+                            </div>
+                            <div class="baf-conditional-options">
+                                <label>
+                                    <input type="checkbox" name="baf_auto_repair" value="1">
+                                    <?php esc_html_e( 'Automatically repair compatible conditions', 'bits-accessible-forms' ); ?>
+                                </label>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+                
+                <div class="baf-modal-footer">
+                    <button type="button" class="baf-btn baf-btn-secondary" data-close-modal>
+                        <?php esc_html_e( 'Cancel', 'bits-accessible-forms' ); ?>
+                    </button>
+                    <button type="button" class="baf-btn baf-btn-primary" id="baf-conversion-confirm" disabled>
+                        <?php esc_html_e( 'Convert Field', 'bits-accessible-forms' ); ?>
+                    </button>
+                </div>
+            </div>
+        </div>
+        <?php
+        return ob_get_clean();
+    }
+
+    /**
+     * Get field types for JavaScript
+     *
+     * @return array Field types data.
+     */
+    public function get_field_types_data() {
+        $converter = new BAF_Field_Type_Converter();
+        return $converter->get_all_field_types();
+    }
+
+    /**
+     * Get compatibility matrix for JavaScript
+     *
+     * @return array Compatibility data.
+     */
+    public function get_compatibility_data() {
+        $converter = new BAF_Field_Type_Converter();
+        return $converter->get_compatibility_matrix();
     }
 }
