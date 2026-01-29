@@ -361,7 +361,8 @@ class BAF_Field_Calculation extends BAF_Field {
     }
 
     /**
-     * Safely evaluate a mathematical expression
+     * Safely evaluate a mathematical expression using a token-based parser
+     * (no eval)
      *
      * @param string $expression Mathematical expression.
      * @return float Result.
@@ -370,29 +371,113 @@ class BAF_Field_Calculation extends BAF_Field {
         // Remove whitespace
         $expression = preg_replace( '/\s+/', '', $expression );
 
-        // Only allow safe characters
+        // Only allow safe characters (digits, operators, parens, decimal)
         if ( ! preg_match( '/^[\d+\-*\/().]+$/', $expression ) ) {
             return 0;
         }
 
-        // Prevent division by zero
-        $expression = preg_replace( '/\/0(?![.\d])/', '/1', $expression );
+        // Limit expression length
+        if ( strlen( $expression ) > 500 ) {
+            return 0;
+        }
 
-        // Use eval safely (only numeric and operators)
         try {
-            // Additional safety: limit expression length
-            if ( strlen( $expression ) > 500 ) {
-                return 0;
-            }
-
-            $result = 0;
-            // phpcs:ignore Squiz.PHP.Eval.Discouraged
-            eval( '$result = ' . $expression . ';' );
-            
-            return is_numeric( $result ) ? (float) $result : 0;
+            return $this->parse_expression( $expression, 0 )[0];
         } catch ( \Throwable $e ) {
             return 0;
         }
+    }
+
+    /**
+     * Recursive descent parser for math expressions (no eval)
+     * Supports: +, -, *, /, parentheses
+     *
+     * @param string $expr Expression string.
+     * @param int    $pos  Current position.
+     * @return array [result, new_position]
+     */
+    private function parse_expression( $expr, $pos ) {
+        list( $result, $pos ) = $this->parse_term( $expr, $pos );
+
+        while ( $pos < strlen( $expr ) ) {
+            $char = $expr[ $pos ];
+            if ( $char === '+' ) {
+                $pos++;
+                list( $term, $pos ) = $this->parse_term( $expr, $pos );
+                $result += $term;
+            } elseif ( $char === '-' ) {
+                $pos++;
+                list( $term, $pos ) = $this->parse_term( $expr, $pos );
+                $result -= $term;
+            } else {
+                break;
+            }
+        }
+
+        return array( (float) $result, $pos );
+    }
+
+    /**
+     * Parse a term (handles * and /)
+     *
+     * @param string $expr Expression.
+     * @param int    $pos  Position.
+     * @return array [result, new_position]
+     */
+    private function parse_term( $expr, $pos ) {
+        list( $result, $pos ) = $this->parse_factor( $expr, $pos );
+
+        while ( $pos < strlen( $expr ) ) {
+            $char = $expr[ $pos ];
+            if ( $char === '*' ) {
+                $pos++;
+                list( $factor, $pos ) = $this->parse_factor( $expr, $pos );
+                $result *= $factor;
+            } elseif ( $char === '/' ) {
+                $pos++;
+                list( $factor, $pos ) = $this->parse_factor( $expr, $pos );
+                // Prevent division by zero
+                $result = ( $factor != 0 ) ? $result / $factor : 0;
+            } else {
+                break;
+            }
+        }
+
+        return array( (float) $result, $pos );
+    }
+
+    /**
+     * Parse a factor (number or parenthesized expression)
+     *
+     * @param string $expr Expression.
+     * @param int    $pos  Position.
+     * @return array [result, new_position]
+     */
+    private function parse_factor( $expr, $pos ) {
+        // Handle negative numbers
+        $negative = false;
+        if ( $pos < strlen( $expr ) && $expr[ $pos ] === '-' ) {
+            $negative = true;
+            $pos++;
+        }
+
+        if ( $pos < strlen( $expr ) && $expr[ $pos ] === '(' ) {
+            $pos++; // skip '('
+            list( $result, $pos ) = $this->parse_expression( $expr, $pos );
+            if ( $pos < strlen( $expr ) && $expr[ $pos ] === ')' ) {
+                $pos++; // skip ')'
+            }
+        } else {
+            // Parse number
+            $num_str = '';
+            while ( $pos < strlen( $expr ) && ( ctype_digit( $expr[ $pos ] ) || $expr[ $pos ] === '.' ) ) {
+                $num_str .= $expr[ $pos ];
+                $pos++;
+            }
+            $result = $num_str !== '' ? (float) $num_str : 0;
+        }
+
+        return array( $negative ? -$result : $result, $pos );
     }
 
     /**

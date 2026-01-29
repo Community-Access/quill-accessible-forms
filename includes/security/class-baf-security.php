@@ -118,8 +118,9 @@ class BAF_Security {
 
         // For public submissions without nonce, check token
         $token = $request->get_param( '_baf_token' );
-        if ( ! empty( $token ) ) {
-            return wp_verify_nonce( $token, 'baf_submit_form' );
+        $form_id = $request->get_param( 'form_id' );
+        if ( ! empty( $token ) && ! empty( $form_id ) ) {
+            return wp_verify_nonce( $token, 'baf_submit_form_' . intval( $form_id ) );
         }
 
         // Allow submissions without nonce for public forms
@@ -226,20 +227,35 @@ class BAF_Security {
     /**
      * Get client IP
      *
+     * Note: Only trust proxy headers if explicitly configured. By default,
+     * we use REMOTE_ADDR which cannot be spoofed.
+     *
      * @return string IP address.
      */
     private function get_client_ip() {
-        $ip = '';
-
-        if ( ! empty( $_SERVER['HTTP_CLIENT_IP'] ) ) {
-            $ip = sanitize_text_field( $_SERVER['HTTP_CLIENT_IP'] );
-        } elseif ( ! empty( $_SERVER['HTTP_X_FORWARDED_FOR'] ) ) {
-            $ip = sanitize_text_field( $_SERVER['HTTP_X_FORWARDED_FOR'] );
-        } elseif ( ! empty( $_SERVER['REMOTE_ADDR'] ) ) {
-            $ip = sanitize_text_field( $_SERVER['REMOTE_ADDR'] );
+        $trust_proxy_headers = apply_filters( 'baf_trust_proxy_headers', false );
+        
+        if ( $trust_proxy_headers ) {
+            // Only use proxy headers when behind a known/trusted proxy
+            if ( ! empty( $_SERVER['HTTP_X_FORWARDED_FOR'] ) ) {
+                // Take the first (original client) IP from the chain
+                $ips = explode( ',', sanitize_text_field( $_SERVER['HTTP_X_FORWARDED_FOR'] ) );
+                $ip = trim( $ips[0] );
+                if ( filter_var( $ip, FILTER_VALIDATE_IP ) ) {
+                    return $ip;
+                }
+            }
         }
 
-        return $ip;
+        // Default to REMOTE_ADDR (cannot be spoofed)
+        if ( ! empty( $_SERVER['REMOTE_ADDR'] ) ) {
+            $ip = sanitize_text_field( $_SERVER['REMOTE_ADDR'] );
+            if ( filter_var( $ip, FILTER_VALIDATE_IP ) ) {
+                return $ip;
+            }
+        }
+
+        return '';
     }
 
     /**

@@ -386,7 +386,9 @@ class BAF_BFL_Parser {
                         $column_fields = $this->parse_field_list_in_block();
                         $this->consume_block_close_if_present();
                     } else {
-                        $column_fields = $this->parse_column_content( $indent );
+                        // Get current indent for indentation-style parsing within explicit block
+                        $col_indent = $this->get_current_indent();
+                        $column_fields = $this->parse_column_content( $col_indent );
                     }
 
                     $field['columns'][] = $column_fields;

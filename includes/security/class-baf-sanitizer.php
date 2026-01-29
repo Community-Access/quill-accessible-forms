@@ -403,6 +403,17 @@ class BAF_Sanitizer {
      * @return bool True if matches.
      */
     public function validate_pattern( $value, $pattern ) {
+        // Escape delimiter and validate pattern is safe
+        $pattern = str_replace( '/', '\/', $pattern );
+        
+        // Test if pattern is valid before using
+        // Suppress errors and use return value to check validity
+        $test = @preg_match( '/' . $pattern . '/', '' );
+        if ( $test === false ) {
+            // Invalid regex pattern
+            return false;
+        }
+        
         return (bool) preg_match( '/' . $pattern . '/', $value );
     }
 

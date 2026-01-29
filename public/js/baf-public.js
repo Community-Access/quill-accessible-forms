@@ -256,11 +256,29 @@
 
             this.announce(instanceId, message, 'assertive');
 
-            // Redirect if specified
+            // Redirect if specified (validate same-origin or relative URL)
             if (result.redirect) {
-                setTimeout(() => {
-                    window.location.href = result.redirect;
-                }, 500);
+                const redirect = result.redirect;
+                let isSafe = false;
+                
+                // Allow relative URLs
+                if (redirect.startsWith('/') && !redirect.startsWith('//')) {
+                    isSafe = true;
+                } else {
+                    // Check same-origin for absolute URLs
+                    try {
+                        const url = new URL(redirect, window.location.origin);
+                        isSafe = url.origin === window.location.origin;
+                    } catch (e) {
+                        isSafe = false;
+                    }
+                }
+                
+                if (isSafe) {
+                    setTimeout(() => {
+                        window.location.href = redirect;
+                    }, 500);
+                }
             }
 
             // Trigger custom event
