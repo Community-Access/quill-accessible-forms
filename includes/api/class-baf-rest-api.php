@@ -498,11 +498,26 @@ class BAF_REST_API {
          */
         do_action( 'baf_form_submitted', $entry, $form );
 
-        return rest_ensure_response( array(
+        $response = array(
             'success' => true,
             'message' => __( 'Form submitted successfully.', 'bits-accessible-forms' ),
             'entry_id' => $entry->id,
-        ) );
+        );
+
+        // A quiz: the outcome is chosen here, so its answers never reach the page.
+        $model = ( isset( $form->config['form_model'] ) && is_array( $form->config['form_model'] ) ) ? $form->config['form_model'] : null;
+        if ( $model ) {
+            $lang    = BAF_Form_Runtime::language( $model, sanitize_key( (string) $request->get_param( 'baf_lang' ) ) );
+            $outcome = BAF_Form_Runtime::outcome( $model, $sanitized_values, $lang, array( 'today' => wp_date( 'Y-m-d' ) ) );
+            if ( $outcome ) {
+                $response['outcome'] = $outcome;
+                if ( $outcome['message'] !== '' ) {
+                    $response['message'] = $outcome['message'];
+                }
+            }
+        }
+
+        return rest_ensure_response( $response );
     }
 
     /**

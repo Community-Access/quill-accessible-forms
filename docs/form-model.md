@@ -339,6 +339,41 @@ has no stored model yet. What it does:
 Every step that could not carry something over says so in the import report
 the converter returns. Nothing is dropped without being listed.
 
+## On a published form
+
+A form saved with a model runs the model on the page, with the same rules the
+server applies: `public/js/baf-expression.js` is a copy of the expression
+language and `public/js/baf-form-model.js` of the model's runtime, and both
+run the conformance suite (`node tests/js/run-conformance.js`).
+
+- **What is shown:** every item's own condition, its sections' and its
+  page's, and the show and hide rules, exactly as `is_shown()`. A hidden
+  question is disabled, so it is neither sent nor checked. When questions
+  appear or disappear after an answer, the form's live region says how many
+  ("1 more question shown."), because nothing else tells a screen-reader user.
+- **Rules:** `require` and `optional` set the field's required state;
+  `enable` and `disable` its enabled state; `set` writes its value;
+  `skip_to` sends Next to the page it names. A page whose condition does not
+  hold is passed by, and Previous goes back the way the visitor came.
+- **Calculations** are worked out as the visitor types, and **smart
+  defaults** fill empty fields when the form opens (`today()` is the site's
+  date; `user()` gives only the facts the form's expressions ask for, about
+  the signed-in visitor; `query()` reads the page's link).
+- **Translations:** the form is drawn in the language asked for with
+  `?baf_lang=es`, else the visitor's locale when the form has that
+  translation, else its own. Labels, help, placeholders, choice labels, page
+  titles, the title, the Submit button and the outcome message are translated.
+- **Quiz outcomes are chosen on the server** when the form is sent, and the
+  reply carries the outcome's message (and the score, with `show_score`).
+  The page never receives correct answers, choice points, outcomes,
+  confirmations, notifications or settings
+  (`BAF_Form_Runtime::public_model()`), so a quiz's answers are not in its
+  source and no address is. A condition on the page that uses `score`
+  therefore sees 0; put score-based messages in outcomes.
+
+A form saved before the model keeps the builder's per-field rules, run as
+before.
+
 ## How BAF stores the model
 
 The table does not change. A form's `config` column now holds:

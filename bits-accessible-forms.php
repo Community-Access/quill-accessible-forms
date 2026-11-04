@@ -231,6 +231,7 @@ final class BITS_Accessible_Forms {
         require_once BAF_PLUGIN_DIR . 'includes/model/class-baf-bfl-reader.php';
         require_once BAF_PLUGIN_DIR . 'includes/model/class-baf-bfl-writer.php';
         require_once BAF_PLUGIN_DIR . 'includes/model/class-baf-form-model-converter.php';
+        require_once BAF_PLUGIN_DIR . 'includes/model/class-baf-form-runtime.php';
         
         // Field Templates
         require_once BAF_PLUGIN_DIR . 'includes/core/class-baf-field-templates.php';

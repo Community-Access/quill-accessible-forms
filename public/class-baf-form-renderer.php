@@ -46,6 +46,14 @@ class BAF_Form_Renderer {
     private $captcha;
 
     /**
+     * Whether the form being drawn has a model, so the browser runs the
+     * model's rules instead of the builder's per-field rule lists.
+     *
+     * @var bool
+     */
+    private $has_model = false;
+
+    /**
      * Constructor
      */
     public function __construct() {
@@ -76,6 +84,18 @@ class BAF_Form_Renderer {
         $config = $form->config;
         $settings = $form->settings;
 
+        // A form saved with a model: its language, and what the browser runs.
+        $model = ( isset( $config['form_model'] ) && is_array( $config['form_model'] ) ) ? $config['form_model'] : null;
+        $this->has_model = (bool) $model;
+        $lang  = '';
+        $title = $form->title;
+        if ( $model ) {
+            $requested = isset( $_GET['baf_lang'] ) ? sanitize_key( wp_unslash( $_GET['baf_lang'] ) ) : '';
+            $lang      = BAF_Form_Runtime::language( $model, $requested, function_exists( 'determine_locale' ) ? determine_locale() : get_locale() );
+            $config    = BAF_Form_Runtime::translate_config( $config, $model, $lang );
+            $title     = BAF_Form_Runtime::text( $model, $lang, 'title', $title );
+        }
+
         // Generate unique instance ID for ARIA
         $instance_id = 'baf-form-' . $form_id . '-' . wp_rand( 1000, 9999 );
 
@@ -98,8 +118,8 @@ class BAF_Form_Renderer {
         echo '<div class="' . esc_attr( implode( ' ', $wrapper_classes ) ) . '">';
 
         // Title
-        if ( $options['show_title'] && ! empty( $form->title ) ) {
-            echo '<h2 class="baf-form-title" id="' . esc_attr( $instance_id ) . '-title">' . esc_html( $form->title ) . '</h2>';
+        if ( $options['show_title'] && ! empty( $title ) ) {
+            echo '<h2 class="baf-form-title" id="' . esc_attr( $instance_id ) . '-title">' . esc_html( $title ) . '</h2>';
         }
 
         // Description
@@ -119,6 +139,12 @@ class BAF_Form_Renderer {
             'aria-describedby' => $options['show_description'] ? $instance_id . '-desc' : '',
             'data-form-id'    => $form_id,
         );
+        if ( $model ) {
+            $form_attrs['data-baf-model'] = '1';
+            if ( $lang !== '' ) {
+                $form_attrs['lang'] = $lang;
+            }
+        }
 
         echo '<form ' . $this->build_attrs( $form_attrs ) . '>';
 
@@ -130,8 +156,27 @@ class BAF_Form_Renderer {
         // Honeypot fields
         echo $this->honeypot->render( $form_id );
 
+        if ( $model ) {
+            echo '<input type="hidden" name="baf_lang" value="' . esc_attr( $lang ) . '" />';
+            $user = array();
+            if ( function_exists( 'is_user_logged_in' ) && is_user_logged_in() ) {
+                $u    = wp_get_current_user();
+                $user = array(
+                    'id'           => $u->ID,
+                    'display_name' => $u->display_name,
+                    'first_name'   => $u->first_name,
+                    'last_name'    => $u->last_name,
+                    'email'        => $u->user_email,
+                    'login'        => $u->user_login,
+                );
+            }
+            $payload = BAF_Form_Runtime::payload( $model, function_exists( 'wp_date' ) ? wp_date( 'Y-m-d' ) : gmdate( 'Y-m-d' ), $user );
+            echo '<script type="application/json" class="baf-form-model">' . wp_json_encode( $payload, JSON_HEX_TAG | JSON_HEX_AMP | JSON_UNESCAPED_UNICODE ) . '</script>';
+        }
+
         // Get pages and fields
         $pages = isset( $config['pages'] ) ? $config['pages'] : array( array( 'fields' => $form->get_fields() ) );
+        $pages = self::fill_pages( $pages, $config['fields'] ?? array() );
         $total_pages = count( $pages );
         $is_multi_page = $total_pages > 1;
 
@@ -153,6 +198,9 @@ class BAF_Form_Renderer {
             echo '<div class="' . esc_attr( implode( ' ', $page_classes ) ) . '" ';
             echo 'id="' . esc_attr( $page_id ) . '" ';
             echo 'data-page="' . esc_attr( $page_number ) . '" ';
+            if ( isset( $page['id'] ) ) {
+                echo 'data-page-id="' . esc_attr( $page['id'] ) . '" ';
+            }
             echo 'role="group" ';
             echo 'aria-label="' . sprintf( esc_attr__( 'Page %1$d of %2$d', 'bits-accessible-forms' ), $page_number, $total_pages ) . '"';
 
@@ -200,6 +248,9 @@ class BAF_Form_Renderer {
         echo '<div class="' . esc_attr( implode( ' ', $submit_classes ) ) . '" data-show-on-page="' . esc_attr( $total_pages ) . '">';
 
         $submit_text = ! empty( $settings['submit_text'] ) ? $settings['submit_text'] : __( 'Submit', 'bits-accessible-forms' );
+        if ( $model ) {
+            $submit_text = BAF_Form_Runtime::text( $model, $lang, 'submit', $submit_text );
+        }
 
         echo '<button type="submit" class="baf-submit-button">';
         echo '<span class="baf-submit-text">' . esc_html( $submit_text ) . '</span>';
@@ -219,6 +270,39 @@ class BAF_Form_Renderer {
         echo '</div>'; // .baf-form-wrapper
 
         return ob_get_clean();
+    }
+
+    /**
+     * Give each page its fields. The builder keeps fields in one list, each
+     * naming its page, and pages only describe themselves; a page that
+     * already lists its fields is left as it is.
+     *
+     * @param array $pages  Pages.
+     * @param array $fields Fields.
+     * @return array Pages with fields.
+     */
+    public static function fill_pages( $pages, $fields ) {
+        $ids = array();
+        foreach ( $pages as $page ) {
+            if ( isset( $page['id'] ) ) {
+                $ids[] = (string) $page['id'];
+            }
+        }
+        foreach ( $pages as $i => $page ) {
+            if ( isset( $page['fields'] ) ) {
+                continue;
+            }
+            $pages[ $i ]['fields'] = array();
+            foreach ( $fields as $field ) {
+                $on = isset( $field['page'] ) ? (string) $field['page'] : '';
+                // A field naming no page, or a page that does not exist, goes on the first.
+                $here = ( $on !== '' && in_array( $on, $ids, true ) ) ? $on === (string) ( $page['id'] ?? '' ) : 0 === $i;
+                if ( $here ) {
+                    $pages[ $i ]['fields'][] = $field;
+                }
+            }
+        }
+        return $pages;
     }
 
     /**
@@ -274,7 +358,8 @@ class BAF_Form_Renderer {
         $output = $field_obj->render();
 
         // Back-compat: JS conditional logic expects [data-conditional] on a wrapper.
-        if ( ! empty( $field['conditional_logic'] ) && ! empty( $field['conditional_logic']['enabled'] ) ) {
+        // A form with a model runs the model's conditions instead.
+        if ( ! $this->has_model && ! empty( $field['conditional_logic'] ) && ! empty( $field['conditional_logic']['enabled'] ) ) {
             $logic = $field['conditional_logic'];
 
             // Translate rules schema -> JS schema.
