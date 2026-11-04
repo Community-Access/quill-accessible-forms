@@ -786,9 +786,35 @@ class BAF_Expression {
             return $v ? 'true' : 'false';
         }
         if ( is_int( $v ) || is_float( $v ) ) {
-            return json_encode( $v, JSON_PRESERVE_ZERO_FRACTION );
+            return self::number_text( $v, true );
         }
         return self::quote( $v );
+    }
+
+    /**
+     * A number as plain decimal digits, never in exponent form, so canonical
+     * text always reads back (json_encode writes 1e17 as "1.0e+17", which the
+     * grammar does not accept). Floats keep ".0" when $float_mark is set.
+     *
+     * @param int|float $v          Number.
+     * @param bool      $float_mark Write ".0" on an integral float.
+     * @return string Digits.
+     */
+    public static function number_text( $v, $float_mark = false ) {
+        $text = json_encode( $v, $float_mark ? JSON_PRESERVE_ZERO_FRACTION : 0 );
+        if ( ! preg_match( '/^(-?)(\d)(?:\.(\d+))?e([+-]\d+)$/i', $text, $m ) ) {
+            return $text;
+        }
+        $digits = rtrim( $m[2] . ( $m[3] ?? '' ), '0' );
+        $point  = (int) $m[4] + 1;
+        if ( $point <= 0 ) {
+            $out = '0.' . str_repeat( '0', -$point ) . $digits;
+        } else {
+            $digits = str_pad( $digits, $point, '0' );
+            $frac   = substr( $digits, $point );
+            $out    = substr( $digits, 0, $point ) . ( $frac !== '' ? '.' . $frac : ( $float_mark ? '.0' : '' ) );
+        }
+        return $m[1] . $out;
     }
 
     /**
@@ -929,7 +955,7 @@ class BAF_Expression {
                 if ( $context !== null && isset( $choices[ $context ] ) && is_string( $v ) && isset( $choices[ $context ][ $v ] ) ) {
                     return (string) $choices[ $context ][ $v ];
                 }
-                return is_string( $v ) ? $v : json_encode( $v );
+                return is_string( $v ) ? $v : self::number_text( $v );
             case 'ref':
                 return isset( $labels[ $node['field'] ] ) && $labels[ $node['field'] ] !== '' ? (string) $labels[ $node['field'] ] : $node['field'];
             case 'var':

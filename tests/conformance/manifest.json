@@ -5,6 +5,7 @@
   "suites": [
     { "kind": "schema", "file": "../../schema/form.schema.json" },
     { "kind": "expressions", "file": "expressions/cases.json" },
+    { "kind": "expressions", "file": "expressions/php-edges.json" },
     { "kind": "valid-models", "files": [
       "models/valid/all-field-types.json",
       "models/valid/logic-and-layout.json",

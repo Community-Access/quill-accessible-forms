@@ -86,7 +86,8 @@ class BAF_Conformance_Manifest_Test extends BAF_Unit_Test_Case {
             $this->$method( $suite );
             $ran[] = $suite['kind'];
         }
-        $this->assertCount( 10, $ran );
+        $this->assertCount( count( self::manifest()['suites'] ), $ran );
+        $this->assertCount( 10, array_unique( $ran ) );
     }
 
     private function run_schema( $suite ) {
@@ -100,6 +101,7 @@ class BAF_Conformance_Manifest_Test extends BAF_Unit_Test_Case {
         foreach ( $cases['parse'] as $c ) {
             $ast = BAF_Expression::parse( $c['text'] );
             $this->assertSame( $c['canonical'], BAF_Expression::to_text( $ast ), $c['text'] );
+            $this->assertSame( $c['canonical'], BAF_Expression::canonical( $c['canonical'] ), 'canonical text reads back: ' . $c['text'] );
             if ( isset( $c['ast'] ) ) {
                 $this->assertTrue( BAF_Form_Model::same( $c['ast'], $ast ), $c['text'] );
             }
@@ -109,6 +111,13 @@ class BAF_Conformance_Manifest_Test extends BAF_Unit_Test_Case {
         }
         foreach ( $cases['errors'] as $c ) {
             $this->assertNotNull( BAF_Expression::check( $c['text'] ), $c['text'] );
+            if ( isset( $c['offset'] ) ) {
+                try {
+                    BAF_Expression::parse( $c['text'] );
+                } catch ( BAF_Expression_Error $e ) {
+                    $this->assertSame( $c['offset'], $e->offset, 'offset of ' . $c['text'] );
+                }
+            }
         }
         foreach ( $cases['evaluate'] as $c ) {
             $got = BAF_Expression::evaluate( $c['text'], $cases['context'] );

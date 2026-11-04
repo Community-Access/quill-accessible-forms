@@ -93,7 +93,11 @@ written by one is byte for byte what the other writes.
 
 - Field references are `#id`. Text is in double quotes, JSON-escaped, with
   characters outside ASCII and the slash `/` written as themselves.
-- Numbers are written as JSON writes them: `2.50` becomes `2.5`.
+- Numbers are written as JSON writes them (`2.50` becomes `2.5`, and a
+  number written with a decimal point keeps it: `1.0`), but always in plain
+  digits, never in exponent form, because the grammar has no exponents:
+  `100000000000000000` is written `100000000000000000.0` and `0.00001`
+  stays `0.00001`. Canonical text always reads back to itself.
 - `is`, `is not`, `<`, `<=`, `>`, `>=`, `is one of`, `is not one of`,
   `is empty`, `is not empty`, `contains`, `does not contain`, `starts with`,
   `ends with`, `is before`, `is after`, `is within N days [of X]`.
@@ -151,6 +155,29 @@ An unanswered field is nothing (null).
   days. Division or remainder by 0 gives nothing. A whole-number result is a
   whole number (6 / 2 is 3, not 3.0).
 - `today()` is the server's date in UTC unless the caller supplies one.
+- **Text is compared as bytes**, as PHP does: only A to Z change case
+  (`"É" contains "é"` is false), and ordering is by code point (`"é" > "z"`).
+- **A date may be followed by a newline** and still be a date
+  (`"2026-11-20
+"`), because PHP's `$` matches before a final newline.
+- **Text that is a number** is digits with an optional minus sign and one
+  decimal point (`"3."`, `".5"`, `"-0"`), with spaces, tabs, line breaks or
+  form feeds around it. `"+5"`, `"1e3"` and `"0x1A"` are not numbers.
+- **Rounding** is half away from zero, after PHP's pre-rounding of the
+  value to 15 significant digits: `round(1.005, 2)` is 1.01 and
+  `round(0.49999999999999994)` is 1.
+
+## Other implementations
+
+BAF evaluates expressions in PHP (`includes/model/class-baf-expression.php`)
+and, on a published form, in JavaScript (`public/js/baf-expression.js`).
+QUILL evaluates them in Python. All three run the cases in
+`tests/conformance/expressions/`; `php-edges.json` holds the cases where
+another language's defaults differ from PHP's (text folding and ordering,
+number formatting, rounding, numeric text, error offsets in UTF-8 bytes).
+JavaScript has one number type, so an integral value is treated as PHP
+treats an integer; the only place that shows is a PHP float of 1e17 or
+more written as text, which no form reaches.
 
 ## Sentences
 
