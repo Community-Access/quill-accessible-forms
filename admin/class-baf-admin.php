@@ -257,6 +257,14 @@ class BAF_Admin {
                 BAF_VERSION,
                 true
             );
+            // The Scoring section of a question's settings in the Visual mode.
+            wp_enqueue_script(
+                'baf-field-scoring',
+                BAF_PLUGIN_URL . 'admin/js/baf-field-scoring.js',
+                array( 'baf-model-editor' ),
+                BAF_VERSION,
+                true
+            );
             wp_localize_script( 'baf-model-editor', 'bafModelEditor', array(
                 'ajaxUrl'   => admin_url( 'admin-ajax.php' ),
                 'nonce'     => wp_create_nonce( 'baf_builder_nonce' ),

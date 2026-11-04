@@ -10,6 +10,126 @@ class BAF_Accessible_Screens_Test extends BAF_Unit_Test_Case {
 
     const SCREENS = array( 'admin/partials/import-export.php' );
 
+    // ------------------------------------------------------------------
+    // The Visual mode's Scoring section (BAF_Field_Scoring_Panel)
+    // ------------------------------------------------------------------
+
+    private static function quiz_model() {
+        require_once BAF_PLUGIN_DIR . 'includes/model/class-baf-form-model.php';
+        require_once BAF_PLUGIN_DIR . 'includes/model/class-baf-field-scoring-panel.php';
+        $m = json_decode( file_get_contents( BAF_PLUGIN_DIR . 'tests/conformance/models/valid/quiz-and-translations.json' ), true );
+        $m['pages'][0]['items'][] = array( 'id' => 'size', 'type' => 'select', 'label' => 'Size', 'choice_library' => 'sizes' );
+        $m['pages'][0]['items'][] = array( 'id' => 'month', 'type' => 'select', 'label' => 'Month', 'choice_library' => 'months' );
+        $m['choice_libraries'] = array( 'sizes' => array( array( 'value' => 's', 'label' => 'Small', 'points' => 1 ) ) );
+        return $m;
+    }
+
+    /** One question's Scoring section as a DOM. */
+    private static function scoring( $id ) {
+        $m     = self::quiz_model();
+        $field = BAF_Field_Scoring_Panel::find( $m, $id );
+        $html  = BAF_Field_Scoring_Panel::render( $field, $m, function ( $name ) {
+            return $name === 'months' ? array( array( 'value' => 'jan', 'label' => 'January' ) ) : array();
+        } );
+        $doc = new DOMDocument();
+        libxml_use_internal_errors( true );
+        $doc->loadHTML( '<!DOCTYPE html><html><head><meta charset="utf-8"></head><body>' . $html . '</body></html>' );
+        $errors = array_filter( libxml_get_errors(), function ( $e ) {
+            return ! preg_match( '/Tag (section|main) invalid/', $e->message );
+        } );
+        libxml_clear_errors();
+        return array( $doc, new DOMXPath( $doc ), array_values( $errors ) );
+    }
+
+    public function test_scoring_sections_are_labelled_and_joined() {
+        foreach ( array( 'q1', 'q2', 'q3', 'feel', 'size', 'month' ) as $id ) {
+            list( $doc, $xp, $errors ) = self::scoring( $id );
+            $this->assertSame( array(), array_map( function ( $e ) { return trim( $e->message ); }, $errors ), $id );
+            $seen = array();
+            foreach ( $xp->query( '//*[@id]' ) as $e ) {
+                $this->assertArrayNotHasKey( $e->getAttribute( 'id' ), $seen, $id . ': an id used twice' );
+                $seen[ $e->getAttribute( 'id' ) ] = true;
+            }
+            foreach ( $xp->query( '//input | //select | //textarea' ) as $c ) {
+                $this->assertSame( 1, $xp->query( '//label[@for="' . $c->getAttribute( 'id' ) . '"]' )->length, $id . ': no label for ' . $c->getAttribute( 'id' ) );
+            }
+            foreach ( array( 'aria-describedby', 'aria-labelledby' ) as $attr ) {
+                foreach ( $xp->query( '//*[@' . $attr . ']' ) as $e ) {
+                    foreach ( preg_split( '/\s+/', $e->getAttribute( $attr ) ) as $ref ) {
+                        $this->assertNotNull( $doc->getElementById( $ref ), $id . ': ' . $attr . ' names ' . $ref );
+                    }
+                }
+            }
+            foreach ( $xp->query( '//fieldset' ) as $fs ) {
+                $this->assertSame( 1, $xp->query( './legend', $fs )->length, $id . ': a fieldset without a legend' );
+            }
+            $h = $doc->getElementById( 'baf-scoring-heading' );
+            $this->assertSame( 'h3', $h->nodeName );
+            $this->assertSame( '-1', $h->getAttribute( 'tabindex' ), $id . ': the heading takes focus when the section opens' );
+            $this->assertSame( 1, $xp->query( '//*[@role="status"]' )->length, $id . ': one status region' );
+            $this->assertSame( '-1', $doc->getElementById( 'baf-scoring-summary' )->getAttribute( 'tabindex' ) );
+            foreach ( $xp->query( '//table' ) as $table ) {
+                $this->assertSame( 1, $xp->query( './caption', $table )->length );
+                $this->assertGreaterThan( 0, $xp->query( './/th[@scope="row"]', $table )->length );
+            }
+        }
+    }
+
+    public function test_scoring_section_shows_what_the_model_holds() {
+        list( $doc, $xp ) = self::scoring( 'q1' );
+        $this->assertSame( 'Scoring: How many dots are in a braille cell?', $doc->getElementById( 'baf-scoring-heading' )->textContent );
+        $this->assertSame( '2', $doc->getElementById( 'baf-scoring-points' )->getAttribute( 'value' ) );
+        $checked = $xp->query( '//input[@name="baf-scoring-correct"][@checked]' );
+        $this->assertSame( 1, $checked->length );
+        $this->assertSame( '6', $checked->item( 0 )->getAttribute( 'value' ) );
+        $this->assertSame( 'radio', $checked->item( 0 )->getAttribute( 'type' ), 'one correct answer: radio buttons, with None' );
+        $this->assertNotNull( $doc->getElementById( 'baf-scoring-correct-none' ) );
+        $this->assertNull( $doc->getElementById( 'baf-scoring-partial' ), 'no partial credit for one answer' );
+        $this->assertStringContainsString( 'six-dot', $doc->getElementById( 'baf-scoring-explanation' )->textContent );
+
+        list( $doc, $xp ) = self::scoring( 'q2' );
+        $this->assertSame( 'Correct answers', $xp->query( '//fieldset[@id="baf-scoring-correct"]/legend' )->item( 0 )->textContent );
+        $this->assertSame( 2, $xp->query( '//input[@type="checkbox"][@name="baf-scoring-correct"][@checked]' )->length );
+        $this->assertTrue( $doc->getElementById( 'baf-scoring-partial' )->hasAttribute( 'checked' ) );
+        $this->assertSame( 'Partly right.', $doc->getElementById( 'baf-scoring-feedback-partial' )->textContent );
+
+        list( $doc ) = self::scoring( 'q3' );
+        $this->assertSame( 'Braille', $doc->getElementById( 'baf-scoring-accepted' )->textContent );
+        $this->assertFalse( $doc->getElementById( 'baf-scoring-case-sensitive' )->hasAttribute( 'checked' ) );
+        $this->assertNull( $doc->getElementById( 'baf-scoring-correct' ) );
+
+        list( $doc, $xp ) = self::scoring( 'feel' );
+        $this->assertSame( array( '0', '1', '2' ), array_map( function ( $i ) { return $i->getAttribute( 'value' ); }, iterator_to_array( $xp->query( '//table[@id="baf-scoring-choice-points"]//input' ) ) ) );
+        $this->assertSame( 'Points for Fairly', $xp->query( '//label[@for="baf-scoring-choice-1-points"]' )->item( 0 )->textContent );
+
+        list( $doc, $xp ) = self::scoring( 'size' );
+        $this->assertNull( $doc->getElementById( 'baf-scoring-choice-points' ), 'a library\'s points are set on its own tab' );
+        $this->assertStringContainsString( 'library sizes', $doc->textContent );
+        $this->assertSame( 1, $xp->query( '//input[@name="baf-scoring-correct"][@value="s"]' )->length );
+
+        list( $doc, $xp ) = self::scoring( 'month' );
+        $this->assertSame( 1, $xp->query( '//input[@name="baf-scoring-correct"][@value="jan"]' )->length, 'a built-in library\'s choices can be marked correct' );
+        $this->assertStringContainsString( 'built-in library months', $doc->textContent );
+    }
+
+    public function test_only_scorable_types_get_a_scoring_button() {
+        require_once BAF_PLUGIN_DIR . 'includes/model/class-baf-field-scoring-panel.php';
+        foreach ( array( 'quiz', 'radio', 'checkbox', 'select', 'multiselect', 'text' ) as $type ) {
+            $this->assertTrue( BAF_Field_Scoring_Panel::is_scored_type( $type ), $type );
+        }
+        foreach ( array( 'date', 'section', 'email', 'file' ) as $type ) {
+            $this->assertFalse( BAF_Field_Scoring_Panel::is_scored_type( $type ), $type );
+        }
+        $card = file_get_contents( BAF_PLUGIN_DIR . 'admin/class-baf-form-builder.php' );
+        $this->assertStringContainsString( "'Scoring for %s'", $card, 'the button is named for its question' );
+        $this->assertStringContainsString( 'aria-controls="baf-field-settings"', $card );
+        $js = file_get_contents( BAF_PLUGIN_DIR . 'admin/js/baf-field-scoring.js' );
+        $this->assertStringContainsString( "'Escape'", $js );
+        $this->assertStringContainsString( "$('baf-scoring-heading').focus()", $js );
+        $this->assertStringContainsString( 'back.focus()', $js, 'Close returns focus to the Scoring button' );
+        $this->assertStringNotContainsString( 'alert(', $js );
+    }
+
     /** The screen's source, each PHP block replaced by a token (the same code, the same token). */
     private static function source( $rel ) {
         return preg_replace_callback( '/<\?php.*?\?>/s', function ( $m ) {
@@ -183,7 +303,7 @@ class BAF_Accessible_Screens_Test extends BAF_Unit_Test_Case {
 
     public function test_every_script_string_is_localised() {
         $i18n = require BAF_PLUGIN_DIR . 'admin/model-editor-i18n.php';
-        foreach ( array( 'baf-model-editor-core.js', 'baf-model-editor.js', 'baf-model-screens.js' ) as $f ) {
+        foreach ( array( 'baf-model-editor-core.js', 'baf-model-editor.js', 'baf-model-screens.js', 'baf-field-scoring.js' ) as $f ) {
             preg_match_all( "/\\bt\\('(\\w+)',\\s*'((?:[^'\\\\]|\\\\.)*)'/", file_get_contents( BAF_PLUGIN_DIR . 'admin/js/' . $f ), $m, PREG_SET_ORDER );
             foreach ( $m as $x ) {
                 $this->assertArrayHasKey( $x[1], $i18n, $f . ': ' . $x[1] . ' is not in admin/model-editor-i18n.php' );

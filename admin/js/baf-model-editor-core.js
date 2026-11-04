@@ -489,6 +489,155 @@
     }
 
     // ------------------------------------------------------------------
+    // A question's scoring (the Visual mode's Scoring section)
+    // ------------------------------------------------------------------
+
+    /** The JSON pointer of an item, as BAF_Form_Model::items() gives it, or null. */
+    function itemPointer(model, id) {
+        var found = null;
+        function walk(list, path) {
+            (list || []).forEach(function (item, i) {
+                if (found || !item || typeof item !== 'object') {
+                    return;
+                }
+                var p = path + '/' + i;
+                if (item.id === id) {
+                    found = p;
+                    return;
+                }
+                if (item.type === 'columns') {
+                    (item.columns || []).forEach(function (col, ci) { walk(col.items, p + '/columns/' + ci + '/items'); });
+                } else if (Array.isArray(item.items)) {
+                    walk(item.items, p + '/items');
+                }
+            });
+        }
+        ((model && model.pages) || []).forEach(function (pg, pi) { walk(pg.items, '/pages/' + pi + '/items'); });
+        return found;
+    }
+
+    function findItem(model, id) {
+        var all = items(model);
+        for (var i = 0; i < all.length; i++) {
+            if (all[i].item.id === id) {
+                return all[i].item;
+            }
+        }
+        return null;
+    }
+
+    function parseNumber(text) {
+        var s = String(text === undefined || text === null ? '' : text).trim();
+        if (s === '') {
+            return { empty: true };
+        }
+        var n = Number(s);
+        return isFinite(n) && /^-?(\d+\.?\d*|\.\d+)$/.test(s) ? { value: n } : { bad: true };
+    }
+
+    /**
+     * Put one question's Scoring section into a model (a copy is returned):
+     * its scoring, and its own choices' points; nothing else is touched.
+     *
+     * input: { points, correct: [values], partial, case_sensitive,
+     *          feedback_correct, feedback_incorrect, feedback_partial,
+     *          explanation, choicePoints: { index: text } } -- a key left
+     *          out is a control the section did not show, kept as it was.
+     *
+     * @return {{model:object|null, problems:Array<{field, message}>}}
+     */
+    function applyScoring(model, fieldId, input, t) {
+        t = t || translator();
+        var out = clone(model);
+        var field = findItem(out, fieldId);
+        var problems = [];
+        if (!field) {
+            return { model: null, problems: [{ field: null, message: t('scoringNoField', 'This question is no longer in the form; reload the builder.') }] };
+        }
+        var s = field.scoring && typeof field.scoring === 'object' && !Array.isArray(field.scoring) ? field.scoring : {};
+        if (input.points !== undefined) {
+            var p = parseNumber(input.points);
+            if (p.bad) {
+                problems.push({ field: 'points', message: t('scoringPoints', 'The points must be a number, such as 2.') });
+            } else if (p.empty) {
+                delete s.points;
+            } else {
+                s.points = p.value;
+            }
+        }
+        if (input.correct !== undefined) {
+            var list = input.correct.map(function (v) { return String(v).trim(); }).filter(function (v) { return v !== ''; });
+            var seen = {};
+            list = list.filter(function (v) { return seen[v] ? false : (seen[v] = true); });
+            if (list.length) {
+                s.correct = list;
+            } else {
+                delete s.correct;
+            }
+        }
+        ['partial', 'case_sensitive'].forEach(function (k) {
+            if (input[k] === undefined) {
+                return;
+            }
+            if (input[k]) {
+                s[k] = true;
+            } else if (Object.prototype.hasOwnProperty.call(s, k)) {
+                s[k] = false; // An explicit "no" stays explicit; one never written is not added.
+            }
+        });
+        ['feedback_correct', 'feedback_incorrect', 'feedback_partial', 'explanation'].forEach(function (k) {
+            if (input[k] === undefined) {
+                return;
+            }
+            if (String(input[k]).trim() === '') {
+                delete s[k];
+            } else {
+                s[k] = String(input[k]);
+            }
+        });
+        if (Object.keys(s).length || field.type === 'quiz') {
+            field.scoring = s; // A quiz question must keep its scoring, even empty.
+        } else {
+            delete field.scoring;
+        }
+        Object.keys(input.choicePoints || {}).forEach(function (i) {
+            var c = field.choices && field.choices[Number(i)];
+            if (!c) {
+                return;
+            }
+            var n = parseNumber(input.choicePoints[i]);
+            if (n.bad) {
+                problems.push({ field: 'choice-' + i + '-points', message: t('scoringChoicePoints', 'The points for %s must be a number, such as 1.', c.label) });
+            } else if (n.empty) {
+                delete c.points;
+            } else {
+                c.points = n.value;
+            }
+        });
+        return { model: problems.length ? null : out, problems: problems };
+    }
+
+    /**
+     * A problem the server found, joined to the Scoring section's field when
+     * it is about this question: "/pages/0/items/2/scoring/points" is "points".
+     */
+    function scoringField(model, fieldId, pointer) {
+        var base = itemPointer(model, fieldId);
+        var p = String(pointer || '');
+        if (!base || p.indexOf(base + '/') !== 0) {
+            return null;
+        }
+        var rest = p.slice(base.length + 1).split('/');
+        if (rest[0] === 'scoring') {
+            return rest[1] === 'correct' ? 'correct' : (rest[1] || 'points');
+        }
+        if (rest[0] === 'choices' && rest[2] === 'points') {
+            return 'choice-' + rest[1] + '-points';
+        }
+        return null;
+    }
+
+    // ------------------------------------------------------------------
     // Lists and paths
     // ------------------------------------------------------------------
 
@@ -585,6 +734,10 @@
         checkLanguage: checkLanguage,
         move: move,
         focusAfterDelete: focusAfterDelete,
+        itemPointer: itemPointer,
+        findItem: findItem,
+        applyScoring: applyScoring,
+        scoringField: scoringField,
         where: where
     };
 }));

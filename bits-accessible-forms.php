@@ -233,7 +233,8 @@ final class BITS_Accessible_Forms {
         require_once BAF_PLUGIN_DIR . 'includes/model/class-baf-form-model-converter.php';
         require_once BAF_PLUGIN_DIR . 'includes/model/class-baf-form-runtime.php';
         require_once BAF_PLUGIN_DIR . 'includes/model/class-baf-bfl-service.php';
-        
+        require_once BAF_PLUGIN_DIR . 'includes/model/class-baf-field-scoring-panel.php';
+
         // Field Templates
         require_once BAF_PLUGIN_DIR . 'includes/core/class-baf-field-templates.php';
         
@@ -351,6 +352,7 @@ final class BITS_Accessible_Forms {
         $this->loader->add_action( 'wp_ajax_baf_export_form', $this->form_builder, 'ajax_export_form' );
         $this->loader->add_action( 'wp_ajax_baf_read_choice_lines', $this->form_builder, 'ajax_read_choice_lines' );
         $this->loader->add_action( 'wp_ajax_baf_get_choice_library', $this->form_builder, 'ajax_get_choice_library' );
+        $this->loader->add_action( 'wp_ajax_baf_get_field_scoring', $this->form_builder, 'ajax_get_field_scoring' );
         $this->loader->add_action( 'wp_ajax_baf_import_csv', $this->form_builder, 'ajax_import_csv' );
         
         // Settings API registration

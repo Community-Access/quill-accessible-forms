@@ -1,8 +1,7 @@
 # Plan: builder screens for rules, outcomes, translations and choice libraries
 
-Status: built (2026-11), steps 1 to 5 below, except the per-question
-Scoring section in the Visual mode's field settings panel (step 4). Not
-yet checked by hand with a screen reader (step 6). The form model holds
+Status: built (2026-11), steps 1 to 5 below. Not yet checked by hand with
+a screen reader (step 6). The form model holds
 all four, BFL writes and reads them, QUILL edits them, and the visual
 builder keeps them when it saves (`BAF_Form::apply_builder_config`). This
 was the plan for editing them in BAF's own admin without writing BFL.
@@ -20,6 +19,15 @@ Where it is:
   against them by `AccessibleScreensTest`.
 - New AJAX actions: `baf_read_choice_lines` (Paste choices, through
   `BAF_BFL_Service::read_choice_lines`) and `baf_get_choice_library`.
+- The per-question Scoring section: `includes/model/class-baf-field-scoring-panel.php`
+  draws it on the server from the question in the stored model (new AJAX
+  `baf_get_field_scoring`), and `admin/js/baf-field-scoring.js` saves it with
+  `BAFModelEditorCore.applyScoring`. A scored question's card (quiz, radio,
+  checkbox, select, multiselect, text) has a Scoring button that opens it in
+  the field settings panel. That panel's own Edit flow has never worked (the
+  script and the server disagree on what is sent and returned, and
+  `baf_save_field_settings` has no handler), so the Scoring section does not
+  depend on it; mending that flow is separate work.
 
 Differences from the plan as written: a save reads the stored model again
 and replaces only the screen's own part, so a visual-builder save made in

@@ -181,6 +181,36 @@ class BAF_Form_Builder {
     }
 
     /**
+     * AJAX: a question's Scoring section (POST form_id, field_id), drawn
+     * from the question in the stored model, for the Visual mode's field
+     * settings panel. admin/js/baf-field-scoring.js saves it.
+     */
+    public function ajax_get_field_scoring() {
+        check_ajax_referer( 'baf_builder_nonce', 'nonce' );
+
+        if ( ! current_user_can( 'manage_options' ) ) {
+            wp_send_json_error( array( 'message' => __( 'Permission denied.', 'bits-accessible-forms' ) ) );
+        }
+        $form = new BAF_Form( isset( $_POST['form_id'] ) ? absint( $_POST['form_id'] ) : 0 );
+        if ( ! $form->id ) {
+            wp_send_json_error( array( 'message' => __( 'Save the form first; then its questions can be scored.', 'bits-accessible-forms' ) ) );
+        }
+        $model = $form->get_model();
+        $field = BAF_Field_Scoring_Panel::find( $model, sanitize_text_field( wp_unslash( $_POST['field_id'] ?? '' ) ) );
+        if ( ! $field ) {
+            wp_send_json_error( array( 'message' => __( 'This question is not in the saved form yet. Save the form, then try again.', 'bits-accessible-forms' ) ) );
+        }
+        if ( ! BAF_Field_Scoring_Panel::is_scored_type( $field['type'] ?? '' ) ) {
+            wp_send_json_error( array( 'message' => __( 'This type of question is not scored.', 'bits-accessible-forms' ) ) );
+        }
+        wp_send_json_success( array(
+            'field_id' => $field['id'],
+            'label'    => $field['label'] ?? '',
+            'html'     => BAF_Field_Scoring_Panel::render( $field, $model, array( __CLASS__, 'builtin_library_choices' ) ),
+        ) );
+    }
+
+    /**
      * AJAX: the choices of a built-in library (POST name), so the Choice
      * libraries screen can copy one into the form.
      */
@@ -455,7 +485,21 @@ class BAF_Form_Builder {
                     <span aria-hidden="true">↓</span>
                     <span class="baf-sr-only"><?php esc_html_e( 'Move Down', 'bits-accessible-forms' ); ?></span>
                 </button>
-                
+
+                <?php if ( class_exists( 'BAF_Field_Scoring_Panel' ) && BAF_Field_Scoring_Panel::is_scored_type( $field_config['type'] ?? '' ) ) : ?>
+                <!-- Scoring Button: opens the question's Scoring section in the settings panel -->
+                <button type="button"
+                        class="baf-action-btn baf-scoring-btn"
+                        data-action="scoring"
+                        data-field-id="<?php echo esc_attr( $field_id ); ?>"
+                        aria-controls="baf-field-settings"
+                        aria-expanded="false"
+                        aria-label="<?php echo esc_attr( sprintf( __( 'Scoring for %s', 'bits-accessible-forms' ), $field_label ) ); ?>">
+                    <span aria-hidden="true">#</span>
+                    <span class="baf-sr-only"><?php esc_html_e( 'Scoring', 'bits-accessible-forms' ); ?></span>
+                </button>
+                <?php endif; ?>
+
                 <!-- Edit Button -->
                 <button type="button" 
                         class="baf-action-btn baf-edit" 

@@ -182,6 +182,54 @@ test('slug matches BAF_Form_Model::slug', function () {
     assert.strictEqual(C.slug('  Extra Large!! '), 'extra-large');
 });
 
+test('scoring: points, correct answers and feedback go in; nothing else changes', function () {
+    var r = C.applyScoring(quiz, 'q1', { points: '3', correct: ['8'], feedback_correct: 'Yes.', explanation: '' });
+    assert.deepStrictEqual(r.problems, []);
+    var q1 = C.findItem(r.model, 'q1');
+    assert.deepStrictEqual(q1.scoring, { correct: ['8'], points: 3, feedback_correct: 'Yes.' });
+    assert.deepStrictEqual(C.findItem(r.model, 'q2'), C.findItem(quiz, 'q2'));
+    assert.deepStrictEqual(r.model.translations, quiz.translations);
+    assert.strictEqual(C.findItem(quiz, 'q1').scoring.points, 2, 'the model passed in is not changed');
+});
+
+test('scoring: an explicit no stays, an unwritten one is not added', function () {
+    var r = C.applyScoring(quiz, 'q3', { case_sensitive: false, correct: ['Braille', ' braille ', 'Braille'] });
+    assert.strictEqual(C.findItem(r.model, 'q3').scoring.case_sensitive, false);
+    assert.deepStrictEqual(C.findItem(r.model, 'q3').scoring.correct, ['Braille', 'braille']);
+    var r2 = C.applyScoring(quiz, 'q2', { partial: false });
+    assert.strictEqual(C.findItem(r2.model, 'q2').scoring.partial, false);
+    var r3 = C.applyScoring(quiz, 'q1', { partial: false });
+    assert.strictEqual('partial' in C.findItem(r3.model, 'q1').scoring, false);
+});
+
+test('scoring: emptied scoring goes, but a quiz question keeps its object', function () {
+    var r = C.applyScoring(quiz, 'q3', { points: '', correct: [], case_sensitive: false });
+    assert.deepStrictEqual(C.findItem(r.model, 'q3').scoring, { case_sensitive: false });
+    var feel = C.applyScoring(quiz, 'feel', { points: '', correct: [] });
+    assert.strictEqual('scoring' in C.findItem(feel.model, 'feel'), false);
+    var q1 = C.applyScoring(quiz, 'q1', { points: '', correct: [], explanation: '' });
+    assert.deepStrictEqual(C.findItem(q1.model, 'q1').scoring, {});
+});
+
+test('scoring: choice points, and numbers that are not numbers', function () {
+    var r = C.applyScoring(quiz, 'feel', { choicePoints: { 0: '', 1: '1.5', 2: '3' } });
+    assert.deepStrictEqual(C.findItem(r.model, 'feel').choices.map(function (c) { return c.points; }), [undefined, 1.5, 3]);
+    var bad = C.applyScoring(quiz, 'feel', { points: 'two', choicePoints: { 1: '1e3' } });
+    assert.strictEqual(bad.model, null);
+    assert.deepStrictEqual(bad.problems.map(function (p) { return p.field; }), ['points', 'choice-1-points']);
+    assert.strictEqual(C.applyScoring(quiz, 'gone', {}).model, null);
+});
+
+test('scoring: the server\'s pointers are joined to the section\'s fields', function () {
+    assert.strictEqual(C.itemPointer(quiz, 'q3'), '/pages/0/items/2');
+    assert.strictEqual(C.itemPointer(model, 'size'), '/pages/0/items/2/items/0');
+    assert.strictEqual(C.scoringField(quiz, 'q1', '/pages/0/items/0/scoring/correct'), 'correct');
+    assert.strictEqual(C.scoringField(quiz, 'q1', '/pages/0/items/0/scoring/points'), 'points');
+    assert.strictEqual(C.scoringField(quiz, 'feel', '/pages/0/items/3/choices/2/points'), 'choice-2-points');
+    assert.strictEqual(C.scoringField(quiz, 'q1', '/pages/0/items/1/scoring/points'), null);
+    assert.strictEqual(C.scoringField(quiz, 'q1', '/pages/0/items/0/label'), null);
+});
+
 var failed = 0;
 tests.forEach(function (tc) {
     try {

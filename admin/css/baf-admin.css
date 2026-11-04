@@ -962,13 +962,15 @@
 }
 
 .baf-model-panel .baf-field-error,
-.baf-model-modal .baf-field-error {
+.baf-model-modal .baf-field-error,
+.baf-scoring-section .baf-field-error {
     display: block;
     color: var(--baf-error);
     font-weight: 600;
 }
 
-.baf-model-modal [aria-invalid="true"] {
+.baf-model-modal [aria-invalid="true"],
+.baf-scoring-section [aria-invalid="true"] {
     border-color: var(--baf-error);
     box-shadow: 0 0 0 1px var(--baf-error);
 }
@@ -1005,7 +1007,8 @@
 }
 
 .baf-model-panel .baf-sr-only,
-.baf-model-modal .baf-sr-only {
+.baf-model-modal .baf-sr-only,
+.baf-scoring-section .baf-sr-only {
     position: absolute;
     width: 1px;
     height: 1px;
