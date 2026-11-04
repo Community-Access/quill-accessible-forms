@@ -219,9 +219,317 @@
     }
 
     // ------------------------------------------------------------------
+    // Choice libraries
+    // ------------------------------------------------------------------
+
+    var libraries = { panelId: 'baf-libraries-panel' };
+    var libraryScreen = null;
+    var libDraft = null; // { name, original, choices } while the dialog is open.
+
+    function libraryList(m) {
+        var libs = (m && m.choice_libraries) || {};
+        return Object.keys(libs).map(function (name) { return { name: name, choices: libs[name] || [] }; });
+    }
+
+    /** Store the libraries in list order; a renamed library is renamed in the fields that use it. */
+    function storeLibraries(m, list, renamed) {
+        var out = {};
+        list.forEach(function (l) { out[l.name] = l.choices; });
+        m.choice_libraries = out;
+        if (renamed && renamed.from !== renamed.to) {
+            C.fields(m).forEach(function (f) {
+                if (f.choice_library === renamed.from) {
+                    f.choice_library = renamed.to;
+                }
+                if (f.cascade && f.cascade.library === renamed.from) {
+                    f.cascade.library = renamed.to;
+                }
+            });
+        }
+    }
+
+    function choiceName(i, c) {
+        return t('choiceRow', 'choice %1$d: %2$s', i + 1, c.label || t('noLabel', 'no label'));
+    }
+
+    function numberOrRaw(text) {
+        var s = String(text).trim();
+        if (s === '') {
+            return undefined;
+        }
+        var n = Number(s);
+        return isFinite(n) ? n : s;
+    }
+
+    /** The choices grid: one row per choice, every input with a real label. */
+    function renderChoices(focus) {
+        var body = $('baf-library-choice-rows');
+        body.textContent = '';
+        libDraft.choices.forEach(function (c, i) {
+            var tr = el('tr');
+            tr.appendChild(el('th', { scope: 'row' }, String(i + 1)));
+            [['label', t('colLabel', 'Label')], ['value', t('colValue', 'Value')], ['price', t('colPrice', 'Price')], ['points', t('colPoints', 'Points')]].forEach(function (col) {
+                var id = 'baf-library-choice-' + i + '-' + col[0];
+                var td = el('td');
+                td.appendChild(el('label', { 'for': id, className: 'baf-sr-only' }, t('choiceField', 'Choice %1$d, %2$s', i + 1, col[1])));
+                var input = el('input', {
+                    type: 'text',
+                    id: id,
+                    inputmode: col[0] === 'price' || col[0] === 'points' ? 'decimal' : null,
+                    autocomplete: 'off',
+                    'aria-describedby': id + '-error'
+                });
+                input.value = c[col[0]] === undefined ? '' : String(c[col[0]]);
+                input.addEventListener('input', function () {
+                    if (col[0] === 'price' || col[0] === 'points') {
+                        var v = numberOrRaw(input.value);
+                        if (v === undefined) {
+                            delete c[col[0]];
+                        } else {
+                            c[col[0]] = v;
+                        }
+                    } else {
+                        c[col[0]] = input.value;
+                    }
+                });
+                if (col[0] === 'label') {
+                    input.addEventListener('blur', function () {
+                        var value = $('baf-library-choice-' + i + '-value');
+                        if (value && value.value === '' && input.value.trim() !== '') {
+                            c.value = C.slug(input.value) || input.value.trim();
+                            value.value = c.value;
+                        }
+                    });
+                }
+                td.appendChild(input);
+                td.appendChild(el('span', { id: id + '-error', className: 'baf-field-error', hidden: true }));
+                tr.appendChild(td);
+            });
+            var actions = el('td', { className: 'baf-row-actions' });
+            var name = choiceName(i, c);
+            [['up', t('moveUp', 'Move up')], ['down', t('moveDown', 'Move down')], ['delete', t('delete', 'Delete')]].forEach(function (b) {
+                var label = b[0] === 'up' ? t('moveUpRow', 'Move up %s', name) : (b[0] === 'down' ? t('moveDownRow', 'Move down %s', name) : t('deleteRow', 'Delete %s', name));
+                var btn = el('button', { type: 'button', className: 'button button-small', 'data-action': b[0], 'data-index': String(i), 'aria-label': label }, b[1]);
+                if ((b[0] === 'up' && i === 0) || (b[0] === 'down' && i === libDraft.choices.length - 1)) {
+                    btn.setAttribute('aria-disabled', 'true');
+                }
+                actions.appendChild(btn);
+            });
+            tr.appendChild(actions);
+            body.appendChild(tr);
+        });
+        $('baf-library-choices').hidden = libDraft.choices.length === 0;
+        if (focus) {
+            var target = focus.input ? $('baf-library-choice-' + focus.index + '-' + focus.input) : body.querySelector('button[data-index="' + focus.index + '"][data-action="' + focus.action + '"]');
+            (target || $('baf-library-add-choice')).focus();
+        }
+    }
+
+    function libraryFields() {
+        var out = {
+            name: { control: $('baf-library-name'), error: $('baf-library-name-error') },
+            paste: { control: $('baf-library-paste'), error: $('baf-library-paste-error') }
+        };
+        libDraft.choices.forEach(function (c, i) {
+            ['label', 'value', 'price', 'points'].forEach(function (k) {
+                out['choice-' + i + '-' + k] = { control: $('baf-library-choice-' + i + '-' + k), error: $('baf-library-choice-' + i + '-' + k + '-error') };
+            });
+        });
+        return out;
+    }
+
+    function openLibrary(lib, index, opener) {
+        var isNew = lib === null;
+        lib = lib || { name: '', choices: [] };
+        libDraft = { name: lib.name, original: isNew ? null : lib.name, choices: C.clone(lib.choices) };
+        $('baf-library-name').value = lib.name;
+        $('baf-library-paste').value = '';
+        renderChoices();
+        var title = isNew ? t('addLibraryTitle', 'Add library') : t('editLibraryTitle', 'Edit library %s', lib.name);
+        var wrapper = dialogForm('baf-library-dialog', title, function () {
+            var name = $('baf-library-name').value.trim();
+            var choices = libDraft.choices.map(function (c) {
+                var o = C.clone(c);
+                o.label = String(o.label || '').trim();
+                o.value = String(o.value === undefined ? '' : o.value).trim();
+                if (o.value === '' && o.label !== '') {
+                    o.value = C.slug(o.label) || o.label;
+                }
+                return o;
+            });
+            var problems = C.checkLibrary(name, choices, libDraft.original, E.state.model, t);
+            if (problems.length) {
+                E.showProblems($('baf-library-dialog-summary'), libraryFields(), problems);
+                return;
+            }
+            var list = libraryList(E.state.model);
+            var at = isNew ? list.length : index;
+            if (isNew) {
+                list.push({ name: name, choices: choices });
+            } else {
+                list[index] = { name: name, choices: choices };
+            }
+            var renamed = isNew ? null : { from: libDraft.original, to: name };
+            E.persist(function (m) { storeLibraries(m, list, renamed); }).then(function (r) {
+                if (!r.ok) {
+                    E.showProblems($('baf-library-dialog-summary'), libraryFields(), serverProblems(r, 'libraries', function (w) { return w.key === name; }));
+                    return;
+                }
+                d.close(document.body);
+                libraryScreen.render({ index: at, action: 'edit' });
+                var users = C.libraryUsers(E.state.model, name).length;
+                E.say($('baf-libraries-status'), t('librarySaved', 'Library %1$s saved, with %2$d choices.', name, choices.length) + (renamed && renamed.from !== name && users ? ' ' + t('libraryRenamed', 'The questions that used %1$s now use %2$s.', renamed.from, name) : ''));
+            });
+        });
+        var d = E.showDialog(wrapper, { returnTo: opener, first: $('baf-library-name') });
+    }
+
+    function renderBuiltins() {
+        var body = $('baf-builtin-rows');
+        var libs = (window.bafModelEditor && window.bafModelEditor.libraries) || {};
+        body.textContent = '';
+        Object.keys(libs).forEach(function (name) {
+            var tr = el('tr');
+            tr.appendChild(el('th', { scope: 'row' }, libs[name]));
+            tr.appendChild(el('td', {}, name));
+            var td = el('td', { className: 'baf-row-actions' });
+            td.appendChild(el('button', { type: 'button', className: 'button button-small', 'data-name': name, 'aria-label': t('copyLibraryRow', 'Copy %s into this form', libs[name]) }, t('copyLibrary', 'Copy into this form')));
+            tr.appendChild(td);
+            body.appendChild(tr);
+        });
+        $('baf-builtin-table').hidden = Object.keys(libs).length === 0;
+    }
+
+    function copyBuiltin(name, button) {
+        var status = $('baf-libraries-status');
+        if (E.state.model.choice_libraries && Object.prototype.hasOwnProperty.call(E.state.model.choice_libraries, name)) {
+            E.say(status, t('libraryTaken', 'This form already has a library called %s.', name));
+            return;
+        }
+        E.post('baf_get_choice_library', { name: name }).then(function (json) {
+            if (!json.success) {
+                E.say(status, (json.data && json.data.message) || t('copyFailed', 'The library could not be copied.'));
+                return;
+            }
+            var list = libraryList(E.state.model);
+            list.push({ name: name, choices: json.data.choices });
+            libraryScreen.save(list, t('libraryCopied', 'Copied %1$s into this form, with %2$d choices. Questions that use %1$s now use this copy.', name, json.data.choices.length), { index: list.length - 1, action: 'edit' });
+        }, function () {
+            E.say(status, t('copyFailed', 'The library could not be copied.'));
+            button.focus();
+        });
+    }
+
+    libraries.render = function () {
+        libraryScreen.render();
+        renderBuiltins();
+    };
+
+    function initLibraries() {
+        if (!$('baf-libraries-panel')) {
+            return;
+        }
+        libraryScreen = E.listScreen({
+            body: $('baf-libraries-rows'),
+            empty: $('baf-libraries-empty'),
+            add: $('baf-libraries-add'),
+            status: $('baf-libraries-status'),
+            summary: $('baf-libraries-summary'),
+            noun: 'library',
+            Noun: 'Library',
+            noMove: true,
+            list: libraryList,
+            store: function (m, list) { storeLibraries(m, list, null); },
+            cells: function (l, i, m) {
+                var users = C.libraryUsers(m, l.name);
+                return [l.name, String(l.choices.length), users.length ? C.listNames(users, t) : t('unused', 'No question yet')];
+            },
+            name: function (l) { return l.name; },
+            deleteMessage: function (l, i, m) {
+                var users = C.libraryUsers(m, l.name);
+                return users.length
+                    ? t('deleteLibraryUsed', 'Library %1$s will be deleted. Questions that use it: %2$s. They will take their choices from a built-in library of that name if there is one, or have none.', l.name, C.listNames(users, t))
+                    : t('deleteLibrary', 'Library %s will be deleted from the form.', l.name);
+            },
+            edit: openLibrary
+        });
+
+        $('baf-library-choice-rows').addEventListener('click', function (e) {
+            var b = e.target.closest('button[data-action]');
+            if (!b) {
+                return;
+            }
+            var i = Number(b.getAttribute('data-index'));
+            var action = b.getAttribute('data-action');
+            var status = $('baf-library-dialog-status');
+            if (action === 'delete') {
+                libDraft.choices.splice(i, 1);
+                var next = C.focusAfterDelete(i, libDraft.choices.length);
+                renderChoices({ index: next, action: 'delete' });
+                E.say(status, t('choiceDeleted', 'Choice %d deleted.', i + 1));
+                return;
+            }
+            var to = action === 'up' ? i - 1 : i + 1;
+            if (to < 0 || to >= libDraft.choices.length) {
+                E.say(status, action === 'up' ? t('alreadyFirst', '%s is already first.', t('choiceCap', 'Choice %d', i + 1)) : t('alreadyLast', '%s is already last.', t('choiceCap', 'Choice %d', i + 1)));
+                return;
+            }
+            libDraft.choices = C.move(libDraft.choices, i, to);
+            renderChoices({ index: to, action: action });
+            E.say(status, t('movedTo', '%1$s is now %2$s.', t('choiceCap', 'Choice %d', i + 1), t('choiceLow', 'choice %d', to + 1)));
+        });
+
+        $('baf-library-add-choice').addEventListener('click', function () {
+            libDraft.choices.push({ value: '', label: '' });
+            renderChoices({ index: libDraft.choices.length - 1, input: 'label' });
+        });
+
+        $('baf-library-paste-add').addEventListener('click', function () {
+            var text = $('baf-library-paste').value;
+            var status = $('baf-library-dialog-status');
+            if (text.trim() === '') {
+                E.showProblems($('baf-library-dialog-summary'), libraryFields(), [{ field: 'paste', message: t('pasteEmpty', 'Paste the choices first, one a line.') }]);
+                return;
+            }
+            E.post('baf_read_choice_lines', { lines: text }).then(function (json) {
+                var d = json.data || {};
+                if (!json.success) {
+                    E.say(status, d.message || t('pasteFailed', 'The choices could not be read.'));
+                    return;
+                }
+                if (d.errors && d.errors.length) {
+                    E.showProblems($('baf-library-dialog-summary'), libraryFields(), d.errors.map(function (er) {
+                        return { field: 'paste', message: t('pasteLine', 'Line %1$d: %2$s', er.line, er.message) };
+                    }));
+                    return;
+                }
+                E.showProblems($('baf-library-dialog-summary'), libraryFields(), []);
+                var first = libDraft.choices.length;
+                libDraft.choices = libDraft.choices.concat(d.choices || []);
+                $('baf-library-paste').value = '';
+                renderChoices({ index: first, input: 'label' });
+                var n = (d.choices || []).length;
+                var warn = (d.warnings || []).map(function (w) { return t('pasteLine', 'Line %1$d: %2$s', w.line, w.message); }).join(' ');
+                E.say(status, (n === 1 ? t('pastedOne', '1 choice added, as choice %d.', first + 1) : t('pastedMany', '%1$d choices added, from choice %2$d.', n, first + 1)) + (warn ? ' ' + warn : ''));
+            }, function () {
+                E.say(status, t('pasteFailed', 'The choices could not be read.'));
+            });
+        });
+
+        $('baf-builtin-rows').addEventListener('click', function (e) {
+            var b = e.target.closest('button[data-name]');
+            if (b && E.state.model) {
+                copyBuiltin(b.getAttribute('data-name'), b);
+            }
+        });
+        E.register('libraries', libraries);
+    }
+
+    // ------------------------------------------------------------------
 
     function init() {
         initRules();
+        initLibraries();
     }
 
     if (document.readyState === 'loading') {

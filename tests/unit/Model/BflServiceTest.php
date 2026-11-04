@@ -94,4 +94,24 @@ class BAF_BFL_Service_Test extends BAF_Unit_Test_Case {
         $this->assertSame( array( 'country', 'region' ), array_column( $contact['postal']['children'], 'id' ) );
         $this->assertTrue( $about['type']['required'] );
     }
+    public function test_pasted_choice_lines_read_as_bfl_does() {
+        $r = BAF_BFL_Service::read_choice_lines( "+ Small\n\ns|Smaller\n  + Large:20.0\n+ \"Odd: one\" @points 2\n" );
+        $this->assertSame( array(), $r['errors'] );
+        $this->assertSame(
+            array(
+                array( 'value' => 'small', 'label' => 'Small' ),
+                array( 'value' => 's', 'label' => 'Smaller' ),
+                array( 'value' => 'large', 'label' => 'Large', 'price' => 20.0 ),
+                array( 'value' => 'odd-one', 'label' => 'Odd: one', 'points' => 2 ),
+            ),
+            $r['choices']
+        );
+    }
+
+    public function test_pasted_choice_problems_name_the_pasted_line() {
+        $r = BAF_BFL_Service::read_choice_lines( "+ Small\n\n+ \"Not closed\n" );
+        $this->assertSame( 1, count( $r['errors'] ) );
+        $this->assertSame( 3, $r['errors'][0]['line'] );
+        $this->assertSame( array(), BAF_BFL_Service::read_choice_lines( "  \n" )['choices'] );
+    }
 }

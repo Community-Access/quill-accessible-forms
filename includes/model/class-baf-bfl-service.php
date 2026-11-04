@@ -52,6 +52,50 @@ class BAF_BFL_Service {
     }
 
     /**
+     * Read pasted choices, one a line, in BFL's choice-line spellings
+     * (+ Small, + s|Small, + Small:10, + "Large" @points 2), through the BFL
+     * reader, so the builder's "Paste choices" reads exactly what BFL does.
+     * The leading "+" may be left off. Blank lines are skipped.
+     *
+     * @param string $text The pasted lines.
+     * @return array Keys: choices, errors, warnings (each array( line, message ),
+     *               the line counted in the pasted text).
+     */
+    public static function read_choice_lines( $text ) {
+        $lines = preg_split( '/\r\n|\r|\n/', (string) $text );
+        $body  = array();
+        $map   = array();
+        foreach ( $lines as $n => $line ) {
+            $line = trim( $line );
+            if ( $line === '' ) {
+                continue;
+            }
+            if ( $line[0] !== '+' ) {
+                $line = '+ ' . $line;
+            }
+            $body[]                    = '  ' . $line;
+            $map[ count( $body ) + 2 ] = $n + 1;
+        }
+        if ( ! $body ) {
+            return array( 'choices' => array(), 'errors' => array(), 'warnings' => array() );
+        }
+        $read = BAF_BFL_Reader::read( "bfl 1\nlibrary #pasted\n" . implode( "\n", $body ) . "\n" );
+        $fix  = function ( $list ) use ( $map ) {
+            $out = array();
+            foreach ( $list as $p ) {
+                $p['line'] = $map[ $p['line'] ] ?? $p['line'];
+                $out[]     = $p;
+            }
+            return $out;
+        };
+        return array(
+            'choices'  => $read['model']['choice_libraries']['pasted'] ?? array(),
+            'errors'   => $fix( $read['errors'] ),
+            'warnings' => $fix( $read['warnings'] ),
+        );
+    }
+
+    /**
      * Check BFL: the reader's line-numbered problems, then the model's
      * schema and rules (JSON pointer paths).
      *

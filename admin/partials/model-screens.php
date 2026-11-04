@@ -28,7 +28,8 @@ if ( ! function_exists( 'baf_model_screen_tabs' ) ) {
      */
     function baf_model_screens() {
         return array(
-            'rules' => __( 'Rules', 'bits-accessible-forms' ),
+            'rules'     => __( 'Rules', 'bits-accessible-forms' ),
+            'libraries' => __( 'Choice libraries', 'bits-accessible-forms' ),
         );
     }
 
@@ -183,6 +184,38 @@ if ( ! function_exists( 'baf_model_screen_tabs' ) ) {
             __( 'Add rule', 'bits-accessible-forms' )
         );
         echo "</div>\n";
+
+        // Choice libraries.
+        baf_model_panel_start(
+            'libraries',
+            __( 'Choice libraries', 'bits-accessible-forms' ),
+            __( 'A library is a list of choices that several questions can share. Change it here and every question that uses it changes too.', 'bits-accessible-forms' )
+        );
+        baf_model_table(
+            'libraries',
+            __( 'This form\'s libraries', 'bits-accessible-forms' ),
+            array( __( 'Name', 'bits-accessible-forms' ), __( 'Choices', 'bits-accessible-forms' ), __( 'Used by', 'bits-accessible-forms' ) ),
+            __( 'This form has no libraries of its own yet.', 'bits-accessible-forms' ),
+            __( 'Add library', 'bits-accessible-forms' )
+        );
+        ?>
+            <div class="baf-model-body" hidden>
+                <h3 id="baf-builtin-heading"><?php esc_html_e( 'BAF\'s built-in libraries', 'bits-accessible-forms' ); ?></h3>
+                <p id="baf-builtin-intro"><?php esc_html_e( 'Any question can use these by name. Copy one into this form when the form needs its own version, for example a shorter list of countries.', 'bits-accessible-forms' ); ?></p>
+                <table class="widefat striped baf-model-table" id="baf-builtin-table" aria-describedby="baf-builtin-intro">
+                    <caption><?php esc_html_e( 'Built-in libraries', 'bits-accessible-forms' ); ?></caption>
+                    <thead>
+                        <tr>
+                            <th scope="col"><?php esc_html_e( 'Library', 'bits-accessible-forms' ); ?></th>
+                            <th scope="col"><?php esc_html_e( 'Name in BFL', 'bits-accessible-forms' ); ?></th>
+                            <th scope="col"><?php esc_html_e( 'Actions', 'bits-accessible-forms' ); ?></th>
+                        </tr>
+                    </thead>
+                    <tbody id="baf-builtin-rows"></tbody>
+                </table>
+            </div>
+        </div>
+        <?php
     }
 
     /** The screens' dialogs, after the builder's page. */
@@ -248,5 +281,41 @@ if ( ! function_exists( 'baf_model_screen_tabs' ) ) {
             </div>
         <?php
         baf_model_dialog_end( __( 'Save rule', 'bits-accessible-forms' ) );
+
+        baf_model_dialog_start( 'baf-library-dialog', __( 'Edit library', 'bits-accessible-forms' ), 'wide' );
+        ?>
+            <div id="baf-library-dialog-status" class="baf-sr-only" role="status" aria-live="polite" aria-atomic="true"></div>
+            <p>
+                <label for="baf-library-name"><?php esc_html_e( 'Name', 'bits-accessible-forms' ); ?></label><br>
+                <input type="text" id="baf-library-name" class="regular-text code" autocomplete="off" spellcheck="false" aria-describedby="baf-library-name-help baf-library-name-error">
+                <span id="baf-library-name-help" class="description"><?php esc_html_e( 'Letters, digits and underscores, such as sizes. Questions name the library this way; renaming it here renames it in them too.', 'bits-accessible-forms' ); ?></span>
+                <span id="baf-library-name-error" class="baf-field-error" hidden></span>
+            </p>
+            <table class="widefat baf-model-table baf-choice-grid" id="baf-library-choices" aria-describedby="baf-library-choices-help">
+                <caption><?php esc_html_e( 'Choices', 'bits-accessible-forms' ); ?></caption>
+                <thead>
+                    <tr>
+                        <th scope="col"><?php esc_html_e( 'Number', 'bits-accessible-forms' ); ?></th>
+                        <th scope="col"><?php esc_html_e( 'Label', 'bits-accessible-forms' ); ?></th>
+                        <th scope="col"><?php esc_html_e( 'Value', 'bits-accessible-forms' ); ?></th>
+                        <th scope="col"><?php esc_html_e( 'Price', 'bits-accessible-forms' ); ?></th>
+                        <th scope="col"><?php esc_html_e( 'Points', 'bits-accessible-forms' ); ?></th>
+                        <th scope="col"><?php esc_html_e( 'Actions', 'bits-accessible-forms' ); ?></th>
+                    </tr>
+                </thead>
+                <tbody id="baf-library-choice-rows"></tbody>
+            </table>
+            <span id="baf-library-choices-help" class="description"><?php esc_html_e( 'The label is what people see; the value is what is stored. A value left empty is made from the label. Price and points may be left empty.', 'bits-accessible-forms' ); ?></span>
+            <p><button type="button" class="button" id="baf-library-add-choice"><?php esc_html_e( 'Add choice', 'bits-accessible-forms' ); ?></button></p>
+            <fieldset>
+                <legend><?php esc_html_e( 'Paste choices', 'bits-accessible-forms' ); ?></legend>
+                <label for="baf-library-paste"><?php esc_html_e( 'Choices, one a line', 'bits-accessible-forms' ); ?></label><br>
+                <textarea id="baf-library-paste" rows="5" class="large-text code" spellcheck="false" aria-describedby="baf-library-paste-help baf-library-paste-error"></textarea>
+                <span id="baf-library-paste-help" class="description"><?php esc_html_e( 'As BFL writes them: Small, or s|Small for a value and a label, or Small:10 for a price. The + at the start may be left off.', 'bits-accessible-forms' ); ?></span>
+                <span id="baf-library-paste-error" class="baf-field-error" hidden></span>
+                <br><button type="button" class="button" id="baf-library-paste-add"><?php esc_html_e( 'Add the pasted choices', 'bits-accessible-forms' ); ?></button>
+            </fieldset>
+        <?php
+        baf_model_dialog_end( __( 'Save library', 'bits-accessible-forms' ) );
     }
 }

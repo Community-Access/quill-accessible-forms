@@ -134,21 +134,7 @@ class BAF_Form_Builder {
         }
 
         // BAF's built-in libraries (countries, months...) are written out as choices.
-        BAF_Exporters::$library_resolver = function ( $name ) {
-            if ( ! class_exists( 'BAF_Choice_Libraries' ) || ! BAF_Choice_Libraries::exists( $name ) ) {
-                return array();
-            }
-            $out = array();
-            foreach ( (array) BAF_Choice_Libraries::get( $name ) as $key => $choice ) {
-                if ( is_array( $choice ) ) {
-                    $value = (string) ( $choice['value'] ?? $key );
-                    $out[] = array( 'value' => $value, 'label' => (string) ( $choice['label'] ?? $value ) );
-                } else {
-                    $out[] = array( 'value' => (string) $key, 'label' => (string) $choice );
-                }
-            }
-            return $out;
-        };
+        BAF_Exporters::$library_resolver = array( __CLASS__, 'builtin_library_choices' );
         $result = BAF_Exporters::export( $target, $form->get_model() );
         wp_send_json_success( array(
             'text'        => $result['text'],
@@ -156,6 +142,60 @@ class BAF_Form_Builder {
             'report'      => $result['report']->to_array(),
             'report_text' => $result['report']->to_text(),
         ) );
+    }
+
+    /**
+     * The choices of one of BAF's built-in libraries (countries, months...)
+     * as the model writes choices, or an empty list when there is none.
+     *
+     * @param string $name Library name.
+     * @return array Choices: array( value, label ).
+     */
+    public static function builtin_library_choices( $name ) {
+        if ( ! class_exists( 'BAF_Choice_Libraries' ) || ! BAF_Choice_Libraries::exists( $name ) ) {
+            return array();
+        }
+        $out = array();
+        foreach ( (array) BAF_Choice_Libraries::get( $name ) as $key => $choice ) {
+            if ( is_array( $choice ) ) {
+                $value = (string) ( $choice['value'] ?? $key );
+                $out[] = array( 'value' => $value, 'label' => (string) ( $choice['label'] ?? $value ) );
+            } else {
+                $out[] = array( 'value' => (string) $key, 'label' => (string) $choice );
+            }
+        }
+        return $out;
+    }
+
+    /**
+     * AJAX: pasted choice lines (POST lines), read by the BFL reader, for
+     * the Choice libraries screen.
+     */
+    public function ajax_read_choice_lines() {
+        check_ajax_referer( 'baf_builder_nonce', 'nonce' );
+
+        if ( ! current_user_can( 'manage_options' ) ) {
+            wp_send_json_error( array( 'message' => __( 'Permission denied.', 'bits-accessible-forms' ) ) );
+        }
+        wp_send_json_success( BAF_BFL_Service::read_choice_lines( wp_unslash( $_POST['lines'] ?? '' ) ) );
+    }
+
+    /**
+     * AJAX: the choices of a built-in library (POST name), so the Choice
+     * libraries screen can copy one into the form.
+     */
+    public function ajax_get_choice_library() {
+        check_ajax_referer( 'baf_builder_nonce', 'nonce' );
+
+        if ( ! current_user_can( 'manage_options' ) ) {
+            wp_send_json_error( array( 'message' => __( 'Permission denied.', 'bits-accessible-forms' ) ) );
+        }
+        $name    = sanitize_key( $_POST['name'] ?? '' );
+        $choices = self::builtin_library_choices( $name );
+        if ( ! $choices ) {
+            wp_send_json_error( array( 'message' => __( 'There is no built-in library by that name.', 'bits-accessible-forms' ) ) );
+        }
+        wp_send_json_success( array( 'name' => $name, 'choices' => $choices ) );
     }
 
     /**
