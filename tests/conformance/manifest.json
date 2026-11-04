@@ -1,0 +1,37 @@
+{
+  "about": "Every case in the BAF form model conformance suite. Paths are relative to this file. See README.md for what each kind asks of a reader.",
+  "model_version": 1,
+  "bfl_version": 1,
+  "suites": [
+    { "kind": "schema", "file": "../../schema/form.schema.json" },
+    { "kind": "expressions", "file": "expressions/cases.json" },
+    { "kind": "valid-models", "files": [
+      "models/valid/all-field-types.json",
+      "models/valid/logic-and-layout.json",
+      "models/valid/quiz-and-translations.json",
+      "bfl/canonical/edge-cases.json"
+    ] },
+    { "kind": "invalid-models", "file": "models/invalid/cases.json" },
+    { "kind": "behaviour", "file": "models/behaviour.json" },
+    { "kind": "bfl-canonical", "cases": [
+      { "bfl": "bfl/canonical/all-field-types.bfl", "model": "models/valid/all-field-types.json" },
+      { "bfl": "bfl/canonical/logic-and-layout.bfl", "model": "models/valid/logic-and-layout.json" },
+      { "bfl": "bfl/canonical/quiz-and-translations.bfl", "model": "models/valid/quiz-and-translations.json" },
+      { "bfl": "bfl/canonical/edge-cases.bfl", "model": "bfl/canonical/edge-cases.json" }
+    ] },
+    { "kind": "bfl-legacy", "cases": [
+      { "bfl": "bfl/legacy/choices.bfl", "model": "bfl/legacy/choices.json", "canonical": "bfl/legacy/choices.canonical.bfl" },
+      { "bfl": "bfl/legacy/compiler-output.bfl", "model": "bfl/legacy/compiler-output.json", "canonical": "bfl/legacy/compiler-output.canonical.bfl" },
+      { "bfl": "bfl/legacy/conditions.bfl", "model": "bfl/legacy/conditions.json", "canonical": "bfl/legacy/conditions.canonical.bfl" },
+      { "bfl": "bfl/legacy/modifiers-and-blocks.bfl", "model": "bfl/legacy/modifiers-and-blocks.json", "canonical": "bfl/legacy/modifiers-and-blocks.canonical.bfl" },
+      { "bfl": "bfl/legacy/modifiers.bfl", "model": "bfl/legacy/modifiers.json", "canonical": "bfl/legacy/modifiers.canonical.bfl" },
+      { "bfl": "bfl/legacy/pages-sections-columns.bfl", "model": "bfl/legacy/pages-sections-columns.json", "canonical": "bfl/legacy/pages-sections-columns.canonical.bfl" }
+    ] },
+    { "kind": "bfl-errors", "file": "bfl/errors.json" },
+    { "kind": "builder", "baf_only": true, "cases": [
+      { "stored": "builder/saved-before-the-model.stored.json", "model": "builder/saved-before-the-model.model.json", "report": "builder/saved-before-the-model.report.json" },
+      { "stored": "builder/logic-and-layout.stored.json", "model": "models/valid/logic-and-layout.json" }
+    ] },
+    { "kind": "imports", "baf_only": true, "cases": [] }
+  ]
+}
