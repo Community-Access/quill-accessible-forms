@@ -117,6 +117,15 @@ class BAF_Admin {
         // Settings
         add_submenu_page(
             'baf-forms',
+            __( 'Import and Export Forms', 'bits-accessible-forms' ),
+            __( 'Import and Export', 'bits-accessible-forms' ),
+            'manage_options',
+            'baf-import-export',
+            array( $this, 'render_import_export_page' )
+        );
+
+        add_submenu_page(
+            'baf-forms',
             __( 'Settings', 'bits-accessible-forms' ),
             __( 'Settings', 'bits-accessible-forms' ),
             'manage_options',
@@ -304,6 +313,54 @@ class BAF_Admin {
             ) );
         }
 
+        // Import and Export Forms
+        if ( strpos( $hook, 'baf-import-export' ) !== false ) {
+            wp_enqueue_script(
+                'baf-import-export',
+                BAF_PLUGIN_URL . 'admin/js/baf-import-export.js',
+                array(),
+                BAF_VERSION,
+                true
+            );
+            wp_localize_script( 'baf-import-export', 'bafImportExport', array(
+                'ajaxUrl' => admin_url( 'admin-ajax.php' ),
+                'nonce'   => wp_create_nonce( 'baf_builder_nonce' ),
+                'i18n'    => array(
+                    'notCarried'      => __( 'Not carried over', 'bits-accessible-forms' ),
+                    'changed'         => __( 'Changed', 'bits-accessible-forms' ),
+                    'problems'        => __( 'Problems', 'bits-accessible-forms' ),
+                    'toCheck'         => __( 'To check', 'bits-accessible-forms' ),
+                    'notCarriedCount' => __( 'not carried over', 'bits-accessible-forms' ),
+                    'changedCount'    => __( 'changed', 'bits-accessible-forms' ),
+                    'problemsCount'   => __( 'problems', 'bits-accessible-forms' ),
+                    'toCheckCount'    => __( 'to check', 'bits-accessible-forms' ),
+                    'everything'      => __( 'Everything came across.', 'bits-accessible-forms' ),
+                    'fileRead'        => __( 'The file is in the text box. Check it, then choose Import.', 'bits-accessible-forms' ),
+                    'fileUnreadable'  => __( 'That file could not be read.', 'bits-accessible-forms' ),
+                    'needExport'      => __( 'Paste the exported form, or choose its file.', 'bits-accessible-forms' ),
+                    'importing'       => __( 'Importing...', 'bits-accessible-forms' ),
+                    'failed'          => __( 'The import did not work.', 'bits-accessible-forms' ),
+                    'importReport'    => __( 'Import report', 'bits-accessible-forms' ),
+                    /* translators: 1: number of items, 2: form builder. */
+                    'imported'        => __( 'Imported %1$d items from %2$s as a draft form.', 'bits-accessible-forms' ),
+                    'openForm'        => __( 'Open the new form in the builder', 'bits-accessible-forms' ),
+                    'reportFollows'   => __( 'The report follows the Import button.', 'bits-accessible-forms' ),
+                    'exporting'       => __( 'Exporting...', 'bits-accessible-forms' ),
+                    'exportFailed'    => __( 'The export did not work.', 'bits-accessible-forms' ),
+                    'exportReport'    => __( 'Export report', 'bits-accessible-forms' ),
+                    /* translators: 1: number of items, 2: form builder. */
+                    'exported'        => __( 'Exported %1$d items to %2$s.', 'bits-accessible-forms' ),
+                    'exportFollows'   => __( 'The report and the export follow the Export button.', 'bits-accessible-forms' ),
+                    /* translators: %s: file name. */
+                    'download'        => __( 'Download %s', 'bits-accessible-forms' ),
+                    /* translators: %s: file name. */
+                    'downloaded'      => __( 'Downloading %s.', 'bits-accessible-forms' ),
+                    'copied'          => __( 'The export is copied.', 'bits-accessible-forms' ),
+                    'copyFailed'      => __( 'Copying was refused; the export is selected for you to copy.', 'bits-accessible-forms' ),
+                ),
+            ) );
+        }
+
         // CSV import wizard scripts
         if ( strpos( $hook, 'baf-csv-import' ) !== false ) {
             wp_enqueue_script(
@@ -382,5 +439,12 @@ class BAF_Admin {
      */
     public function render_csv_import_page() {
         include BAF_PLUGIN_DIR . 'admin/partials/csv-import-wizard.php';
+    }
+
+    /**
+     * Render the Import and Export Forms page
+     */
+    public function render_import_export_page() {
+        include BAF_PLUGIN_DIR . 'admin/partials/import-export.php';
     }
 }

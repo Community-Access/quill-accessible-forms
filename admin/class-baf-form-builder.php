@@ -106,6 +106,53 @@ class BAF_Form_Builder {
         }
         wp_send_json_success( array(
             'form_id'     => $id,
+            'title'       => $form->title,
+            'edit_url'    => admin_url( 'admin.php?page=baf-form-builder&form_id=' . absint( $id ) ),
+            'report'      => $result['report']->to_array(),
+            'report_text' => $result['report']->to_text(),
+        ) );
+    }
+
+    /**
+     * AJAX: export a form to another builder's format, with its report.
+     */
+    public function ajax_export_form() {
+        check_ajax_referer( 'baf_builder_nonce', 'nonce' );
+
+        if ( ! current_user_can( 'manage_options' ) ) {
+            wp_send_json_error( array( 'message' => __( 'Permission denied.', 'bits-accessible-forms' ) ) );
+        }
+
+        require_once BAF_PLUGIN_DIR . 'includes/model/class-baf-exporters.php';
+        $target = sanitize_key( $_POST['target'] ?? '' );
+        if ( ! isset( BAF_Exporters::TARGETS[ $target ] ) ) {
+            wp_send_json_error( array( 'message' => __( 'Choose what to export the form to.', 'bits-accessible-forms' ) ) );
+        }
+        $form = new BAF_Form( isset( $_POST['form_id'] ) ? absint( $_POST['form_id'] ) : 0 );
+        if ( ! $form->id ) {
+            wp_send_json_error( array( 'message' => __( 'Form not found.', 'bits-accessible-forms' ) ) );
+        }
+
+        // BAF's built-in libraries (countries, months...) are written out as choices.
+        BAF_Exporters::$library_resolver = function ( $name ) {
+            if ( ! class_exists( 'BAF_Choice_Libraries' ) || ! BAF_Choice_Libraries::exists( $name ) ) {
+                return array();
+            }
+            $out = array();
+            foreach ( (array) BAF_Choice_Libraries::get( $name ) as $key => $choice ) {
+                if ( is_array( $choice ) ) {
+                    $value = (string) ( $choice['value'] ?? $key );
+                    $out[] = array( 'value' => $value, 'label' => (string) ( $choice['label'] ?? $value ) );
+                } else {
+                    $out[] = array( 'value' => (string) $key, 'label' => (string) $choice );
+                }
+            }
+            return $out;
+        };
+        $result = BAF_Exporters::export( $target, $form->get_model() );
+        wp_send_json_success( array(
+            'text'        => $result['text'],
+            'filename'    => $result['filename'],
             'report'      => $result['report']->to_array(),
             'report_text' => $result['report']->to_text(),
         ) );

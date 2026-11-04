@@ -7,8 +7,9 @@ at all, and what to check. Nothing is dropped without being listed.
 
 - **Code:** `includes/model/class-baf-importers.php`
   (`BAF_Importers::import( $source, $text )`).
-- **On the site:** the AJAX action `baf_import_form` saves the result as a
-  draft form and returns the report, both as data and as plain sentences.
+- **On the site:** BAF Forms, Import and Export (below). The AJAX action
+  `baf_import_form` behind it saves the result as a draft form and returns
+  the report, both as data and as plain sentences, and the builder link.
 - **Tests:** `tests/conformance/imports/`, one realistic export per source,
   with the model and report it must give.
 
@@ -117,9 +118,60 @@ at all, and what to check. Nothing is dropped without being listed.
   `forms.body.readonly` scope; BAF does not store it. **Not carried:** "submit
   form" and "restart form" branching, and Google's own email collection.
 
+## The Import and Export screen
+
+BAF Forms, Import and Export (`admin/partials/import-export.php`,
+`admin/js/baf-import-export.js`) does both directions, from the keyboard
+alone:
+
+- **Import:** a group of radio buttons for the builder, each with a line on
+  how to get its export; a labelled text box for the export, and a file
+  chooser that puts the file's text in the box to check first; for Google
+  Forms, the form's ID and an access token instead (used once, not stored).
+  An empty box is an error joined to the box (`aria-describedby`,
+  `aria-invalid`), and focus returns to it.
+- **Export:** a form, a builder, Export; then the export in a read-only
+  text box, with Download and Copy buttons.
+- **The result** is said in the section's status region ("Imported 18 items
+  from Gravity Forms as a draft form. 2 changed, 3 not carried over. The
+  report follows the Import button.") and the report follows as a heading,
+  a summary and a list for each kind of entry, with a link to the new form.
+
+`tests/unit/Model/AccessibleScreensTest.php` checks that every control has a
+label, every `aria-describedby` names something that exists, and the
+results have status regions and headings.
+
+## Exports
+
+`includes/model/class-baf-exporters.php`
+(`BAF_Exporters::export( $target, $model )`) writes a model in each
+builder's own format, with a report in the same shape as an import report
+(its `direction` is `export`). The AJAX action is `baf_export_form`.
+
+| Target | What it writes | What it keeps |
+| --- | --- | --- |
+| `gravity-forms` | the Forms, Import/Export JSON | fields, choices and prices, help, placeholders, required, defaults, masks, page breaks and page titles, conditions with one list of tests (all or any), calculations of `+ - * /` |
+| `wpforms` | the Tools, Export JSON | fields, choices, help, placeholders, required, defaults, page breaks, conditions as groups of tests (an "or" of "and"s) |
+| `contact-form-7` | the Form tab's template | fields with their labels, choices (`"Label\|value"`), required, placeholders, sections and page titles as headings |
+| `ninja-forms` | the `.nff` JSON | fields, choices and prices (`calc`), help, placeholders, required, defaults, masks |
+| `google-forms` | a `forms.get` resource | questions, choices (by label: Google keeps no separate value), required, page breaks, scales, quiz answers and points |
+
+Every export reads back through the importer to the same questions and
+choices, and Gravity Forms and WPForms conditions to the same sentence
+(`tests/unit/Model/ExportersTest.php`). `tests/conformance/exports/` holds
+one export per builder byte for byte, with its report (BAF only).
+
+What none of them can hold is reported, never silently left out: rules,
+quiz outcomes, translations, notifications, smart defaults, cascades,
+repeaters, conditions the builder cannot say (dates, field-to-field, mixed
+groups), calculations beyond arithmetic, and field types the builder lacks.
+A field whose choices come from BAF's built-in libraries gets them written
+out on the site (the plugin supplies them); without the plugin it is
+reported.
+
 ## Not done yet
 
-- **Exports** to these builders' formats.
 - **SurveyJS, XLSForm and plain HTML forms**, which 17a.15 places in QUILL
   (they run on the computer).
-- **A screen in BAF's admin** for importing; the AJAX action is ready for one.
+- **Rules as conditions:** a show or hide rule could be folded into its
+  targets' conditions before exporting; today each rule is reported.
