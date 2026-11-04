@@ -1,0 +1,144 @@
+{
+    "version": 1,
+    "title": "Contact us",
+    "settings": {
+        "submit_label": "Send",
+        "enable_honeypot": true,
+        "ajax_submission": true
+    },
+    "pages": [
+        {
+            "id": "page_1",
+            "props": {
+                "next_button_text": "Continue"
+            },
+            "items": [
+                {
+                    "id": "field_0",
+                    "type": "name",
+                    "label": "Name",
+                    "required": true,
+                    "props": {
+                        "format": "first_last"
+                    }
+                },
+                {
+                    "id": "field_1",
+                    "type": "email",
+                    "label": "Email",
+                    "help": "We reply within a day.",
+                    "required": true
+                },
+                {
+                    "id": "field_2",
+                    "type": "select",
+                    "label": "Topic",
+                    "choices": [
+                        {
+                            "value": "Support",
+                            "label": "Support"
+                        },
+                        {
+                            "value": "Sales",
+                            "label": "Sales"
+                        },
+                        {
+                            "value": "press",
+                            "label": "Press"
+                        }
+                    ]
+                },
+                {
+                    "id": "field_3",
+                    "type": "text",
+                    "label": "Order number",
+                    "mask": "AA-9999",
+                    "when": "#field_2 is \"Support\""
+                }
+            ]
+        },
+        {
+            "id": "page_2",
+            "title": "Details",
+            "items": [
+                {
+                    "id": "field_5",
+                    "type": "textarea",
+                    "label": "Message",
+                    "placeholder": "How can we help?",
+                    "required": true,
+                    "validation": {
+                        "max_length": 500
+                    }
+                },
+                {
+                    "id": "field_6",
+                    "type": "checkbox",
+                    "label": "Contact me by",
+                    "choices": [
+                        {
+                            "value": "Email",
+                            "label": "Email",
+                            "selected": true
+                        },
+                        {
+                            "value": "Phone",
+                            "label": "Phone"
+                        }
+                    ]
+                },
+                {
+                    "id": "field_7",
+                    "type": "phone",
+                    "label": "Phone",
+                    "when": "#field_6 is \"Phone\" or #field_2 is \"Sales\" and #field_1 is not empty"
+                },
+                {
+                    "id": "field_8",
+                    "type": "section",
+                    "label": "Optional",
+                    "items": [
+                        {
+                            "id": "field_9",
+                            "type": "nps",
+                            "label": "Would you recommend us?"
+                        },
+                        {
+                            "id": "field_10",
+                            "type": "consent",
+                            "label": "Privacy",
+                            "required": true,
+                            "props": {
+                                "consent_text": "I consent to having this website store my submitted information."
+                            }
+                        }
+                    ]
+                }
+            ]
+        }
+    ],
+    "confirmations": [
+        {
+            "id": "confirmation_1",
+            "type": "message",
+            "message": "<p>Thanks, we will be in touch.</p>"
+        },
+        {
+            "id": "confirmation_2",
+            "type": "page",
+            "page_id": 77,
+            "when": "#field_2 is \"press\""
+        }
+    ],
+    "notifications": [
+        {
+            "id": "notification_1",
+            "to": "{admin_email}",
+            "from_name": "Website",
+            "from_email": "{admin_email}",
+            "reply_to": "{field_1}",
+            "subject": "New message",
+            "message": "{all_fields}"
+        }
+    ]
+}

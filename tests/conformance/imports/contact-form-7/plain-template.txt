@@ -1,0 +1,10 @@
+<p>Your name (required)<br />
+    [text* your-name] </p>
+
+<p>Your email (required)<br />
+    [email* your-email] </p>
+
+<p>Pick one<br />
+    [radio pick default:1 "Tea" "Coffee"] </p>
+
+[submit "Send"]

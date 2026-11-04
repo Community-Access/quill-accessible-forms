@@ -1,0 +1,24 @@
+{
+  "formId": "1FAIpQLSexampleFormId",
+  "info": { "title": "Braille quiz", "documentTitle": "Braille quiz (copy)", "description": "Ten minutes, no pressure." },
+  "settings": { "quizSettings": { "isQuiz": true }, "emailCollectionType": "VERIFIED" },
+  "revisionId": "00000042",
+  "responderUri": "https://docs.google.com/forms/d/e/1FAIpQLSexampleFormId/viewform",
+  "items": [
+    { "itemId": "11aa", "title": "Your name", "questionItem": { "question": { "questionId": "2b3c", "required": true, "textQuestion": {} } } },
+    { "itemId": "22bb", "title": "Have you read braille before?", "questionItem": { "question": { "questionId": "3c4d", "required": true, "choiceQuestion": { "type": "RADIO", "options": [ { "value": "Yes" }, { "value": "No", "goToSectionId": "77gg" }, { "isOther": true } ] } } } },
+    { "itemId": "33cc", "title": "How many dots are in a braille cell?", "questionItem": { "question": { "questionId": "4d5e", "required": true, "grading": { "pointValue": 2, "correctAnswers": { "answers": [ { "value": "Six" } ] }, "whenRight": { "text": "Right." }, "whenWrong": { "text": "Not quite." } }, "choiceQuestion": { "type": "RADIO", "options": [ { "value": "Four" }, { "value": "Six" }, { "value": "Eight" } ], "shuffle": true } } } },
+    { "itemId": "44dd", "title": "Which are braille codes?", "questionItem": { "question": { "questionId": "5e6f", "grading": { "pointValue": 2, "correctAnswers": { "answers": [ { "value": "UEB" }, { "value": "Nemeth" } ] }, "generalFeedback": { "text": "UEB and Nemeth are both braille codes." } }, "choiceQuestion": { "type": "CHECKBOX", "options": [ { "value": "UEB" }, { "value": "Nemeth" }, { "value": "Morse" } ] } } } },
+    { "itemId": "55ee", "title": "Rate these", "description": "One per row", "questionGroupItem": { "questions": [ { "questionId": "6f70", "required": true, "rowQuestion": { "title": "Reading speed" } }, { "questionId": "7081", "rowQuestion": { "title": "Accuracy" } } ], "grid": { "columns": { "type": "RADIO", "options": [ { "value": "Low" }, { "value": "Medium" }, { "value": "High" } ] } } } },
+    { "itemId": "66ff", "title": "How confident are you?", "questionItem": { "question": { "questionId": "8192", "scaleQuestion": { "low": 1, "high": 5, "lowLabel": "Not at all", "highLabel": "Very" } } } },
+    { "itemId": "6a6a", "title": "How likely are you to recommend this quiz?", "questionItem": { "question": { "questionId": "8a8a", "scaleQuestion": { "low": 0, "high": 10 } } } },
+    { "itemId": "77gg", "title": "About you", "description": "A few last questions.", "pageBreakItem": {} },
+    { "itemId": "88hh", "title": "When did you start learning?", "questionItem": { "question": { "questionId": "92a3", "dateQuestion": { "includeYear": true } } } },
+    { "itemId": "99ii", "title": "Practice time per day", "questionItem": { "question": { "questionId": "a3b4", "timeQuestion": { "duration": true } } } },
+    { "itemId": "aajj", "title": "A braille cell", "imageItem": { "image": { "contentUri": "https://lh3.example.com/cell.png", "altText": "" } } },
+    { "itemId": "bbkk", "title": "Thanks!", "description": "That is the end.", "textItem": {} },
+    { "itemId": "cckk", "title": "Rate the quiz", "questionItem": { "question": { "questionId": "b4c5", "ratingQuestion": { "ratingScaleLevel": 5, "iconType": "HEART" } } } },
+    { "itemId": "ddll", "title": "Upload a photo of your work", "questionItem": { "question": { "questionId": "c5d6", "fileUploadQuestion": { "folderId": "abc", "maxFiles": 1, "maxFileSize": "10485760" } } } },
+    { "itemId": "eemm", "title": "Comments", "questionItem": { "question": { "questionId": "d6e7", "textQuestion": { "paragraph": true } } } }
+  ]
+}

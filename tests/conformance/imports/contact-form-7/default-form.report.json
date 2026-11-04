@@ -1,0 +1,51 @@
+{
+    "source": "Contact Form 7",
+    "carried": 13,
+    "entries": [
+        {
+            "level": "changed",
+            "where": "[text]",
+            "message": "Its name \"your-name\" became the ID \"your_name\"."
+        },
+        {
+            "level": "changed",
+            "where": "[email]",
+            "message": "Its name \"your-email\" became the ID \"your_email\"."
+        },
+        {
+            "level": "changed",
+            "where": "[text]",
+            "message": "Its name \"your-subject\" became the ID \"your_subject\"."
+        },
+        {
+            "level": "changed",
+            "where": "[textarea]",
+            "message": "Its name \"your-message\" became the ID \"your_message\"."
+        },
+        {
+            "level": "dropped",
+            "where": "[quiz]",
+            "message": "Contact Form 7 asks one of 2 quiz questions at random; only the first was kept."
+        },
+        {
+            "level": "dropped",
+            "where": "[recaptcha]",
+            "message": "BAF has no field like Contact Form 7's [recaptcha]."
+        },
+        {
+            "level": "dropped",
+            "where": "message mail_sent_ng",
+            "message": "BAF writes its own messages; \"There was an error trying to send your message.\" was not kept."
+        },
+        {
+            "level": "note",
+            "where": "field attachment",
+            "message": "It has no label, so a screen reader can only announce its type. Give it one before you publish the form."
+        },
+        {
+            "level": "note",
+            "where": "field terms",
+            "message": "It has no label, so a screen reader can only announce its type. Give it one before you publish the form."
+        }
+    ]
+}

@@ -28,6 +28,9 @@ class BAF_Import_Report {
     /** The result does not pass the model's own checks. */
     const ERROR = 'error';
 
+    /** Carried over, but worth checking (a field with no label, say). */
+    const NOTE = 'note';
+
     /** @var string Where the form came from. */
     public $source;
 
@@ -77,6 +80,16 @@ class BAF_Import_Report {
     }
 
     /**
+     * Record something to check.
+     *
+     * @param string $where   Where.
+     * @param string $message What to check.
+     */
+    public function note( $where, $message ) {
+        $this->entries[] = array( 'level' => self::NOTE, 'where' => $where, 'message' => $message );
+    }
+
+    /**
      * Entries of one level.
      *
      * @param string $level Level.
@@ -121,7 +134,7 @@ class BAF_Import_Report {
         if ( ! $this->entries ) {
             $lines[] = 'Everything came across.';
         }
-        $words = array( self::DROPPED => 'Not carried over', self::CHANGED => 'Changed', self::ERROR => 'Problem' );
+        $words = array( self::DROPPED => 'Not carried over', self::CHANGED => 'Changed', self::ERROR => 'Problem', self::NOTE => 'Check' );
         foreach ( $this->entries as $e ) {
             $lines[] = $words[ $e['level'] ] . ': ' . $e['where'] . ': ' . $e['message'];
         }

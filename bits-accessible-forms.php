@@ -344,6 +344,7 @@ final class BITS_Accessible_Forms {
         $this->loader->add_action( 'wp_ajax_baf_compile_bfl', $this->form_builder, 'ajax_compile_bfl' );
         $this->loader->add_action( 'wp_ajax_baf_get_form_model', $this->form_builder, 'ajax_get_form_model' );
         $this->loader->add_action( 'wp_ajax_baf_save_form_model', $this->form_builder, 'ajax_save_form_model' );
+        $this->loader->add_action( 'wp_ajax_baf_import_form', $this->form_builder, 'ajax_import_form' );
         $this->loader->add_action( 'wp_ajax_baf_import_csv', $this->form_builder, 'ajax_import_csv' );
         
         // Settings API registration

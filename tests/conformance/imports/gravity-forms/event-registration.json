@@ -1,0 +1,44 @@
+{
+  "0": {
+    "title": "Event registration",
+    "description": "Sign up for the accessibility summit.",
+    "labelPlacement": "top_label",
+    "button": { "type": "text", "text": "Register" },
+    "enableHoneypot": true,
+    "limitEntries": true,
+    "limitEntriesCount": "200",
+    "limitEntriesMessage": "Registration is full.",
+    "pagination": { "type": "steps", "pages": [ "You", "Your visit" ] },
+    "fields": [
+      { "type": "name", "id": 1, "label": "Name", "isRequired": true, "inputs": [ { "id": "1.3", "label": "First" }, { "id": "1.6", "label": "Last" } ] },
+      { "type": "email", "id": 2, "label": "Email", "isRequired": true, "noDuplicates": true, "description": "We send your ticket here." },
+      { "type": "phone", "id": 3, "label": "Phone", "phoneFormat": "standard", "inputMask": true, "inputMaskValue": "(999) 999-9999" },
+      { "type": "radio", "id": 4, "label": "Attending as", "isRequired": true, "choices": [ { "text": "Delegate", "value": "delegate", "isSelected": true }, { "text": "Speaker", "value": "speaker" }, { "text": "Exhibitor", "value": "exhibitor" } ] },
+      { "type": "text", "id": 5, "label": "Talk title", "maxLength": "120", "conditionalLogic": { "actionType": "show", "logicType": "all", "rules": [ { "fieldId": "4", "operator": "is", "value": "speaker" } ] } },
+      { "type": "section", "id": 6, "label": "Access needs", "description": "Tell us what would help.", "conditionalLogic": { "actionType": "hide", "logicType": "any", "rules": [ { "fieldId": "4", "operator": "is", "value": "exhibitor" } ] } },
+      { "type": "checkbox", "id": 7, "label": "Formats", "choices": [ { "text": "Braille", "value": "braille" }, { "text": "Large print", "value": "large_print" } ], "inputs": [ { "id": "7.1", "label": "Braille" }, { "id": "7.2", "label": "Large print" } ] },
+      { "type": "textarea", "id": 8, "label": "Anything else", "placeholder": "Guide dog, quiet room..." },
+      { "type": "page", "id": 9, "nextButton": { "type": "text", "text": "Next" }, "conditionalLogic": null },
+      { "type": "date", "id": 10, "label": "Arrival", "defaultValue": "{date_mdy}" },
+      { "type": "number", "id": 11, "label": "Nights", "rangeMin": "1", "rangeMax": "5" },
+      { "type": "number", "id": 12, "label": "Hotel total", "enableCalculation": true, "calculationFormula": "{Nights:11} * 140" },
+      { "type": "product", "id": 13, "label": "Workshop", "inputType": "radio", "choices": [ { "text": "None", "value": "none", "price": "$0.00" }, { "text": "Screen readers 101", "value": "sr101", "price": "$45.00" } ] },
+      { "type": "fileupload", "id": 14, "label": "Photo ID", "allowedExtensions": "jpg, png, pdf", "maxFileSize": "5" },
+      { "type": "html", "id": 15, "label": "HTML Block", "content": "<p>Questions? Call us.</p>" },
+      { "type": "list", "id": 16, "label": "Guests" },
+      { "type": "consent", "id": 17, "label": "Consent", "isRequired": true, "checkboxLabel": "I agree to the code of conduct" },
+      { "type": "text", "id": 18, "label": "Referral code", "defaultValue": "{embed_url}" },
+      { "type": "coupon", "id": 19, "label": "Coupon" },
+      { "type": "text", "id": 20, "label": "Badge name", "conditionalLogic": { "actionType": "show", "logicType": "all", "rules": [ { "fieldId": "99", "operator": "is", "value": "x" }, { "fieldId": "4", "operator": "isnot", "value": "" } ] } }
+    ],
+    "confirmations": {
+      "5f1": { "id": "5f1", "name": "Default", "isDefault": true, "type": "message", "message": "You are registered." },
+      "5f2": { "id": "5f2", "name": "Speakers", "type": "redirect", "url": "https://example.org/speakers", "conditionalLogic": { "actionType": "show", "logicType": "all", "rules": [ { "fieldId": "4", "operator": "is", "value": "speaker" } ] } }
+    },
+    "notifications": {
+      "6a1": { "id": "6a1", "name": "Admin", "isActive": true, "to": "events@example.org", "toType": "email", "subject": "New registration", "message": "{all_fields}", "fromName": "Summit", "from": "noreply@example.org" },
+      "6a2": { "id": "6a2", "name": "By role", "isActive": false, "toType": "routing", "subject": "Routed" }
+    }
+  },
+  "version": "2.8.0"
+}

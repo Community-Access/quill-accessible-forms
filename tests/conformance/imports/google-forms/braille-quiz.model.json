@@ -1,0 +1,196 @@
+{
+    "version": 1,
+    "title": "Braille quiz",
+    "description": "Ten minutes, no pressure.",
+    "pages": [
+        {
+            "id": "page_1",
+            "items": [
+                {
+                    "id": "q_2b3c",
+                    "type": "text",
+                    "label": "Your name",
+                    "required": true
+                },
+                {
+                    "id": "q_3c4d",
+                    "type": "radio",
+                    "label": "Have you read braille before?",
+                    "required": true,
+                    "choices": [
+                        {
+                            "value": "Yes",
+                            "label": "Yes"
+                        },
+                        {
+                            "value": "No",
+                            "label": "No"
+                        }
+                    ],
+                    "props": {
+                        "allow_other": true
+                    }
+                },
+                {
+                    "id": "q_4d5e",
+                    "type": "radio",
+                    "label": "How many dots are in a braille cell?",
+                    "required": true,
+                    "choices": [
+                        {
+                            "value": "Four",
+                            "label": "Four"
+                        },
+                        {
+                            "value": "Six",
+                            "label": "Six"
+                        },
+                        {
+                            "value": "Eight",
+                            "label": "Eight"
+                        }
+                    ],
+                    "scoring": {
+                        "correct": [
+                            "Six"
+                        ],
+                        "points": 2,
+                        "feedback_correct": "Right.",
+                        "feedback_incorrect": "Not quite."
+                    },
+                    "props": {
+                        "randomize": true
+                    }
+                },
+                {
+                    "id": "q_5e6f",
+                    "type": "checkbox",
+                    "label": "Which are braille codes?",
+                    "choices": [
+                        {
+                            "value": "UEB",
+                            "label": "UEB"
+                        },
+                        {
+                            "value": "Nemeth",
+                            "label": "Nemeth"
+                        },
+                        {
+                            "value": "Morse",
+                            "label": "Morse"
+                        }
+                    ],
+                    "scoring": {
+                        "correct": [
+                            "UEB",
+                            "Nemeth"
+                        ],
+                        "points": 2,
+                        "explanation": "UEB and Nemeth are both braille codes."
+                    }
+                },
+                {
+                    "id": "q_55ee",
+                    "type": "matrix",
+                    "label": "Rate these",
+                    "help": "One per row",
+                    "required": true,
+                    "props": {
+                        "rows": [
+                            "Reading speed",
+                            "Accuracy"
+                        ],
+                        "columns": [
+                            "Low",
+                            "Medium",
+                            "High"
+                        ],
+                        "input_type": "radio"
+                    }
+                },
+                {
+                    "id": "q_8192",
+                    "type": "rating",
+                    "label": "How confident are you?",
+                    "props": {
+                        "max_rating": 5,
+                        "icon_type": "circle",
+                        "low_label": "Not at all",
+                        "high_label": "Very"
+                    }
+                },
+                {
+                    "id": "q_8a8a",
+                    "type": "nps",
+                    "label": "How likely are you to recommend this quiz?"
+                }
+            ]
+        },
+        {
+            "id": "page_2",
+            "title": "About you",
+            "description": "A few last questions.",
+            "items": [
+                {
+                    "id": "q_92a3",
+                    "type": "date",
+                    "label": "When did you start learning?"
+                },
+                {
+                    "id": "q_a3b4",
+                    "type": "time",
+                    "label": "Practice time per day"
+                },
+                {
+                    "id": "item_aajj",
+                    "type": "html",
+                    "props": {
+                        "content": "<h3>A braille cell</h3><img src=\"https://lh3.example.com/cell.png\" alt=\"\">"
+                    }
+                },
+                {
+                    "id": "item_bbkk",
+                    "type": "html",
+                    "props": {
+                        "content": "<h3>Thanks!</h3><p>That is the end.</p>"
+                    }
+                },
+                {
+                    "id": "q_b4c5",
+                    "type": "rating",
+                    "label": "Rate the quiz",
+                    "props": {
+                        "max_rating": 5,
+                        "icon_type": "heart"
+                    }
+                },
+                {
+                    "id": "q_c5d6",
+                    "type": "fileupload",
+                    "label": "Upload a photo of your work",
+                    "props": {
+                        "max_files": 1,
+                        "max_size": 10
+                    }
+                },
+                {
+                    "id": "q_d6e7",
+                    "type": "textarea",
+                    "label": "Comments"
+                }
+            ]
+        }
+    ],
+    "rules": [
+        {
+            "action": "skip_to",
+            "targets": [
+                "page_2"
+            ],
+            "when": "#q_3c4d is \"No\""
+        }
+    ],
+    "scoring": {
+        "show_score": true
+    }
+}

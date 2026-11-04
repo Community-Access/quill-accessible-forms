@@ -1,0 +1,30 @@
+{
+  "settings": {
+    "title": "Quote request",
+    "show_title": 1,
+    "calculations": [ { "name": "estimate", "eq": "{field:rooms_1} * 120 + {field:extras_2}" }, { "name": "fancy", "eq": "sqrt({field:rooms_1})" } ],
+    "conditions": [ { "when": [ { "key": "rooms_1", "comparator": "greater", "value": "3" } ], "then": [ { "key": "notes", "trigger": "show_field" } ] } ]
+  },
+  "fields": [
+    { "type": "firstname", "label": "First name", "key": "firstname", "required": 1, "order": 1 },
+    { "type": "lastname", "label": "Last name", "key": "lastname", "required": "1", "order": 2 },
+    { "type": "email", "label": "Email", "key": "email", "required": 1, "order": 3, "default": "user_email" },
+    { "type": "phone", "label": "Phone", "key": "phone", "order": 4, "mask": "us-phone" },
+    { "type": "number", "label": "Rooms", "key": "rooms_1", "order": 5, "num_min": "1", "num_max": "12", "num_step": "1", "default": "2" },
+    { "type": "listcheckbox", "label": "Extras", "key": "extras_2", "order": 6, "options": [ { "label": "Windows", "value": "windows", "calc": "40" }, { "label": "Carpets", "value": "carpets", "calc": "60", "selected": 1 } ] },
+    { "type": "listcountry", "label": "Country", "key": "country", "order": 7 },
+    { "type": "textarea", "label": "Notes", "key": "notes", "order": 8, "input_limit": "300", "input_limit_type": "characters", "desc_text": "<p>Anything we should know?</p>" },
+    { "type": "checkbox", "label": "Email me a copy", "key": "copy", "order": 9 },
+    { "type": "hr", "label": "Divider", "key": "hr", "order": 10 },
+    { "type": "starrating", "label": "How was this form?", "key": "stars", "order": 11, "number_of_stars": "5" },
+    { "type": "spam", "label": "What is 2 + 3?", "key": "spam", "order": 12 },
+    { "type": "unknown_addon_field", "label": "Map pin", "key": "pin", "order": 13 },
+    { "type": "submit", "label": "Get my quote", "key": "submit", "order": 14, "processing_label": "Sending" }
+  ],
+  "actions": [
+    { "type": "successmessage", "label": "Success Message", "success_msg": "Thanks! We will send your quote soon.", "active": 1 },
+    { "type": "email", "label": "Email Confirmation", "to": "{field:email}", "email_subject": "Your quote request", "email_message": "{all_fields_table}", "from_name": "Cleaners", "active": 1 },
+    { "type": "save", "label": "Record Submission" },
+    { "type": "mailchimp", "label": "Mailchimp" }
+  ]
+}

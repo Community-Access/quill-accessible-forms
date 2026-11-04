@@ -1,0 +1,16 @@
+{
+  "title": "Contact form 1",
+  "form": "<p>Please fill in the form below.</p>\n<label> Your name\n    [text* your-name autocomplete:name] </label>\n\n<label> Your email\n    [email* your-email autocomplete:email] </label>\n\n<label> Subject\n    [text your-subject placeholder \"What is it about?\"] </label>\n\n<label> Department\n    [select department include_blank \"Support|support\" \"Sales|sales\" \"Press\"] </label>\n\n<label> How did you hear about us?\n    [checkbox heard use_label_element default:2 \"Search\" \"Friend\" \"Newsletter\"] </label>\n\n<label> Guests\n    [number guests min:0 max:5 step:1 \"0\"] </label>\n\n<label> Your message (optional)\n    [textarea your-message 40x6 maxlength:2000] </label>\n\n<label> Visit date\n    [date visit min:2026-01-01] </label>\n\n[file attachment limit:2mb filetypes:pdf|docx]\n\n<label> Prove you are human\n    [quiz human \"What is 1 + 1?|2\" \"Capital of France?|Paris\"] </label>\n\n[acceptance terms] I agree to the privacy policy. [/acceptance]\n\n[recaptcha]\n\n[submit \"Send message\"]",
+  "mail": {
+    "active": true,
+    "subject": "[_site_title] \"[your-subject]\"",
+    "sender": "[_site_title] <wordpress@example.org>",
+    "recipient": "[_site_admin_email]",
+    "body": "From: [your-name] <[your-email]>\n\n[your-message]",
+    "additional_headers": "Reply-To: [your-email]"
+  },
+  "messages": {
+    "mail_sent_ok": "Thank you for your message. It has been sent.",
+    "mail_sent_ng": "There was an error trying to send your message."
+  }
+}

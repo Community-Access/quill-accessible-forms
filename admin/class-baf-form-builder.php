@@ -64,6 +64,54 @@ class BAF_Form_Builder {
     }
 
     /**
+     * AJAX: import a form from another builder's export (POST source and
+     * export, the file's text) or from Google Forms (POST source=google-forms,
+     * google_form_id and access_token). Saves it as a draft and returns the
+     * import report.
+     */
+    public function ajax_import_form() {
+        check_ajax_referer( 'baf_builder_nonce', 'nonce' );
+
+        if ( ! current_user_can( 'manage_options' ) ) {
+            wp_send_json_error( array( 'message' => __( 'Permission denied.', 'bits-accessible-forms' ) ) );
+        }
+
+        require_once BAF_PLUGIN_DIR . 'includes/model/class-baf-importers.php';
+        $source = sanitize_key( $_POST['source'] ?? '' );
+        if ( ! isset( BAF_Importers::SOURCES[ $source ] ) ) {
+            wp_send_json_error( array( 'message' => __( 'Choose what the form comes from.', 'bits-accessible-forms' ) ) );
+        }
+        try {
+            if ( $source === 'google-forms' && ! empty( $_POST['google_form_id'] ) ) {
+                $result = BAF_Importers::fetch_google_form( sanitize_text_field( wp_unslash( $_POST['google_form_id'] ) ), sanitize_text_field( wp_unslash( $_POST['access_token'] ?? '' ) ) );
+                if ( is_wp_error( $result ) ) {
+                    wp_send_json_error( array( 'message' => $result->get_error_message() ) );
+                }
+            } else {
+                $result = BAF_Importers::import( $source, wp_unslash( $_POST['export'] ?? '' ) );
+            }
+        } catch ( InvalidArgumentException $e ) {
+            wp_send_json_error( array( 'message' => $e->getMessage() ) );
+        }
+
+        $form = new BAF_Form();
+        $set  = $form->set_model( $result['model'] );
+        if ( is_wp_error( $set ) ) {
+            wp_send_json_error( array( 'message' => $set->get_error_message(), 'report' => $result['report']->to_array() ) );
+        }
+        $form->status = 'draft';
+        $id           = $form->save();
+        if ( is_wp_error( $id ) ) {
+            wp_send_json_error( array( 'message' => $id->get_error_message() ) );
+        }
+        wp_send_json_success( array(
+            'form_id'     => $id,
+            'report'      => $result['report']->to_array(),
+            'report_text' => $result['report']->to_text(),
+        ) );
+    }
+
+    /**
      * AJAX: the form model, its canonical BFL, and the conversion report.
      */
     public function ajax_get_form_model() {

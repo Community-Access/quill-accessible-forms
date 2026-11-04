@@ -1,0 +1,219 @@
+{
+    "version": 1,
+    "title": "Event registration",
+    "description": "Sign up for the accessibility summit.",
+    "settings": {
+        "submit_label": "Register",
+        "enable_honeypot": true,
+        "entry_limit_enabled": true,
+        "entry_limit_count": 200,
+        "entry_limit_message": "Registration is full."
+    },
+    "pages": [
+        {
+            "id": "page_1",
+            "title": "You",
+            "props": {
+                "next_button_text": "Next"
+            },
+            "items": [
+                {
+                    "id": "field_1",
+                    "type": "name",
+                    "label": "Name",
+                    "required": true
+                },
+                {
+                    "id": "field_2",
+                    "type": "email",
+                    "label": "Email",
+                    "help": "We send your ticket here.",
+                    "required": true,
+                    "validation": {
+                        "unique": true
+                    }
+                },
+                {
+                    "id": "field_3",
+                    "type": "phone",
+                    "label": "Phone",
+                    "mask": "(999) 999-9999"
+                },
+                {
+                    "id": "field_4",
+                    "type": "radio",
+                    "label": "Attending as",
+                    "required": true,
+                    "choices": [
+                        {
+                            "value": "delegate",
+                            "label": "Delegate",
+                            "selected": true
+                        },
+                        {
+                            "value": "speaker",
+                            "label": "Speaker"
+                        },
+                        {
+                            "value": "exhibitor",
+                            "label": "Exhibitor"
+                        }
+                    ]
+                },
+                {
+                    "id": "field_5",
+                    "type": "text",
+                    "label": "Talk title",
+                    "when": "#field_4 is \"speaker\"",
+                    "validation": {
+                        "max_length": 120
+                    }
+                },
+                {
+                    "id": "field_6",
+                    "type": "section",
+                    "label": "Access needs",
+                    "help": "Tell us what would help.",
+                    "when": "#field_4 is not \"exhibitor\"",
+                    "items": [
+                        {
+                            "id": "field_7",
+                            "type": "checkbox",
+                            "label": "Formats",
+                            "choices": [
+                                {
+                                    "value": "braille",
+                                    "label": "Braille"
+                                },
+                                {
+                                    "value": "large_print",
+                                    "label": "Large print"
+                                }
+                            ]
+                        },
+                        {
+                            "id": "field_8",
+                            "type": "textarea",
+                            "label": "Anything else",
+                            "placeholder": "Guide dog, quiet room..."
+                        }
+                    ]
+                }
+            ]
+        },
+        {
+            "id": "page_2",
+            "title": "Your visit",
+            "items": [
+                {
+                    "id": "field_10",
+                    "type": "date",
+                    "label": "Arrival",
+                    "smart_default": "today()"
+                },
+                {
+                    "id": "field_11",
+                    "type": "number",
+                    "label": "Nights",
+                    "validation": {
+                        "min": 1,
+                        "max": 5
+                    }
+                },
+                {
+                    "id": "field_12",
+                    "type": "calculation",
+                    "label": "Hotel total",
+                    "calculation": "#field_11 * 140"
+                },
+                {
+                    "id": "field_13",
+                    "type": "product",
+                    "label": "Workshop",
+                    "choices": [
+                        {
+                            "value": "none",
+                            "label": "None",
+                            "price": 0
+                        },
+                        {
+                            "value": "sr101",
+                            "label": "Screen readers 101",
+                            "price": 45
+                        }
+                    ]
+                },
+                {
+                    "id": "field_14",
+                    "type": "fileupload",
+                    "label": "Photo ID",
+                    "props": {
+                        "accept": ".jpg,.png,.pdf",
+                        "max_size": 5
+                    }
+                },
+                {
+                    "id": "field_15",
+                    "type": "html",
+                    "props": {
+                        "content": "<p>Questions? Call us.</p>"
+                    }
+                },
+                {
+                    "id": "field_16",
+                    "type": "table",
+                    "label": "Guests"
+                },
+                {
+                    "id": "field_17",
+                    "type": "consent",
+                    "label": "Consent",
+                    "required": true,
+                    "props": {
+                        "consent_text": "I agree to the code of conduct"
+                    }
+                },
+                {
+                    "id": "field_18",
+                    "type": "text",
+                    "label": "Referral code"
+                },
+                {
+                    "id": "field_20",
+                    "type": "text",
+                    "label": "Badge name",
+                    "when": "#field_4 is not empty"
+                }
+            ]
+        }
+    ],
+    "confirmations": [
+        {
+            "id": "confirmation_1",
+            "type": "message",
+            "message": "You are registered."
+        },
+        {
+            "id": "confirmation_2",
+            "type": "redirect",
+            "url": "https://example.org/speakers",
+            "when": "#field_4 is \"speaker\""
+        }
+    ],
+    "notifications": [
+        {
+            "id": "notification_1",
+            "enabled": true,
+            "to": "events@example.org",
+            "from_name": "Summit",
+            "from_email": "noreply@example.org",
+            "subject": "New registration",
+            "message": "{all_fields}"
+        },
+        {
+            "id": "notification_2",
+            "enabled": false,
+            "subject": "Routed"
+        }
+    ]
+}

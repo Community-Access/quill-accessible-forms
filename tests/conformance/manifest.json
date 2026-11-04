@@ -32,6 +32,13 @@
       { "stored": "builder/saved-before-the-model.stored.json", "model": "builder/saved-before-the-model.model.json", "report": "builder/saved-before-the-model.report.json" },
       { "stored": "builder/logic-and-layout.stored.json", "model": "models/valid/logic-and-layout.json" }
     ] },
-    { "kind": "imports", "baf_only": true, "cases": [] }
+    { "kind": "imports", "baf_only": true, "cases": [
+      { "source": "gravity-forms", "input": "imports/gravity-forms/event-registration.json", "model": "imports/gravity-forms/event-registration.model.json", "report": "imports/gravity-forms/event-registration.report.json" },
+      { "source": "wpforms", "input": "imports/wpforms/contact.json", "model": "imports/wpforms/contact.model.json", "report": "imports/wpforms/contact.report.json" },
+      { "source": "contact-form-7", "input": "imports/contact-form-7/default-form.json", "model": "imports/contact-form-7/default-form.model.json", "report": "imports/contact-form-7/default-form.report.json" },
+      { "source": "contact-form-7", "input": "imports/contact-form-7/plain-template.txt", "model": "imports/contact-form-7/plain-template.model.json", "report": "imports/contact-form-7/plain-template.report.json" },
+      { "source": "ninja-forms", "input": "imports/ninja-forms/quote-request.json", "model": "imports/ninja-forms/quote-request.model.json", "report": "imports/ninja-forms/quote-request.report.json" },
+      { "source": "google-forms", "input": "imports/google-forms/braille-quiz.json", "model": "imports/google-forms/braille-quiz.model.json", "report": "imports/google-forms/braille-quiz.report.json" }
+    ] }
   ]
 }
