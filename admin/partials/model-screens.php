@@ -29,6 +29,7 @@ if ( ! function_exists( 'baf_model_screen_tabs' ) ) {
     function baf_model_screens() {
         return array(
             'rules'     => __( 'Rules', 'bits-accessible-forms' ),
+            'outcomes'  => __( 'Quiz outcomes', 'bits-accessible-forms' ),
             'libraries' => __( 'Choice libraries', 'bits-accessible-forms' ),
         );
     }
@@ -185,6 +186,55 @@ if ( ! function_exists( 'baf_model_screen_tabs' ) ) {
         );
         echo "</div>\n";
 
+        // Quiz outcomes.
+        baf_model_panel_start(
+            'outcomes',
+            __( 'Quiz outcomes', 'bits-accessible-forms' ),
+            __( 'When a quiz is sent, the first outcome whose condition holds gives the person its message. A condition can use the score, such as score >= 5.', 'bits-accessible-forms' )
+        );
+        ?>
+            <div class="baf-model-body" hidden>
+                <form id="baf-quiz-settings" novalidate>
+                    <fieldset>
+                        <legend><?php esc_html_e( 'Quiz settings', 'bits-accessible-forms' ); ?></legend>
+                        <p>
+                            <input type="checkbox" id="baf-quiz-show-score">
+                            <label for="baf-quiz-show-score"><?php esc_html_e( 'Show the score', 'bits-accessible-forms' ); ?></label>
+                        </p>
+                        <p>
+                            <label for="baf-quiz-pass-mark"><?php esc_html_e( 'Pass mark', 'bits-accessible-forms' ); ?></label><br>
+                            <input type="text" inputmode="decimal" id="baf-quiz-pass-mark" class="small-text" autocomplete="off" aria-describedby="baf-quiz-pass-mark-help baf-quiz-pass-mark-error">
+                            <span id="baf-quiz-pass-mark-help" class="description"><?php esc_html_e( 'The score that counts as a pass. Leave it empty for none.', 'bits-accessible-forms' ); ?></span>
+                            <span id="baf-quiz-pass-mark-error" class="baf-field-error" hidden></span>
+                        </p>
+                        <p><button type="submit" class="button" id="baf-quiz-settings-save"><?php esc_html_e( 'Save quiz settings', 'bits-accessible-forms' ); ?></button></p>
+                    </fieldset>
+                </form>
+            </div>
+        <?php
+        baf_model_table(
+            'outcomes',
+            __( 'Outcomes, in the order they are tried', 'bits-accessible-forms' ),
+            array( __( 'ID', 'bits-accessible-forms' ), __( 'When', 'bits-accessible-forms' ), __( 'Message', 'bits-accessible-forms' ) ),
+            __( 'There are no outcomes yet.', 'bits-accessible-forms' ),
+            __( 'Add outcome', 'bits-accessible-forms' )
+        );
+        ?>
+            <div class="baf-model-body" hidden>
+                <h3 id="baf-outcome-try-heading"><?php esc_html_e( 'Try it', 'bits-accessible-forms' ); ?></h3>
+                <form id="baf-outcome-try" novalidate>
+                    <p>
+                        <label for="baf-outcome-try-score"><?php esc_html_e( 'A score to try', 'bits-accessible-forms' ); ?></label><br>
+                        <input type="text" inputmode="decimal" id="baf-outcome-try-score" class="small-text" autocomplete="off" aria-describedby="baf-outcome-try-help">
+                        <span id="baf-outcome-try-help" class="description"><?php esc_html_e( 'Says which outcome that score would give, using the outcomes as saved.', 'bits-accessible-forms' ); ?></span>
+                        <button type="submit" class="button"><?php esc_html_e( 'Try it', 'bits-accessible-forms' ); ?></button>
+                    </p>
+                    <p id="baf-outcome-try-result" aria-live="polite" aria-atomic="true"></p>
+                </form>
+            </div>
+        </div>
+        <?php
+
         // Choice libraries.
         baf_model_panel_start(
             'libraries',
@@ -281,6 +331,30 @@ if ( ! function_exists( 'baf_model_screen_tabs' ) ) {
             </div>
         <?php
         baf_model_dialog_end( __( 'Save rule', 'bits-accessible-forms' ) );
+
+        baf_model_dialog_start( 'baf-outcome-dialog', __( 'Edit outcome', 'bits-accessible-forms' ) );
+        ?>
+            <p>
+                <label for="baf-outcome-id"><?php esc_html_e( 'ID', 'bits-accessible-forms' ); ?></label><br>
+                <input type="text" id="baf-outcome-id" class="regular-text code" autocomplete="off" spellcheck="false" aria-describedby="baf-outcome-id-help baf-outcome-id-error">
+                <span id="baf-outcome-id-help" class="description"><?php esc_html_e( 'A short name for the outcome, such as pass. Letters, digits and underscores.', 'bits-accessible-forms' ); ?></span>
+                <span id="baf-outcome-id-error" class="baf-field-error" hidden></span>
+            </p>
+            <?php
+            baf_model_expression_field(
+                'baf-outcome-when',
+                __( 'When', 'bits-accessible-forms' ),
+                __( 'The condition, for example score >= 5. Insert a field offers the score too.', 'bits-accessible-forms' )
+            );
+            ?>
+            <p>
+                <label for="baf-outcome-message"><?php esc_html_e( 'Message', 'bits-accessible-forms' ); ?></label><br>
+                <textarea id="baf-outcome-message" rows="4" class="large-text" aria-describedby="baf-outcome-message-help baf-outcome-message-error"></textarea>
+                <span id="baf-outcome-message-help" class="description"><?php esc_html_e( 'What the person sees after sending the quiz.', 'bits-accessible-forms' ); ?></span>
+                <span id="baf-outcome-message-error" class="baf-field-error" hidden></span>
+            </p>
+        <?php
+        baf_model_dialog_end( __( 'Save outcome', 'bits-accessible-forms' ) );
 
         baf_model_dialog_start( 'baf-library-dialog', __( 'Edit library', 'bits-accessible-forms' ), 'wide' );
         ?>

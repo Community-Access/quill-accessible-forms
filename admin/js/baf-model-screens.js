@@ -526,9 +526,167 @@
     }
 
     // ------------------------------------------------------------------
+    // Quiz outcomes
+    // ------------------------------------------------------------------
+
+    var outcomes = { panelId: 'baf-outcomes-panel' };
+    var outcomeScreen = null;
+    var outcomeWhen = null;
+
+    function outcomeList(m) {
+        return (m && m.scoring && m.scoring.outcomes) || [];
+    }
+
+    /** Store the outcomes; a renamed outcome keeps its translations. */
+    function storeOutcomes(m, list, renamed) {
+        m.scoring = m.scoring || {};
+        m.scoring.outcomes = list;
+        if (renamed && renamed.from !== renamed.to) {
+            Object.keys(m.translations || {}).forEach(function (lang) {
+                var o = m.translations[lang].outcomes;
+                if (o && Object.prototype.hasOwnProperty.call(o, renamed.from)) {
+                    o[renamed.to] = o[renamed.from];
+                    delete o[renamed.from];
+                }
+            });
+        }
+    }
+
+    function outcomeFields() {
+        return fieldMap({
+            id: ['baf-outcome-id', 'baf-outcome-id-error'],
+            when: ['baf-outcome-when', 'baf-outcome-when-error'],
+            message: ['baf-outcome-message', 'baf-outcome-message-error']
+        });
+    }
+
+    function openOutcome(outcome, index, opener) {
+        var isNew = outcome === null;
+        outcome = outcome || { id: '', when: '', message: '' };
+        $('baf-outcome-id').value = outcome.id;
+        $('baf-outcome-when').value = outcome.when;
+        $('baf-outcome-message').value = outcome.message;
+        outcomeWhen.refresh();
+        var title = isNew ? t('addOutcomeTitle', 'Add outcome') : t('editOutcomeTitle', 'Edit outcome %d', index + 1);
+        var wrapper = dialogForm('baf-outcome-dialog', title, function () {
+            var next = C.clone(outcome);
+            next.id = $('baf-outcome-id').value.trim();
+            next.when = $('baf-outcome-when').value.trim();
+            next.message = $('baf-outcome-message').value;
+            var problems = C.checkOutcome(next, isNew ? -1 : index, E.state.model, t);
+            if (problems.length) {
+                E.showProblems($('baf-outcome-dialog-summary'), outcomeFields(), problems);
+                return;
+            }
+            var list = outcomeList(E.state.model).slice();
+            var at = isNew ? list.length : index;
+            if (isNew) {
+                list.push(next);
+            } else {
+                list[index] = next;
+            }
+            var renamed = isNew ? null : { from: outcome.id, to: next.id };
+            E.persist(function (m) { storeOutcomes(m, list, renamed); }).then(function (r) {
+                if (!r.ok) {
+                    E.showProblems($('baf-outcome-dialog-summary'), outcomeFields(), serverProblems(r, 'outcomes', function (w) { return w.index === at; }));
+                    return;
+                }
+                d.close(document.body);
+                outcomeScreen.render({ index: at, action: 'edit' });
+                E.say($('baf-outcomes-status'), isNew ? t('outcomeAdded', 'Outcome %1$d added: %2$s, when %3$s.', at + 1, next.id, C.sentenceOf(next.when, E.state.model)) : t('outcomeSaved', 'Outcome %1$d saved: %2$s, when %3$s.', at + 1, next.id, C.sentenceOf(next.when, E.state.model)));
+            });
+        });
+        var d = E.showDialog(wrapper, { returnTo: opener, first: $('baf-outcome-id') });
+    }
+
+    function renderQuizSettings() {
+        var s = (E.state.model && E.state.model.scoring) || {};
+        $('baf-quiz-show-score').checked = !!s.show_score;
+        $('baf-quiz-pass-mark').value = s.pass_mark === undefined ? '' : String(s.pass_mark);
+    }
+
+    outcomes.render = function () {
+        renderQuizSettings();
+        outcomeScreen.render();
+    };
+
+    function initOutcomes() {
+        if (!$('baf-outcomes-panel')) {
+            return;
+        }
+        outcomeWhen = E.expressionField($('baf-outcome-when'), { score: true });
+        outcomeScreen = E.listScreen({
+            body: $('baf-outcomes-rows'),
+            empty: $('baf-outcomes-empty'),
+            add: $('baf-outcomes-add'),
+            status: $('baf-outcomes-status'),
+            summary: $('baf-outcomes-summary'),
+            noun: 'outcome',
+            Noun: 'Outcome',
+            list: outcomeList,
+            store: function (m, list) { storeOutcomes(m, list, null); },
+            cells: function (o, i, m) { return [o.id, C.sentenceOf(o.when, m), o.message]; },
+            name: function (o, i, m) { return t('outcomeName', '%1$s, when %2$s', o.id, C.sentenceOf(o.when, m)); },
+            edit: openOutcome
+        });
+
+        $('baf-quiz-settings').addEventListener('submit', function (e) {
+            e.preventDefault();
+            var show = $('baf-quiz-show-score').checked;
+            var raw = $('baf-quiz-pass-mark').value.trim();
+            var mark = raw === '' ? undefined : Number(raw);
+            var fields = fieldMap({ pass_mark: ['baf-quiz-pass-mark', 'baf-quiz-pass-mark-error'] });
+            if (mark !== undefined && !isFinite(mark)) {
+                E.showProblems($('baf-outcomes-summary'), fields, [{ field: 'pass_mark', message: t('passMarkNumber', 'The pass mark must be a number, such as 5.') }]);
+                return;
+            }
+            E.persist(function (m) {
+                m.scoring = m.scoring || {};
+                if (show) {
+                    m.scoring.show_score = true;
+                } else {
+                    delete m.scoring.show_score;
+                }
+                if (mark === undefined) {
+                    delete m.scoring.pass_mark;
+                } else {
+                    m.scoring.pass_mark = mark;
+                }
+            }).then(function (r) {
+                if (!r.ok) {
+                    if (!r.busy) {
+                        outcomeScreen.fail(r);
+                    }
+                    return;
+                }
+                E.showProblems($('baf-outcomes-summary'), fields, []);
+                var words = show ? t('scoreShown', 'The score is shown.') : t('scoreHidden', 'The score is not shown.');
+                words += ' ' + (mark === undefined ? t('noPassMark', 'No pass mark.') : t('passMarkIs', 'The pass mark is %s.', String(mark)));
+                E.say($('baf-outcomes-status'), t('quizSaved', 'Quiz settings saved. %s', words));
+            });
+        });
+
+        $('baf-outcome-try').addEventListener('submit', function (e) {
+            e.preventDefault();
+            var raw = $('baf-outcome-try-score').value.trim();
+            var result = $('baf-outcome-try-result');
+            if (raw === '' || !isFinite(Number(raw))) {
+                E.say(result, t('tryNumber', 'Type a score, such as 6.'));
+                return;
+            }
+            var found = C.tryOutcome(E.state.model, Number(raw));
+            E.say(result, found
+                ? t('tryGives', 'A score of %1$s gives outcome %2$d, %3$s: %4$s', raw, found.index + 1, found.outcome.id, found.outcome.message)
+                : t('tryNone', 'A score of %s gives no outcome; no condition holds.', raw));
+        });
+        E.register('outcomes', outcomes);
+    }
+
+    // ------------------------------------------------------------------
 
     function init() {
         initRules();
+        initOutcomes();
         initLibraries();
     }
 
