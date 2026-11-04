@@ -683,10 +683,155 @@
     }
 
     // ------------------------------------------------------------------
+    // Translations
+    // ------------------------------------------------------------------
+
+    var translations = { panelId: 'baf-translations-panel' };
+    var translationScreen = null;
+    var langDraft = null; // { rows, values } while the dialog is open.
+
+    function languageName(code) {
+        try {
+            var dn = new Intl.DisplayNames([document.documentElement.lang || 'en'], { type: 'language' });
+            var name = dn.of(code);
+            return name && name !== code ? name : code;
+        } catch (e) {
+            return code;
+        }
+    }
+
+    function languageList(m) {
+        var tr = (m && m.translations) || {};
+        return Object.keys(tr).map(function (code) { return { code: code, tr: tr[code] || {} }; });
+    }
+
+    function storeLanguages(m, list) {
+        var out = {};
+        list.forEach(function (l) { out[l.code] = l.tr; });
+        m.translations = out;
+    }
+
+    function countWords(m, code) {
+        var c = C.translationCount(m, code);
+        return t('translatedCount', '%1$d of %2$d texts', c.done, c.total);
+    }
+
+    /** The grid: one row per text, the row header the text's place, a labelled box for the translation. */
+    function renderTexts() {
+        var body = $('baf-language-text-rows');
+        var only = $('baf-language-untranslated').checked;
+        body.textContent = '';
+        var shown = 0;
+        langDraft.rows.forEach(function (row, i) {
+            var value = langDraft.values[i];
+            var tr = el('tr', only && value !== '' ? { hidden: true } : {});
+            var hid = 'baf-language-text-' + i + '-what';
+            tr.appendChild(el('th', { scope: 'row', id: hid }, row.what));
+            tr.appendChild(el('td', { lang: (E.state.model && E.state.model.language) || null }, row.source === '' ? t('noOwnText', '(none of its own)') : row.source));
+            var td = el('td');
+            var id = 'baf-language-text-' + i;
+            td.appendChild(el('label', { 'for': id, className: 'baf-sr-only' }, t('translationOf', 'Translation: %s', row.what)));
+            var long = row.source.length > 80 || row.path[row.path.length - 1] === 'description' || row.path[row.path.length - 1] === 'message';
+            var input = el(long ? 'textarea' : 'input', long ? { id: id, rows: '2', 'aria-describedby': id + '-hint', lang: langDraft.code || null } : { type: 'text', id: id, 'aria-describedby': id + '-hint', lang: langDraft.code || null });
+            input.value = value;
+            var hint = el('span', { id: id + '-hint', className: 'description' }, value === '' ? t('fallsBack', 'Not translated; the form\'s own text is shown.') : '');
+            input.addEventListener('input', function () {
+                langDraft.values[i] = input.value;
+                hint.textContent = input.value === '' ? t('fallsBack', 'Not translated; the form\'s own text is shown.') : '';
+            });
+            td.appendChild(input);
+            td.appendChild(hint);
+            tr.appendChild(td);
+            body.appendChild(tr);
+            if (!tr.hidden) {
+                shown++;
+            }
+        });
+        return shown;
+    }
+
+    function openLanguage(lang, index, opener) {
+        var isNew = lang === null;
+        var code = isNew ? '' : lang.code;
+        var model = E.state.model;
+        var start = isNew ? {} : C.clone(lang.tr);
+        var rows = C.translationRows(model, code, t);
+        langDraft = { code: code, rows: rows, values: rows.map(function (r) { return r.value; }) };
+        var codeInput = $('baf-language-code');
+        codeInput.value = code;
+        codeInput.readOnly = !isNew;
+        $('baf-language-untranslated').checked = false;
+        renderTexts();
+        var title = isNew ? t('addLanguageTitle', 'Add a language') : t('editLanguageTitle', 'Translation: %1$s (%2$s)', languageName(code), code);
+        var wrapper = dialogForm('baf-language-dialog', title, function () {
+            var c = codeInput.value.trim();
+            var fields = fieldMap({ code: ['baf-language-code', 'baf-language-code-error'] });
+            var problems = isNew ? C.checkLanguage(c, E.state.model, t) : [];
+            if (problems.length) {
+                E.showProblems($('baf-language-dialog-summary'), fields, problems);
+                return;
+            }
+            var tr = start;
+            langDraft.rows.forEach(function (row, i) {
+                tr = C.setTranslation(tr, row.path, langDraft.values[i]);
+            });
+            var list = languageList(E.state.model);
+            var at = isNew ? list.length : index;
+            if (isNew) {
+                list.push({ code: c, tr: tr });
+            } else {
+                list[index] = { code: c, tr: tr };
+            }
+            E.persist(function (m) { storeLanguages(m, list); }).then(function (r) {
+                if (!r.ok) {
+                    E.showProblems($('baf-language-dialog-summary'), fields, serverProblems(r, 'translations', function (w) { return w.key === c && !w.field; }));
+                    return;
+                }
+                d.close(document.body);
+                translationScreen.render({ index: at, action: 'edit' });
+                E.say($('baf-translations-status'), t('languageSaved', '%1$s saved: %2$s translated.', languageName(c), countWords(E.state.model, c)));
+            });
+        });
+        var d = E.showDialog(wrapper, { returnTo: opener, first: isNew ? codeInput : ($('baf-language-text-0') || codeInput) });
+    }
+
+    translations.render = function () {
+        translationScreen.render();
+    };
+
+    function initTranslations() {
+        if (!$('baf-translations-panel')) {
+            return;
+        }
+        translationScreen = E.listScreen({
+            body: $('baf-translations-rows'),
+            empty: $('baf-translations-empty'),
+            add: $('baf-translations-add'),
+            status: $('baf-translations-status'),
+            summary: $('baf-translations-summary'),
+            noun: 'language',
+            Noun: 'Language',
+            noMove: true,
+            list: languageList,
+            store: storeLanguages,
+            cells: function (l, i, m) { return [l.code, languageName(l.code), countWords(m, l.code)]; },
+            name: function (l) { return languageName(l.code) + ' (' + l.code + ')'; },
+            deleteMessage: function (l) { return t('deleteLanguage', 'The %s translation will be deleted from the form, with every text in it.', languageName(l.code)); },
+            edit: openLanguage
+        });
+        $('baf-language-untranslated').addEventListener('change', function () {
+            var n = renderTexts();
+            E.say($('baf-language-dialog-status'), $('baf-language-untranslated').checked ? t('untranslatedShown', '%d texts not yet translated are shown.', n) : t('allShown', 'All %d texts are shown.', n));
+        });
+        E.register('translations', translations);
+    }
+
+    // ------------------------------------------------------------------
 
     function init() {
         initRules();
         initOutcomes();
+        initTranslations();
         initLibraries();
     }
 

@@ -29,8 +29,9 @@ if ( ! function_exists( 'baf_model_screen_tabs' ) ) {
     function baf_model_screens() {
         return array(
             'rules'     => __( 'Rules', 'bits-accessible-forms' ),
-            'outcomes'  => __( 'Quiz outcomes', 'bits-accessible-forms' ),
-            'libraries' => __( 'Choice libraries', 'bits-accessible-forms' ),
+            'outcomes'     => __( 'Quiz outcomes', 'bits-accessible-forms' ),
+            'translations' => __( 'Translations', 'bits-accessible-forms' ),
+            'libraries'    => __( 'Choice libraries', 'bits-accessible-forms' ),
         );
     }
 
@@ -235,6 +236,21 @@ if ( ! function_exists( 'baf_model_screen_tabs' ) ) {
         </div>
         <?php
 
+        // Translations.
+        baf_model_panel_start(
+            'translations',
+            __( 'Translations', 'bits-accessible-forms' ),
+            __( 'Each language holds the form\'s texts in that language: titles, labels, help, choices and messages. A text left empty shows the form\'s own text instead.', 'bits-accessible-forms' )
+        );
+        baf_model_table(
+            'translations',
+            __( 'Languages', 'bits-accessible-forms' ),
+            array( __( 'Code', 'bits-accessible-forms' ), __( 'Language', 'bits-accessible-forms' ), __( 'Translated', 'bits-accessible-forms' ) ),
+            __( 'This form has no translations yet.', 'bits-accessible-forms' ),
+            __( 'Add language', 'bits-accessible-forms' )
+        );
+        echo "</div>\n";
+
         // Choice libraries.
         baf_model_panel_start(
             'libraries',
@@ -355,6 +371,34 @@ if ( ! function_exists( 'baf_model_screen_tabs' ) ) {
             </p>
         <?php
         baf_model_dialog_end( __( 'Save outcome', 'bits-accessible-forms' ) );
+
+        baf_model_dialog_start( 'baf-language-dialog', __( 'Edit translation', 'bits-accessible-forms' ), 'wide' );
+        ?>
+            <div id="baf-language-dialog-status" class="baf-sr-only" role="status" aria-live="polite" aria-atomic="true"></div>
+            <p>
+                <label for="baf-language-code"><?php esc_html_e( 'Language code', 'bits-accessible-forms' ); ?></label><br>
+                <input type="text" id="baf-language-code" class="small-text code" autocomplete="off" spellcheck="false" aria-describedby="baf-language-code-help baf-language-code-error">
+                <span id="baf-language-code-help" class="description"><?php esc_html_e( 'Such as es for Spanish, fr for French or pt-BR for Brazilian Portuguese. A visitor gets this language from ?baf_lang=es or from the site\'s language.', 'bits-accessible-forms' ); ?></span>
+                <span id="baf-language-code-error" class="baf-field-error" hidden></span>
+            </p>
+            <p>
+                <input type="checkbox" id="baf-language-untranslated">
+                <label for="baf-language-untranslated"><?php esc_html_e( 'Show only the texts not yet translated', 'bits-accessible-forms' ); ?></label>
+            </p>
+            <table class="widefat striped baf-model-table baf-translation-grid" id="baf-language-texts" aria-describedby="baf-language-texts-help">
+                <caption id="baf-language-texts-caption"><?php esc_html_e( 'Texts', 'bits-accessible-forms' ); ?></caption>
+                <thead>
+                    <tr>
+                        <th scope="col"><?php esc_html_e( 'Text', 'bits-accessible-forms' ); ?></th>
+                        <th scope="col"><?php esc_html_e( 'The form\'s own text', 'bits-accessible-forms' ); ?></th>
+                        <th scope="col"><?php esc_html_e( 'Translation', 'bits-accessible-forms' ); ?></th>
+                    </tr>
+                </thead>
+                <tbody id="baf-language-text-rows"></tbody>
+            </table>
+            <span id="baf-language-texts-help" class="description"><?php esc_html_e( 'One row per text. Built-in messages, such as the one for a required question, have no text of the form\'s own; empty, they use BAF\'s.', 'bits-accessible-forms' ); ?></span>
+        <?php
+        baf_model_dialog_end( __( 'Save translation', 'bits-accessible-forms' ) );
 
         baf_model_dialog_start( 'baf-library-dialog', __( 'Edit library', 'bits-accessible-forms' ), 'wide' );
         ?>

@@ -480,7 +480,7 @@
             return [{ field: 'code', message: t('badLanguage', 'Type a language code such as es, fr or pt-BR.') }];
         }
         if (model.translations && Object.prototype.hasOwnProperty.call(model.translations, code)) {
-            return [{ field: 'code', message: t('languageTaken', 'This form already has a %s translation.', code) }];
+            return [{ field: 'code', message: t('languageTaken', 'This form already has a translation for %s.', code) }];
         }
         if (code === (model.language || '')) {
             return [{ field: 'code', message: t('languageOwn', '%s is the form\'s own language.', code) }];
