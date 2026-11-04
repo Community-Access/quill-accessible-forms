@@ -195,6 +195,11 @@ class BAF_REST_API {
         $form->status      = $request->get_param( 'status' ) ?: 'draft';
         $form->settings    = $request->get_param( 'settings' ) ?: array();
 
+        $model_result = $this->apply_model( $form, $request );
+        if ( is_wp_error( $model_result ) ) {
+            return $model_result;
+        }
+
         $result = $form->save();
 
         if ( is_wp_error( $result ) ) {
@@ -202,6 +207,31 @@ class BAF_REST_API {
         }
 
         return rest_ensure_response( $this->prepare_form_response( $form ) );
+    }
+
+    /**
+     * Store a form model sent with a create or update (QUILL, BFL tools).
+     *
+     * A form saved with only `config` keeps its model but shows no fields,
+     * because the renderer reads `config.fields`. With a `model`, set_model()
+     * writes the fields the renderer reads. Other `config` keys the site
+     * already had (or that came with the request) are kept.
+     *
+     * @param BAF_Form        $form    The form being saved.
+     * @param WP_REST_Request $request Request object.
+     * @return true|WP_Error True, or the model's validation error.
+     */
+    private function apply_model( $form, $request ) {
+        if ( ! $request->has_param( 'model' ) ) {
+            return true;
+        }
+        $kept   = is_array( $form->config ) ? $form->config : array();
+        $result = $form->set_model( $request->get_param( 'model' ) );
+        if ( is_wp_error( $result ) ) {
+            return $result;
+        }
+        $form->config = array_merge( $kept, $form->config );
+        return true;
     }
 
     /**
@@ -234,6 +264,11 @@ class BAF_REST_API {
         }
         if ( $request->has_param( 'settings' ) ) {
             $form->settings = $request->get_param( 'settings' );
+        }
+
+        $model_result = $this->apply_model( $form, $request );
+        if ( is_wp_error( $model_result ) ) {
+            return $model_result;
         }
 
         $result = $form->save();
