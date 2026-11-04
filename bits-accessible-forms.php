@@ -232,6 +232,7 @@ final class BITS_Accessible_Forms {
         require_once BAF_PLUGIN_DIR . 'includes/model/class-baf-bfl-writer.php';
         require_once BAF_PLUGIN_DIR . 'includes/model/class-baf-form-model-converter.php';
         require_once BAF_PLUGIN_DIR . 'includes/model/class-baf-form-runtime.php';
+        require_once BAF_PLUGIN_DIR . 'includes/model/class-baf-bfl-service.php';
         
         // Field Templates
         require_once BAF_PLUGIN_DIR . 'includes/core/class-baf-field-templates.php';
@@ -343,6 +344,7 @@ final class BITS_Accessible_Forms {
         $this->loader->add_action( 'wp_ajax_baf_get_field_settings', $this->form_builder, 'ajax_get_field_settings' );
         $this->loader->add_action( 'wp_ajax_baf_parse_bfl', $this->form_builder, 'ajax_parse_bfl' );
         $this->loader->add_action( 'wp_ajax_baf_compile_bfl', $this->form_builder, 'ajax_compile_bfl' );
+        $this->loader->add_action( 'wp_ajax_baf_format_bfl', $this->form_builder, 'ajax_format_bfl' );
         $this->loader->add_action( 'wp_ajax_baf_get_form_model', $this->form_builder, 'ajax_get_form_model' );
         $this->loader->add_action( 'wp_ajax_baf_save_form_model', $this->form_builder, 'ajax_save_form_model' );
         $this->loader->add_action( 'wp_ajax_baf_import_form', $this->form_builder, 'ajax_import_form' );

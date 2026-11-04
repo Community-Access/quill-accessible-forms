@@ -164,7 +164,7 @@ $structure_mode = new BAF_Structure_Mode();
         
         <!-- Structure Mode Panel -->
         <div id="baf-structure-panel" role="tabpanel" aria-labelledby="baf-mode-structure" class="baf-mode-panel" hidden>
-            <?php echo $structure_mode->render( $form->config, $form_id ); ?>
+            <?php echo $structure_mode->render( $form->config, $form_id, $form->get_model() ); ?>
         </div>
         
         <!-- BFL Code Mode Panel -->
@@ -184,7 +184,7 @@ $structure_mode = new BAF_Structure_Mode();
                 <textarea id="baf-bfl-editor" 
                           class="baf-bfl-textarea" 
                           aria-describedby="baf-bfl-help"
-                          spellcheck="false"><?php echo esc_textarea( $form->bfl_source ); ?></textarea>
+                          spellcheck="false"><?php echo esc_textarea( $form->bfl_source ? $form->bfl_source : ( $form_id ? BAF_BFL_Writer::write( $form->get_model() ) : '' ) ); ?></textarea>
                 
                 <div id="baf-bfl-help" class="baf-bfl-help">
                     <p><?php esc_html_e( 'Write form definitions in BITS Form Language. Changes will sync when you switch modes.', 'bits-accessible-forms' ); ?></p>

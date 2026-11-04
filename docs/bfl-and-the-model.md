@@ -8,8 +8,28 @@ notation of the form model (`docs/form-model.md`) and nothing more:
 - BAF's PHP and QUILL's Python both check the result against the same schema.
 
 The reader is `includes/model/class-baf-bfl-reader.php` and the writer
-`includes/model/class-baf-bfl-writer.php`. The older parser in `includes/bfl/`
-is unchanged, so nothing that calls it behaves differently.
+`includes/model/class-baf-bfl-writer.php`.
+
+## Where BAF reads and writes BFL
+
+Every place the site reads or writes BFL uses the reader and the writer,
+through `includes/model/class-baf-bfl-service.php`:
+
+| Where | What it does now |
+| --- | --- |
+| `POST baf/v1/bfl/parse` (`bfl`) | Reads BFL. The reply is `valid`, the `model`, the builder's shape written from it (`config`, `title`, `settings`; `config` is null when there are errors), and `errors` and `warnings`, each with a `line` and a `message`. Before 2026-11 the reply was the older parser's config on its own. |
+| `POST baf/v1/bfl/validate` (`bfl`) | New. The reader's problems, then the model's schema and rules as `model_errors` (JSON pointer paths), and `valid`. |
+| `POST baf/v1/bfl/format` (`bfl`) | New. The same BFL in canonical form, or null with the errors. |
+| `POST baf/v1/bfl/compile` (`model` or `config`) | Writes canonical BFL from a form model, or from the builder's shape (with the conversion `report`). Before 2026-11 it used the older compiler, which wrote a dialect without `bfl 1`. |
+| `GET baf/v1/forms/{id}` | Also returns the form's `model`. |
+| Builder: BFL panel | Format Code rewrites the text in canonical form (`baf_format_bfl`); Sync to Visual saves it as the form's model (`baf_save_form_model`) and reloads the builder. Problems are listed with their line numbers, each a button that moves to its line. |
+| Builder: Structure mode | Drawn from the model: sections, columns and repeaters hold their questions, and each condition is read as a sentence ("Shown when Type is Business"). |
+| `baf_parse_bfl`, `baf_compile_bfl` (admin-ajax) | As `bfl/parse` and `bfl/compile`. |
+
+The older parser, compiler, validator and formatter in `includes/bfl/` stay
+only for reading forms written before the model: the older file importer
+(`includes/import/`) and the older formatter still call them. The new reader
+reads everything they read (see "Older BFL" below), so nothing new should.
 
 ## What "round-trip exactly" means
 

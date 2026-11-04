@@ -222,20 +222,38 @@ class BAF_Form_Builder {
             wp_send_json_error( array( 'message' => __( 'No BFL source provided.', 'bits-accessible-forms' ) ) );
         }
 
-        try {
-            $parser = new BAF_BFL_Parser();
-            $form_config = $parser->parse( $bfl_source );
-            // The form model read from the same text, with its line-numbered problems.
-            $read = BAF_BFL_Reader::read( $bfl_source );
-            wp_send_json_success( array(
-                'config'   => $form_config,
-                'model'    => $read['model'],
-                'errors'   => $read['errors'],
-                'warnings' => $read['warnings'],
+        // The BFL 1 reader reads every older spelling as well; the builder's
+        // fields are written from the model it gives.
+        $result = BAF_BFL_Service::parse( $bfl_source );
+        if ( ! $result['valid'] ) {
+            wp_send_json_error( array(
+                'message'  => __( 'The BFL has errors.', 'bits-accessible-forms' ),
+                'errors'   => $result['errors'],
+                'warnings' => $result['warnings'],
             ) );
-        } catch ( Exception $e ) {
-            wp_send_json_error( array( 'message' => $e->getMessage() ) );
         }
+        wp_send_json_success( $result );
+    }
+
+    /**
+     * AJAX: rewrite BFL in its canonical form (the BFL panel's Format Code).
+     */
+    public function ajax_format_bfl() {
+        check_ajax_referer( 'baf_builder_nonce', 'nonce' );
+
+        if ( ! current_user_can( 'manage_options' ) ) {
+            wp_send_json_error( array( 'message' => __( 'Permission denied.', 'bits-accessible-forms' ) ) );
+        }
+
+        $result = BAF_BFL_Service::format( wp_unslash( $_POST['bfl_source'] ?? '' ) );
+        if ( $result['bfl'] === null ) {
+            wp_send_json_error( array(
+                'message'  => __( 'The BFL has errors.', 'bits-accessible-forms' ),
+                'errors'   => $result['errors'],
+                'warnings' => $result['warnings'],
+            ) );
+        }
+        wp_send_json_success( $result );
     }
 
     /**
@@ -254,13 +272,12 @@ class BAF_Form_Builder {
             wp_send_json_error( array( 'message' => __( 'No form configuration provided.', 'bits-accessible-forms' ) ) );
         }
 
-        try {
-            $compiler = new BAF_BFL_Compiler();
-            $bfl_source = $compiler->compile( $form_config );
-            wp_send_json_success( array( 'bfl_source' => $bfl_source ) );
-        } catch ( Exception $e ) {
-            wp_send_json_error( array( 'message' => $e->getMessage() ) );
-        }
+        $result = BAF_BFL_Service::compile( $form_config );
+        wp_send_json_success( array(
+            'bfl_source' => $result['bfl'],
+            'model'      => $result['model'],
+            'report'     => $result['report'],
+        ) );
     }
 
     /**

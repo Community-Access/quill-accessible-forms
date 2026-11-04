@@ -162,3 +162,21 @@ if ( ! function_exists( 'sanitize_title' ) ) {
         return trim( preg_replace( '/[^a-z0-9]+/', '-', strtolower( (string) $title ) ), '-' );
     }
 }
+
+if ( ! function_exists( 'esc_attr__' ) ) {
+    function esc_attr__( $text, $domain = 'default' ) {
+        return esc_attr( $text );
+    }
+}
+
+if ( ! function_exists( 'esc_html_e' ) ) {
+    function esc_html_e( $text, $domain = 'default' ) {
+        echo esc_html( $text );
+    }
+}
+
+if ( ! function_exists( 'esc_attr_e' ) ) {
+    function esc_attr_e( $text, $domain = 'default' ) {
+        echo esc_attr( $text );
+    }
+}

@@ -20,13 +20,20 @@ class BAF_Structure_Mode {
     /**
      * Render structure mode tree view
      *
-     * @param array $form_config Form configuration.
-     * @param int   $form_id     Form ID.
+     * The tree is drawn from the form model, so sections, columns and
+     * repeaters show their questions inside them, and every condition is
+     * read out as a sentence ("Shown when Type is Business").
+     *
+     * @param array      $form_config Form configuration (the builder's shape).
+     * @param int        $form_id     Form ID.
+     * @param array|null $model       The form model; read from $form_config when not given.
      * @return string Structure mode HTML.
      */
-    public function render( $form_config, $form_id = 0 ) {
-        $fields = $form_config['fields'] ?? array();
-        $pages = $form_config['pages'] ?? array();
+    public function render( $form_config, $form_id = 0, $model = null ) {
+        if ( ! is_array( $model ) ) {
+            $model = BAF_Form_Model_Converter::from_legacy( array( 'config' => is_array( $form_config ) ? $form_config : array() ) )['model'];
+        }
+        $pages = BAF_BFL_Service::outline( $model );
 
         ob_start();
         ?>
@@ -57,10 +64,10 @@ class BAF_Structure_Mode {
                 aria-labelledby="baf-structure-title"
                 aria-describedby="baf-structure-instructions">
                 
-                <?php if ( empty( $pages ) || count( $pages ) <= 1 ) : ?>
-                    <?php echo $this->render_fields_tree( $fields, 1 ); ?>
+                <?php if ( count( $pages ) <= 1 ) : ?>
+                    <?php echo $this->render_fields_tree( $pages[0]['items'] ?? array(), 1 ); ?>
                 <?php else : ?>
-                    <?php echo $this->render_pages_tree( $pages, $fields ); ?>
+                    <?php echo $this->render_pages_tree( $pages ); ?>
                 <?php endif; ?>
                 
             </ul>
@@ -82,19 +89,15 @@ class BAF_Structure_Mode {
     /**
      * Render pages tree
      *
-     * @param array $pages  Pages configuration.
-     * @param array $fields All fields.
+     * @param array $pages Pages from BAF_BFL_Service::outline().
      * @return string HTML.
      */
-    private function render_pages_tree( $pages, $fields ) {
+    private function render_pages_tree( $pages ) {
         $html = '';
 
         foreach ( $pages as $page_index => $page ) {
-            $page_id = $page['id'] ?? 'page-' . $page_index;
-            $page_title = $page['title'] ?? sprintf( __( 'Page %d', 'bits-accessible-forms' ), $page_index + 1 );
-            $page_fields = array_filter( $fields, function( $field ) use ( $page_id ) {
-                return ( $field['page'] ?? '' ) === $page_id;
-            } );
+            $page_id = $page['id'] !== '' ? $page['id'] : 'page-' . $page_index;
+            $page_title = $page['title'] !== '' ? $page['title'] : sprintf( __( 'Page %d', 'bits-accessible-forms' ), $page_index + 1 );
 
             $html .= sprintf(
                 '<li class="baf-tree-item baf-tree-page" role="treeitem" aria-expanded="true" data-item-type="page" data-item-id="%s" tabindex="%s">
@@ -103,14 +106,16 @@ class BAF_Structure_Mode {
                         <span class="baf-tree-icon" aria-hidden="true">📄</span>
                         <span class="baf-tree-label">%s</span>
                         %s
+                        %s
                     </div>
                     <ul role="group">%s</ul>
                 </li>',
                 esc_attr( $page_id ),
                 $page_index === 0 ? '0' : '-1',
                 esc_html( $page_title ),
+                $this->render_condition( $page['when'] ),
                 $this->render_item_actions( $page_title, 'page' ),
-                $this->render_fields_tree( array_values( $page_fields ), $page_index + 1 )
+                $this->render_fields_tree( $page['items'], 2 )
             );
         }
 
@@ -120,7 +125,7 @@ class BAF_Structure_Mode {
     /**
      * Render fields tree
      *
-     * @param array $fields Fields configuration.
+     * @param array $fields Items from BAF_BFL_Service::outline().
      * @param int   $level  Nesting level.
      * @return string HTML.
      */
@@ -130,14 +135,13 @@ class BAF_Structure_Mode {
 
         foreach ( $fields as $index => $field ) {
             $field_id = $field['id'] ?? '';
-            $field_label = $field['label'] ?? __( 'Untitled Field', 'bits-accessible-forms' );
+            $field_label = ( $field['label'] ?? '' ) !== '' ? $field['label'] : __( 'Untitled Field', 'bits-accessible-forms' );
             $field_type = $field['type'] ?? 'text';
             $is_required = ! empty( $field['required'] );
             $position = $index + 1;
 
             // Check if this is a container field (section, columns, repeater)
-            $is_container = in_array( $field_type, array( 'section', 'columns', 'repeater', 'fieldset' ), true );
-            $has_children = $is_container && ! empty( $field['fields'] );
+            $has_children = ! empty( $field['children'] );
 
             $type_icons = array(
                 'text'      => '📝',
@@ -178,6 +182,7 @@ class BAF_Structure_Mode {
                         <span class="baf-tree-type">(%s)</span>
                         %s
                         %s
+                        %s
                     </div>
                     %s
                 </li>',
@@ -190,12 +195,27 @@ class BAF_Structure_Mode {
                 esc_html( $field_label ),
                 esc_html( $field_type ),
                 $is_required ? '<span class="baf-tree-required" aria-label="' . esc_attr__( 'Required', 'bits-accessible-forms' ) . '">[required]</span>' : '',
+                $this->render_condition( $field['when'] ?? '' ),
                 $this->render_item_actions( $field_label, 'field', $position, $total ),
-                $has_children ? '<ul role="group">' . $this->render_fields_tree( $field['fields'], $level + 1 ) . '</ul>' : ''
+                $has_children ? '<ul role="group">' . $this->render_fields_tree( $field['children'], $level + 1 ) . '</ul>' : ''
             );
         }
 
         return $html;
+    }
+
+    /**
+     * The sentence of an item's condition, read with the item.
+     *
+     * @param string $sentence Sentence from the outline, or ''.
+     * @return string HTML.
+     */
+    private function render_condition( $sentence ) {
+        if ( $sentence === '' ) {
+            return '';
+        }
+        /* translators: %s: a condition as a sentence, such as "Type is Business". */
+        return '<span class="baf-tree-when">' . esc_html( sprintf( __( 'Shown when %s', 'bits-accessible-forms' ), $sentence ) ) . '</span>';
     }
 
     /**

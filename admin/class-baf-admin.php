@@ -209,6 +209,15 @@ class BAF_Admin {
                 true
             );
 
+            // The BFL panel: Format Code and Sync to Visual, on the form model.
+            wp_enqueue_script(
+                'baf-bfl-mode',
+                BAF_PLUGIN_URL . 'admin/js/baf-bfl-mode.js',
+                array( 'baf-form-builder' ),
+                BAF_VERSION,
+                true
+            );
+
             // Get field registry for builder
             $field_registry = BAF_Field_Registry::get_instance();
 
@@ -229,6 +238,15 @@ class BAF_Admin {
                     'duplicate'        => __( 'Duplicate', 'bits-accessible-forms' ),
                     'untitledForm'     => __( 'Untitled Form', 'bits-accessible-forms' ),
                     'noFieldsYet'      => __( 'No fields yet. Add a field from the palette to get started.', 'bits-accessible-forms' ),
+                    'bflError'         => __( 'Error', 'bits-accessible-forms' ),
+                    'bflWarning'       => __( 'Warning', 'bits-accessible-forms' ),
+                    'bflProblems'      => __( 'Problems in the BFL', 'bits-accessible-forms' ),
+                    /* translators: %d: line number. */
+                    'bflLine'          => __( 'line %d', 'bits-accessible-forms' ),
+                    /* translators: %d: number of errors. */
+                    'bflHasErrors'     => __( 'The BFL has %d errors. They are listed after the editor.', 'bits-accessible-forms' ),
+                    'bflFormatted'     => __( 'Formatted.', 'bits-accessible-forms' ),
+                    'bflSynced'        => __( 'Saved. Reloading the visual builder.', 'bits-accessible-forms' ),
                 ),
             ) );
 
