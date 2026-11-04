@@ -227,6 +227,44 @@ class BAF_Admin {
                 true
             );
 
+            // Rules, Quiz outcomes, Translations and Choice libraries: the
+            // screens check expressions with the published form's evaluator.
+            wp_enqueue_script(
+                'baf-admin-expression',
+                BAF_PLUGIN_URL . 'public/js/baf-expression.js',
+                array(),
+                BAF_VERSION,
+                true
+            );
+            wp_enqueue_script(
+                'baf-model-editor-core',
+                BAF_PLUGIN_URL . 'admin/js/baf-model-editor-core.js',
+                array( 'baf-admin-expression' ),
+                BAF_VERSION,
+                true
+            );
+            wp_enqueue_script(
+                'baf-model-editor',
+                BAF_PLUGIN_URL . 'admin/js/baf-model-editor.js',
+                array( 'baf-model-editor-core' ),
+                BAF_VERSION,
+                true
+            );
+            wp_enqueue_script(
+                'baf-model-screens',
+                BAF_PLUGIN_URL . 'admin/js/baf-model-screens.js',
+                array( 'baf-model-editor' ),
+                BAF_VERSION,
+                true
+            );
+            wp_localize_script( 'baf-model-editor', 'bafModelEditor', array(
+                'ajaxUrl'   => admin_url( 'admin-ajax.php' ),
+                'nonce'     => wp_create_nonce( 'baf_builder_nonce' ),
+                'formId'    => isset( $_GET['form_id'] ) ? absint( $_GET['form_id'] ) : 0,
+                'libraries' => class_exists( 'BAF_Choice_Libraries' ) ? BAF_Choice_Libraries::get_all() : array(),
+                'i18n'      => require BAF_PLUGIN_DIR . 'admin/model-editor-i18n.php',
+            ) );
+
             // Get field registry for builder
             $field_registry = BAF_Field_Registry::get_instance();
 

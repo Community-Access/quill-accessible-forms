@@ -14,6 +14,7 @@ $form_id = isset( $_GET['form_id'] ) ? absint( $_GET['form_id'] ) : 0;
 $form = $form_id ? new BAF_Form( $form_id ) : new BAF_Form();
 $form_builder = new BAF_Form_Builder();
 $structure_mode = new BAF_Structure_Mode();
+require_once BAF_PLUGIN_DIR . 'admin/partials/model-screens.php';
 ?>
 <div class="wrap baf-wrap">
     <!-- Skip Links for Accessibility -->
@@ -74,6 +75,7 @@ $structure_mode = new BAF_Structure_Mode();
                         class="baf-mode-btn">
                     <?php esc_html_e( 'BFL Code', 'bits-accessible-forms' ); ?>
                 </button>
+                <?php baf_model_screen_tabs(); ?>
             </div>
         </div>
         
@@ -193,6 +195,9 @@ $structure_mode = new BAF_Structure_Mode();
                 <div class="baf-bfl-errors" id="baf-bfl-errors" role="alert" aria-live="polite"></div>
             </div>
         </div>
+
+        <!-- Rules, Quiz outcomes, Translations, Choice libraries -->
+        <?php baf_model_screen_panels(); ?>
     </main>
     
     <!-- Hidden form data -->
@@ -200,6 +205,8 @@ $structure_mode = new BAF_Structure_Mode();
     <input type="hidden" id="baf-form-config" value="<?php echo esc_attr( wp_json_encode( $form->config ) ); ?>">
     <input type="hidden" id="baf-form-settings" value="<?php echo esc_attr( wp_json_encode( $form->settings ) ); ?>">
 </div>
+
+<?php baf_model_screen_dialogs(); ?>
 
 <!-- Field Picker Modal (for Add Field button) -->
 <div id="baf-field-picker-modal" 
