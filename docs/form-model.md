@@ -262,6 +262,14 @@ defaults need to be written.
 The first confirmation whose `when` holds (or that has none) is used. Every
 notification whose `when` holds is sent.
 
+## Objects and lists
+
+`settings`, `props`, `attributes`, `translations`, `choice_libraries` and
+the other objects in the model are JSON objects: write an empty one as `{}`.
+PHP decodes `{}` and `[]` to the same thing, so BAF also accepts an empty
+`[]` where an object belongs; QUILL rejects it, as the schema says. BAF's own
+writer always writes `{}`, so this only arises in a model written by hand.
+
 ## Rules beyond the schema
 
 `BAF_Form_Model::validate()` also checks what a JSON Schema cannot say:

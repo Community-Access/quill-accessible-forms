@@ -264,8 +264,14 @@ class BAF_BFL_Writer {
         $value  = (string) $c['value'];
         $label  = (string) $c['label'];
         $extras = array_diff_key( $c, array( 'value' => 1, 'label' => 1 ) );
+        $bare   = self::plain( $label ) && strpos( $label, '|' ) === false && strpos( $label, ':' ) === false && $value === BAF_Form_Model::slug( $label ) && $value !== '';
+        // A price alone, on a choice whose value is its label's slug: the short
+        // spelling "+ Small:10", which reads back to the same choice.
+        if ( $bare && array_keys( $extras ) === array( 'price' ) && ( is_int( $c['price'] ) || ( is_float( $c['price'] ) && is_finite( $c['price'] ) ) ) ) {
+            return '+ ' . $label . ':' . BAF_Expression::literal_text( $c['price'] );
+        }
         if ( ! $extras ) {
-            if ( self::plain( $label ) && strpos( $label, '|' ) === false && strpos( $label, ':' ) === false && $value === BAF_Form_Model::slug( $label ) && $value !== '' ) {
+            if ( $bare ) {
                 return '+ ' . $label;
             }
             if ( self::plain( $value ) && strpos( $value, '|' ) === false && self::plain( $label ) ) {

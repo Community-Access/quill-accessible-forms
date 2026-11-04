@@ -138,10 +138,20 @@ rule require #phone
 | --- | --- |
 | `+ Small` | value `small` (the label's slug), label `Small` |
 | `+ s\|Small` | value `s`, label `Small` |
-| `+ Small:10` | value `small`, label `Small`, price 10 (older spelling; a colon not followed by a number is part of the label) |
+| `+ Small:10` | value `small`, label `Small`, price 10 (a colon not followed by a number is part of the label) |
 | `+ "s" \| "Small" @price 10 @points 2 @image "..." @description "..." @selected` | any choice, with every extra |
 
-The writer uses the shortest line that reads back to the same choice.
+The writer uses the shortest line that reads back to the same choice:
+
+- `+ Small` when the value is the label's slug and there is nothing else;
+- `+ Small:10` when, besides that, the choice has a price and nothing more
+  (a price written with a decimal point keeps it: `+ Large:20.0`, because
+  the model holds 20.0, not 20);
+- `+ s|Small` when the value is not the slug and there is nothing else;
+- the quoted form otherwise: a label with a colon or a bar, a value that is
+  not the slug with a price, or any other extra.
+
+`tests/conformance/bfl/canonical/priced-choices.bfl` holds every case.
 
 ### Rules, scoring, confirmations, notifications
 
@@ -222,6 +232,9 @@ the same meaning:
 - form modifiers `@ajax`, `@honeypot`, `@captcha "type"`, and the older
   compiler's `settings` block;
 - `@smart_default "today+7"`, `"user:display_name"`, `"query:ref"`, `"geo"`;
+- a library named after a choice field's label, as the language guide
+  teaches: `select "Country" countries` is `@library "countries"`. Any word
+  there is taken as the library's name, unless it starts another item;
 - the eight single-test conditions (`is`, `contains`, `starts`, `ends`,
   `greater`, `less`, `empty`, `filled`), now inside the full expression language;
 - flat sections: a section with nothing indented under it takes the items

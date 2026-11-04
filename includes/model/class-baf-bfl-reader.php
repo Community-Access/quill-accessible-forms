@@ -1133,6 +1133,15 @@ class BAF_BFL_Reader {
         if ( in_array( $word, self::ELEMENT_TYPES, true ) ) {
             $field['props']['element'] = $word;
         }
+        // The language guide's spelling of a library: a word after the label
+        // on a choice field's line (select "Country" countries).
+        $next = $this->peek();
+        if ( in_array( $field['type'], array_merge( BAF_Form_Model::CHOICE_TYPES, array( 'likert' ) ), true )
+            && $next['t'] === 'WORD' && $next['line'] === $header['line']
+            && preg_match( '/^[A-Za-z][A-Za-z0-9_]*$/', $next['v'] ) && ! $this->starts_item( $next )
+            && ! in_array( strtolower( $next['v'] ), array( 'form', 'page', 'library', 'rule', 'scoring', 'confirmation', 'notification', 'translation', 'settings', 'if', 'else', 'end', 'begin', 'column' ), true ) ) {
+            $field['choice_library'] = $this->next()['v'];
+        }
         $choices = array();
         $items   = array();
         $this->body( $header, function ( $kind, $t ) use ( &$field, &$choices, &$items ) {

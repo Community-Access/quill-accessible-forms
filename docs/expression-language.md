@@ -163,6 +163,8 @@ An unanswered field is nothing (null).
 - **Text that is a number** is digits with an optional minus sign and one
   decimal point (`"3."`, `".5"`, `"-0"`), with spaces, tabs, line breaks or
   form feeds around it. `"+5"`, `"1e3"` and `"0x1A"` are not numbers.
+- **A lone surrogate escape** (`"\uD800"` with no low half) stands for
+  U+FFFD, the replacement character, in canonical text.
 - **Rounding** is half away from zero, after PHP's pre-rounding of the
   value to 15 significant digits: `round(1.005, 2)` is 1.01 and
   `round(0.49999999999999994)` is 1.
