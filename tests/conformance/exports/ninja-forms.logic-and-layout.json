@@ -1,0 +1,163 @@
+{
+    "settings": {
+        "title": "Membership"
+    },
+    "fields": [
+        {
+            "type": "listradio",
+            "key": "type",
+            "label": "Joining as",
+            "order": 1,
+            "required": 1,
+            "options": [
+                {
+                    "label": "An individual",
+                    "value": "person",
+                    "order": 0
+                },
+                {
+                    "label": "A business",
+                    "value": "business",
+                    "order": 1
+                },
+                {
+                    "label": "A charity",
+                    "value": "charity",
+                    "order": 2
+                }
+            ]
+        },
+        {
+            "type": "textbox",
+            "key": "company",
+            "label": "Company name",
+            "order": 2,
+            "required": 0
+        },
+        {
+            "type": "number",
+            "key": "staff",
+            "label": "Staff",
+            "order": 3,
+            "required": 0
+        },
+        {
+            "type": "textbox",
+            "key": "first",
+            "label": "First name",
+            "order": 4,
+            "required": 0
+        },
+        {
+            "type": "textbox",
+            "key": "last",
+            "label": "Last name",
+            "order": 5,
+            "required": 0
+        },
+        {
+            "type": "html",
+            "key": "contact",
+            "label": "How to reach you",
+            "default": "<h3>How to reach you</h3>",
+            "order": 6
+        },
+        {
+            "type": "listselect",
+            "key": "contact_by",
+            "label": "Contact me by",
+            "order": 7,
+            "required": 0,
+            "options": [
+                {
+                    "label": "Email",
+                    "value": "email",
+                    "order": 0
+                },
+                {
+                    "label": "Phone",
+                    "value": "phone",
+                    "order": 1
+                },
+                {
+                    "label": "Post",
+                    "value": "post",
+                    "order": 2
+                }
+            ]
+        },
+        {
+            "type": "phone",
+            "key": "phone",
+            "label": "Phone",
+            "order": 8,
+            "required": 0,
+            "mask": "custom",
+            "custom_mask": "(999) 999-9999"
+        },
+        {
+            "type": "html",
+            "key": "postal",
+            "label": "Postal address",
+            "default": "<h3>Postal address</h3>",
+            "order": 9
+        },
+        {
+            "type": "listselect",
+            "key": "country",
+            "label": "Country",
+            "order": 10,
+            "required": 0
+        },
+        {
+            "type": "listselect",
+            "key": "region",
+            "label": "State or province",
+            "order": 11,
+            "required": 0
+        },
+        {
+            "type": "html",
+            "key": "after_section",
+            "label": "",
+            "order": 12,
+            "default": "<p>Almost there.</p>"
+        },
+        {
+            "type": "date",
+            "key": "start",
+            "label": "Start date",
+            "order": 13,
+            "required": 0
+        },
+        {
+            "type": "date",
+            "key": "renewal",
+            "label": "Renewal",
+            "order": 14,
+            "required": 0
+        },
+        {
+            "type": "quantity",
+            "key": "members",
+            "label": "Members",
+            "order": 15,
+            "required": 0,
+            "default": "1"
+        },
+        {
+            "type": "total",
+            "key": "total",
+            "label": "Total",
+            "order": 16,
+            "required": 0
+        },
+        {
+            "type": "submit",
+            "key": "submit",
+            "label": "Join",
+            "order": 17
+        }
+    ],
+    "actions": []
+}

@@ -1,0 +1,142 @@
+{
+    "source": "Ninja Forms",
+    "carried": 14,
+    "entries": [
+        {
+            "level": "changed",
+            "where": "pages",
+            "message": "Ninja Forms needs its Multi-Part add-on for pages; the 3 pages follow one another."
+        },
+        {
+            "level": "dropped",
+            "where": "field company (Company name)",
+            "message": "Ninja Forms conditions need its Conditional Logic add-on, whose format BAF does not write."
+        },
+        {
+            "level": "dropped",
+            "where": "field staff (Staff)",
+            "message": "Ninja Forms conditions need its Conditional Logic add-on, whose format BAF does not write."
+        },
+        {
+            "level": "dropped",
+            "where": "field first (First name)",
+            "message": "Its smart default has no place in this builder."
+        },
+        {
+            "level": "changed",
+            "where": "field contact (How to reach you)",
+            "message": "The section is a heading."
+        },
+        {
+            "level": "changed",
+            "where": "field postal (Postal address)",
+            "message": "The section is a heading."
+        },
+        {
+            "level": "dropped",
+            "where": "field country (Country)",
+            "message": "Its choices come from BAF's \"countries\" library; add them in the other builder."
+        },
+        {
+            "level": "dropped",
+            "where": "field region (State or province)",
+            "message": "Its cascade has no place in this builder."
+        },
+        {
+            "level": "dropped",
+            "where": "page family",
+            "message": "Ninja Forms conditions need its Conditional Logic add-on, whose format BAF does not write."
+        },
+        {
+            "level": "dropped",
+            "where": "field children (Children)",
+            "message": "Ninja Forms has no field like BAF's \"repeater\"; it was left out."
+        },
+        {
+            "level": "dropped",
+            "where": "field start (Start date)",
+            "message": "Ninja Forms conditions need its Conditional Logic add-on, whose format BAF does not write."
+        },
+        {
+            "level": "dropped",
+            "where": "field start (Start date)",
+            "message": "Its smart default has no place in this builder."
+        },
+        {
+            "level": "dropped",
+            "where": "field renewal (Renewal)",
+            "message": "Ninja Forms conditions need its Conditional Logic add-on, whose format BAF does not write."
+        },
+        {
+            "level": "dropped",
+            "where": "field fee (Fee each)",
+            "message": "Ninja Forms has no field like BAF's \"price\"; it was left out."
+        },
+        {
+            "level": "dropped",
+            "where": "field discount (Discount)",
+            "message": "Ninja Forms has no field like BAF's \"calculation\"; it was left out."
+        },
+        {
+            "level": "dropped",
+            "where": "field total (Total)",
+            "message": "Its calculation has no place in this builder."
+        },
+        {
+            "level": "dropped",
+            "where": "field agree (I agree)",
+            "message": "Ninja Forms has no field like BAF's \"consent\"; it was left out."
+        },
+        {
+            "level": "dropped",
+            "where": "rule 1 (show)",
+            "message": "This builder has no rule like it."
+        },
+        {
+            "level": "dropped",
+            "where": "rule 2 (hide)",
+            "message": "This builder has no rule like it."
+        },
+        {
+            "level": "dropped",
+            "where": "rule 3 (require)",
+            "message": "This builder has no rule like it."
+        },
+        {
+            "level": "dropped",
+            "where": "rule 4 (optional)",
+            "message": "This builder has no rule like it."
+        },
+        {
+            "level": "dropped",
+            "where": "rule 5 (enable)",
+            "message": "This builder has no rule like it."
+        },
+        {
+            "level": "dropped",
+            "where": "rule 6 (disable)",
+            "message": "This builder has no rule like it."
+        },
+        {
+            "level": "dropped",
+            "where": "rule 7 (set)",
+            "message": "This builder has no rule like it."
+        },
+        {
+            "level": "dropped",
+            "where": "rule 8 (skip_to)",
+            "message": "This builder has no rule like it."
+        },
+        {
+            "level": "changed",
+            "where": "choice libraries",
+            "message": "The form's own libraries were written out as each field's choices."
+        },
+        {
+            "level": "dropped",
+            "where": "notification office",
+            "message": "Set up email notifications again in the other builder."
+        }
+    ],
+    "direction": "export"
+}

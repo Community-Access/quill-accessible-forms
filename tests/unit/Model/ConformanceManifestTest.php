@@ -12,6 +12,7 @@ require_once BAF_PLUGIN_DIR . 'includes/model/class-baf-bfl-writer.php';
 if ( file_exists( BAF_PLUGIN_DIR . 'includes/model/class-baf-importers.php' ) ) {
     require_once BAF_PLUGIN_DIR . 'includes/model/class-baf-importers.php';
 }
+require_once BAF_PLUGIN_DIR . 'includes/model/class-baf-exporters.php';
 
 class BAF_Conformance_Manifest_Test extends BAF_Unit_Test_Case {
 
@@ -45,7 +46,7 @@ class BAF_Conformance_Manifest_Test extends BAF_Unit_Test_Case {
             }
             foreach ( $suite['cases'] ?? array() as $case ) {
                 foreach ( $case as $k => $v ) {
-                    if ( is_string( $v ) && in_array( $k, array( 'bfl', 'model', 'canonical', 'stored', 'report', 'input' ), true ) ) {
+                    if ( is_string( $v ) && in_array( $k, array( 'bfl', 'model', 'canonical', 'stored', 'report', 'input', 'output' ), true ) ) {
                         $out[] = $v;
                     }
                 }
@@ -87,7 +88,7 @@ class BAF_Conformance_Manifest_Test extends BAF_Unit_Test_Case {
             $ran[] = $suite['kind'];
         }
         $this->assertCount( count( self::manifest()['suites'] ), $ran );
-        $this->assertCount( 10, array_unique( $ran ) );
+        $this->assertCount( 11, array_unique( $ran ) );
     }
 
     private function run_schema( $suite ) {
@@ -157,6 +158,17 @@ class BAF_Conformance_Manifest_Test extends BAF_Unit_Test_Case {
             foreach ( $c['hidden'] ?? array() as $id ) {
                 $this->assertFalse( BAF_Form_Model::is_shown( $model, $id, $c['answers'], $extra ), $c['name'] . ' ' . $id );
             }
+        }
+    }
+
+    private function run_exports( $suite ) {
+        foreach ( $suite['cases'] as $c ) {
+            $out = BAF_Exporters::export( $c['target'], self::json( $c['model'] ) );
+            $this->assertSame( self::load( $c['output'] ), $out['text'], $c['output'] );
+            $this->assertSame( self::json( $c['report'] ), $out['report']->to_array(), $c['report'] );
+            // What was exported reads back through the importer, and is a valid model.
+            $back = BAF_Importers::import( $c['target'], $out['text'] );
+            $this->assertSame( array(), BAF_Form_Model::validate( $back['model'] ), $c['output'] . ' reads back' );
         }
     }
 

@@ -41,6 +41,13 @@ class BAF_Import_Report {
     public $entries = array();
 
     /**
+     * "import" (from another builder) or "export" (to one).
+     *
+     * @var string
+     */
+    public $direction = 'import';
+
+    /**
      * Constructor.
      *
      * @param string $source Source name, such as "Gravity Forms".
@@ -116,11 +123,15 @@ class BAF_Import_Report {
      * @return array Report.
      */
     public function to_array() {
-        return array(
+        $out = array(
             'source'  => $this->source,
             'carried' => $this->carried,
             'entries' => $this->entries,
         );
+        if ( $this->direction === 'export' ) {
+            $out['direction'] = 'export';
+        }
+        return $out;
     }
 
     /**
@@ -130,7 +141,9 @@ class BAF_Import_Report {
      */
     public function to_text() {
         $lines   = array();
-        $lines[] = sprintf( 'Imported %d item(s) from %s.', $this->carried, $this->source );
+        $lines[] = $this->direction === 'export'
+            ? sprintf( 'Exported %d item(s) to %s.', $this->carried, $this->source )
+            : sprintf( 'Imported %d item(s) from %s.', $this->carried, $this->source );
         if ( ! $this->entries ) {
             $lines[] = 'Everything came across.';
         }

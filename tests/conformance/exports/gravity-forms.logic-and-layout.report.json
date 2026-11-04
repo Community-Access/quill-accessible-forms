@@ -1,0 +1,112 @@
+{
+    "source": "Gravity Forms",
+    "carried": 18,
+    "entries": [
+        {
+            "level": "dropped",
+            "where": "field staff (Staff)",
+            "message": "Its condition \"#type is one of [\"business\", \"charity\"] and #company is not empty\" is more than Gravity Forms' one list of tests can say."
+        },
+        {
+            "level": "dropped",
+            "where": "field first (First name)",
+            "message": "Its smart default has no place in this builder."
+        },
+        {
+            "level": "dropped",
+            "where": "field country (Country)",
+            "message": "Its choices come from BAF's \"countries\" library; add them in the other builder."
+        },
+        {
+            "level": "dropped",
+            "where": "field region (State or province)",
+            "message": "Its cascade has no place in this builder."
+        },
+        {
+            "level": "dropped",
+            "where": "field children (Children)",
+            "message": "Gravity Forms has no field like BAF's \"repeater\"; it was left out."
+        },
+        {
+            "level": "dropped",
+            "where": "field start (Start date)",
+            "message": "Its condition \"#type is \"person\" and not #children is empty\" is more than Gravity Forms' one list of tests can say."
+        },
+        {
+            "level": "dropped",
+            "where": "field start (Start date)",
+            "message": "Its smart default has no place in this builder."
+        },
+        {
+            "level": "dropped",
+            "where": "field renewal (Renewal)",
+            "message": "Its condition \"#start is within 30 days or #start is before \"2027-01-01\" or #start is after today()\" is more than Gravity Forms' one list of tests can say."
+        },
+        {
+            "level": "dropped",
+            "where": "field fee (Fee each)",
+            "message": "Gravity Forms has no field like BAF's \"price\"; it was left out."
+        },
+        {
+            "level": "dropped",
+            "where": "field discount (Discount)",
+            "message": "Its calculation \"if(#members > 10, #members * #fee * 0.1, 0)\" uses more than Gravity Forms' + - * / and fields."
+        },
+        {
+            "level": "dropped",
+            "where": "field total (Total)",
+            "message": "Its calculation \"round(#members * #fee - #discount, 2)\" uses more than Gravity Forms' + - * / and fields."
+        },
+        {
+            "level": "dropped",
+            "where": "rule 1 (show)",
+            "message": "This builder has no rule like it."
+        },
+        {
+            "level": "dropped",
+            "where": "rule 2 (hide)",
+            "message": "This builder has no rule like it."
+        },
+        {
+            "level": "dropped",
+            "where": "rule 3 (require)",
+            "message": "This builder has no rule like it."
+        },
+        {
+            "level": "dropped",
+            "where": "rule 4 (optional)",
+            "message": "This builder has no rule like it."
+        },
+        {
+            "level": "dropped",
+            "where": "rule 5 (enable)",
+            "message": "This builder has no rule like it."
+        },
+        {
+            "level": "dropped",
+            "where": "rule 6 (disable)",
+            "message": "This builder has no rule like it."
+        },
+        {
+            "level": "dropped",
+            "where": "rule 7 (set)",
+            "message": "This builder has no rule like it."
+        },
+        {
+            "level": "dropped",
+            "where": "rule 8 (skip_to)",
+            "message": "This builder has no rule like it."
+        },
+        {
+            "level": "changed",
+            "where": "choice libraries",
+            "message": "The form's own libraries were written out as each field's choices."
+        },
+        {
+            "level": "dropped",
+            "where": "notification office",
+            "message": "Set up email notifications again in the other builder."
+        }
+    ],
+    "direction": "export"
+}

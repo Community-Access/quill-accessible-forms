@@ -43,6 +43,13 @@
       { "source": "contact-form-7", "input": "imports/contact-form-7/plain-template.txt", "model": "imports/contact-form-7/plain-template.model.json", "report": "imports/contact-form-7/plain-template.report.json" },
       { "source": "ninja-forms", "input": "imports/ninja-forms/quote-request.json", "model": "imports/ninja-forms/quote-request.model.json", "report": "imports/ninja-forms/quote-request.report.json" },
       { "source": "google-forms", "input": "imports/google-forms/braille-quiz.json", "model": "imports/google-forms/braille-quiz.model.json", "report": "imports/google-forms/braille-quiz.report.json" }
+    ] },
+    { "kind": "exports", "baf_only": true, "cases": [
+      { "target": "gravity-forms", "model": "models/valid/logic-and-layout.json", "output": "exports/gravity-forms.logic-and-layout.json", "report": "exports/gravity-forms.logic-and-layout.report.json" },
+      { "target": "wpforms", "model": "models/valid/logic-and-layout.json", "output": "exports/wpforms.logic-and-layout.json", "report": "exports/wpforms.logic-and-layout.report.json" },
+      { "target": "contact-form-7", "model": "models/valid/logic-and-layout.json", "output": "exports/contact-form-7.logic-and-layout.txt", "report": "exports/contact-form-7.logic-and-layout.report.json" },
+      { "target": "ninja-forms", "model": "models/valid/logic-and-layout.json", "output": "exports/ninja-forms.logic-and-layout.json", "report": "exports/ninja-forms.logic-and-layout.report.json" },
+      { "target": "google-forms", "model": "models/valid/quiz-and-translations.json", "output": "exports/google-forms.quiz-and-translations.json", "report": "exports/google-forms.quiz-and-translations.report.json" }
     ] }
   ]
 }

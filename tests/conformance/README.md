@@ -38,6 +38,7 @@ published forms with `node tests/js/run-conformance.js`.
 | `bfl-errors` | `bfl/errors.json` | Each text gives an error on the given line. |
 | `builder` | `builder/*` | BAF only: its stored form shape and the migration of forms saved before the model. |
 | `imports` | `imports/<source>/*` | BAF only: each source file converts to the `.model.json`, with the `.report.json`. |
+| `exports` | `exports/*` | BAF only: each model exports to the builder's format byte for byte, with the `.report.json`, and reads back through the importer. |
 
 Every model in `bfl-canonical`, `bfl-legacy`, `builder` and `imports` is also
 valid. The models in `valid-models` and the canonical edge cases together use

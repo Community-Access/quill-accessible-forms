@@ -1,0 +1,195 @@
+{
+    "0": {
+        "title": "Membership",
+        "fields": [
+            {
+                "id": 1,
+                "type": "radio",
+                "label": "Joining as",
+                "isRequired": true,
+                "choices": [
+                    {
+                        "text": "An individual",
+                        "value": "person"
+                    },
+                    {
+                        "text": "A business",
+                        "value": "business"
+                    },
+                    {
+                        "text": "A charity",
+                        "value": "charity"
+                    }
+                ]
+            },
+            {
+                "id": 2,
+                "type": "text",
+                "label": "Company name",
+                "conditionalLogic": {
+                    "actionType": "show",
+                    "logicType": "any",
+                    "rules": [
+                        {
+                            "fieldId": "1",
+                            "operator": "is",
+                            "value": "business"
+                        },
+                        {
+                            "fieldId": "1",
+                            "operator": "is",
+                            "value": "charity"
+                        }
+                    ]
+                }
+            },
+            {
+                "id": 3,
+                "type": "number",
+                "label": "Staff"
+            },
+            {
+                "id": 4,
+                "type": "text",
+                "label": "First name"
+            },
+            {
+                "id": 5,
+                "type": "text",
+                "label": "Last name"
+            },
+            {
+                "id": 6,
+                "type": "section",
+                "label": "How to reach you",
+                "description": "We only use this to send your card."
+            },
+            {
+                "id": 7,
+                "type": "select",
+                "label": "Contact me by",
+                "choices": [
+                    {
+                        "text": "Email",
+                        "value": "email"
+                    },
+                    {
+                        "text": "Phone",
+                        "value": "phone"
+                    },
+                    {
+                        "text": "Post",
+                        "value": "post"
+                    }
+                ]
+            },
+            {
+                "id": 8,
+                "type": "phone",
+                "label": "Phone",
+                "inputMask": true,
+                "inputMaskValue": "(999) 999-9999"
+            },
+            {
+                "id": 9,
+                "type": "section",
+                "label": "Postal address",
+                "conditionalLogic": {
+                    "actionType": "show",
+                    "logicType": "all",
+                    "rules": [
+                        {
+                            "fieldId": "7",
+                            "operator": "is",
+                            "value": "post"
+                        }
+                    ]
+                }
+            },
+            {
+                "id": 10,
+                "type": "select",
+                "label": "Country"
+            },
+            {
+                "id": 11,
+                "type": "select",
+                "label": "State or province"
+            },
+            {
+                "id": 12,
+                "type": "html",
+                "content": "<p>Almost there.</p>"
+            },
+            {
+                "type": "page",
+                "conditionalLogic": {
+                    "actionType": "show",
+                    "logicType": "all",
+                    "rules": [
+                        {
+                            "fieldId": "1",
+                            "operator": "is",
+                            "value": "person"
+                        }
+                    ]
+                },
+                "id": 13
+            },
+            {
+                "id": 14,
+                "type": "date",
+                "label": "Start date"
+            },
+            {
+                "id": 15,
+                "type": "date",
+                "label": "Renewal"
+            },
+            {
+                "type": "page",
+                "nextButton": {
+                    "type": "text",
+                    "text": "Continue"
+                },
+                "id": 16
+            },
+            {
+                "id": 17,
+                "type": "quantity",
+                "label": "Members",
+                "defaultValue": "1"
+            },
+            {
+                "id": 18,
+                "type": "number",
+                "label": "Discount"
+            },
+            {
+                "id": 19,
+                "type": "total",
+                "label": "Total"
+            },
+            {
+                "id": 20,
+                "type": "consent",
+                "label": "I agree",
+                "isRequired": true
+            }
+        ],
+        "description": "Every rule shape, condition shape and layout container.",
+        "button": {
+            "type": "text",
+            "text": "Join"
+        },
+        "pagination": {
+            "type": "steps",
+            "pages": [
+                "About you",
+                "Your family",
+                "Payment"
+            ]
+        }
+    },
+    "version": "2.8"
+}

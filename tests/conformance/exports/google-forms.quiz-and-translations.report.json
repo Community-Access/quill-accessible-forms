@@ -1,0 +1,52 @@
+{
+    "source": "Google Forms",
+    "carried": 4,
+    "entries": [
+        {
+            "level": "changed",
+            "where": "field q1 (How many dots are in a braille cell?)",
+            "message": "Google Forms stores the label \"Four\" as the answer, not \"4\"."
+        },
+        {
+            "level": "changed",
+            "where": "field q1 (How many dots are in a braille cell?)",
+            "message": "Google Forms stores the label \"Six\" as the answer, not \"6\"."
+        },
+        {
+            "level": "changed",
+            "where": "field q1 (How many dots are in a braille cell?)",
+            "message": "Google Forms stores the label \"Eight\" as the answer, not \"8\"."
+        },
+        {
+            "level": "changed",
+            "where": "field q2 (Which are braille codes?)",
+            "message": "Google Forms gives no partial credit."
+        },
+        {
+            "level": "changed",
+            "where": "field feel (How confident do you feel?)",
+            "message": "Google Forms stores the label \"Not very\" as the answer, not \"low\"."
+        },
+        {
+            "level": "changed",
+            "where": "field feel (How confident do you feel?)",
+            "message": "Google Forms stores the label \"Fairly\" as the answer, not \"mid\"."
+        },
+        {
+            "level": "changed",
+            "where": "field feel (How confident do you feel?)",
+            "message": "Google Forms stores the label \"Very\" as the answer, not \"high\"."
+        },
+        {
+            "level": "dropped",
+            "where": "scoring",
+            "message": "This builder has no quiz outcomes; 3 were left out."
+        },
+        {
+            "level": "dropped",
+            "where": "translations",
+            "message": "This builder keeps one language; the translations (es, fr) were left out."
+        }
+    ],
+    "direction": "export"
+}
