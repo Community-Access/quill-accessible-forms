@@ -1,0 +1,264 @@
+{
+    "version": 1,
+    "title": "Volunteer sign-up",
+    "settings": {
+        "form_button_text": "Sign up",
+        "ajax_submission": true,
+        "enable_honeypot": true,
+        "captcha_type": "recaptcha_v3"
+    },
+    "pages": [
+        {
+            "id": "page_1",
+            "title": "About you",
+            "items": [
+                {
+                    "id": "full_name",
+                    "type": "name",
+                    "label": "Full name",
+                    "required": true
+                },
+                {
+                    "id": "email",
+                    "type": "email",
+                    "label": "Email",
+                    "required": true,
+                    "smart_default": "user(\"user_email\")",
+                    "validation": {
+                        "unique": true
+                    }
+                },
+                {
+                    "id": "age",
+                    "type": "number",
+                    "label": "Age",
+                    "validation": {
+                        "min": 16,
+                        "max": 99
+                    },
+                    "props": {
+                        "step": "1"
+                    }
+                },
+                {
+                    "id": "s1",
+                    "type": "section",
+                    "label": "Experience",
+                    "help": "Optional",
+                    "items": [
+                        {
+                            "id": "role",
+                            "type": "select",
+                            "label": "Preferred role",
+                            "choices": [
+                                {
+                                    "value": "driver",
+                                    "label": "Driver"
+                                },
+                                {
+                                    "value": "2",
+                                    "label": "Reader"
+                                },
+                                {
+                                    "value": "guide",
+                                    "label": "Sighted guide"
+                                }
+                            ]
+                        },
+                        {
+                            "id": "licence",
+                            "type": "text",
+                            "label": "Licence number",
+                            "mask": "AA999999",
+                            "when": "#role is \"driver\" and #age > 17"
+                        },
+                        {
+                            "id": "other_role",
+                            "type": "text",
+                            "label": "Other role",
+                            "when": "#role is empty"
+                        },
+                        {
+                            "id": "agree",
+                            "type": "checkbox",
+                            "label": "I agree to the code of conduct",
+                            "required": true,
+                            "choices": [
+                                {
+                                    "value": "yes",
+                                    "label": "Yes"
+                                }
+                            ]
+                        },
+                        {
+                            "id": "orphan",
+                            "type": "text",
+                            "label": "On a page that is gone"
+                        }
+                    ]
+                }
+            ]
+        },
+        {
+            "id": "page_2",
+            "title": "Availability",
+            "description": "Tell us when you can help",
+            "items": [
+                {
+                    "id": "s2",
+                    "type": "section",
+                    "label": "When",
+                    "items": [
+                        {
+                            "id": "start",
+                            "type": "date",
+                            "label": "Earliest start",
+                            "smart_default": "today() + 3"
+                        },
+                        {
+                            "id": "days",
+                            "type": "checkbox",
+                            "label": "Days",
+                            "choices": [
+                                {
+                                    "value": "mon",
+                                    "label": "Monday"
+                                },
+                                {
+                                    "value": "wed",
+                                    "label": "Wednesday"
+                                }
+                            ]
+                        },
+                        {
+                            "id": "region",
+                            "type": "select",
+                            "label": "Region",
+                            "choice_library": "us_states"
+                        },
+                        {
+                            "id": "hours",
+                            "type": "number",
+                            "label": "Hours a week"
+                        },
+                        {
+                            "id": "rate",
+                            "type": "number",
+                            "label": "Mileage rate",
+                            "default": "0.45"
+                        },
+                        {
+                            "id": "claim",
+                            "type": "calculation",
+                            "label": "Weekly claim",
+                            "calculation": "#hours * #rate"
+                        },
+                        {
+                            "id": "fancy",
+                            "type": "calculation",
+                            "label": "Spreadsheet sum",
+                            "calculation": "sum(#hours, #rate)"
+                        },
+                        {
+                            "id": "tagline",
+                            "type": "text",
+                            "label": "Tagline",
+                            "attributes": {
+                                "data-track": "tagline"
+                            }
+                        },
+                        {
+                            "id": "q1",
+                            "type": "quiz",
+                            "label": "Which side does a sighted guide walk?",
+                            "choices": [
+                                {
+                                    "value": "half_step_ahead",
+                                    "label": "Half a step ahead"
+                                },
+                                {
+                                    "value": "behind",
+                                    "label": "Behind"
+                                }
+                            ],
+                            "scoring": {
+                                "correct": [
+                                    "half_step_ahead"
+                                ],
+                                "points": 2,
+                                "partial": false,
+                                "feedback_correct": "Yes."
+                            }
+                        },
+                        {
+                            "id": "field_22",
+                            "type": "html",
+                            "props": {
+                                "element": "divider"
+                            }
+                        },
+                        {
+                            "id": "cols",
+                            "type": "columns",
+                            "columns": [
+                                {
+                                    "items": [
+                                        {
+                                            "id": "phone",
+                                            "type": "phone",
+                                            "label": "Phone"
+                                        }
+                                    ]
+                                },
+                                {
+                                    "items": [
+                                        {
+                                            "id": "mobile",
+                                            "type": "phone",
+                                            "label": "Mobile"
+                                        }
+                                    ]
+                                }
+                            ]
+                        }
+                    ]
+                }
+            ]
+        }
+    ],
+    "confirmations": [
+        {
+            "id": "confirmation_1",
+            "type": "message",
+            "message": "Thank you for volunteering."
+        },
+        {
+            "id": "confirmation_2",
+            "type": "message",
+            "message": "Hi"
+        }
+    ],
+    "notifications": [
+        {
+            "id": "notification_1",
+            "to": "volunteers@example.org",
+            "subject": "New volunteer",
+            "message": "{all_fields}",
+            "props": {
+                "attach_files": true
+            }
+        }
+    ],
+    "extensions": {
+        "baf_legacy": {
+            "unknown_fields": [
+                {
+                    "id": "beam",
+                    "type": "teleporter",
+                    "label": "Beam me up",
+                    "page": "page_2"
+                }
+            ]
+        }
+    }
+}

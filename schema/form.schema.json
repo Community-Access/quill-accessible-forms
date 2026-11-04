@@ -393,7 +393,11 @@
             "loading_message", "loadingmessage", "attr",
             "correct", "points", "partial", "case_sensitive", "feedback_correct", "feedback_incorrect",
             "feedback_partial", "explanation",
-            "readonly", "class", "css", "admin", "allowother", "confirm", "hidden"
+            "readonly", "class", "css", "admin", "allowother", "confirm", "hidden",
+            "default_value", "input_mask", "custom_attributes", "conditional_logic", "choice_library",
+            "formula", "calculation", "correct_answers", "partial_credit", "custom_error_message",
+            "smart_default_expression", "page", "fields", "model_items", "scoring", "validation",
+            "cascade", "attributes", "options"
           ]
         }
       }

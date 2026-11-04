@@ -44,9 +44,11 @@ class BAF_Form_Builder {
         $form = new BAF_Form( $form_id );
         $form->title = sanitize_text_field( $form_data['title'] ?? '' );
         $form->description = wp_kses_post( $form_data['description'] ?? '' );
-        $form->config = $form_data['config'] ?? array();
-        $form->settings = $form_data['settings'] ?? array();
         $form->status = sanitize_key( $form_data['status'] ?? 'draft' );
+
+        // The builder edits the model's fields; what it has no place for
+        // (rules, outcomes, translations) is kept from the stored model.
+        $report = $form->apply_builder_config( $form_data['config'] ?? array(), $form_data['settings'] ?? array() );
 
         $result = $form->save();
 
@@ -54,6 +56,67 @@ class BAF_Form_Builder {
             wp_send_json_error( array( 'message' => $result->get_error_message() ) );
         }
 
+        wp_send_json_success( array(
+            'message' => __( 'Form saved successfully.', 'bits-accessible-forms' ),
+            'form_id' => $result,
+            'report'  => $report->to_array(),
+        ) );
+    }
+
+    /**
+     * AJAX: the form model, its canonical BFL, and the conversion report.
+     */
+    public function ajax_get_form_model() {
+        check_ajax_referer( 'baf_builder_nonce', 'nonce' );
+
+        if ( ! current_user_can( 'manage_options' ) ) {
+            wp_send_json_error( array( 'message' => __( 'Permission denied.', 'bits-accessible-forms' ) ) );
+        }
+
+        $form = new BAF_Form( isset( $_POST['form_id'] ) ? absint( $_POST['form_id'] ) : 0 );
+        if ( ! $form->id ) {
+            wp_send_json_error( array( 'message' => __( 'Form not found.', 'bits-accessible-forms' ) ) );
+        }
+        $result = $form->get_model_and_report();
+        wp_send_json_success( array(
+            'model'  => $result['model'],
+            'bfl'    => BAF_BFL_Writer::write( $result['model'] ),
+            'report' => $result['report']->to_array(),
+        ) );
+    }
+
+    /**
+     * AJAX: save a form from a model (JSON in "model") or from BFL ("bfl").
+     */
+    public function ajax_save_form_model() {
+        check_ajax_referer( 'baf_builder_nonce', 'nonce' );
+
+        if ( ! current_user_can( 'manage_options' ) ) {
+            wp_send_json_error( array( 'message' => __( 'Permission denied.', 'bits-accessible-forms' ) ) );
+        }
+
+        if ( isset( $_POST['bfl'] ) ) {
+            $read = BAF_BFL_Reader::read( wp_unslash( $_POST['bfl'] ) );
+            if ( $read['errors'] ) {
+                wp_send_json_error( array( 'message' => __( 'The BFL has errors.', 'bits-accessible-forms' ), 'errors' => $read['errors'] ) );
+            }
+            $model = $read['model'];
+        } else {
+            $model = json_decode( wp_unslash( $_POST['model'] ?? '' ), true );
+        }
+        if ( ! is_array( $model ) ) {
+            wp_send_json_error( array( 'message' => __( 'Invalid form data.', 'bits-accessible-forms' ) ) );
+        }
+
+        $form = new BAF_Form( isset( $_POST['form_id'] ) ? absint( $_POST['form_id'] ) : 0 );
+        $set  = $form->set_model( $model );
+        if ( is_wp_error( $set ) ) {
+            wp_send_json_error( array( 'message' => $set->get_error_message(), 'errors' => $set->get_error_data() ) );
+        }
+        $result = $form->save();
+        if ( is_wp_error( $result ) ) {
+            wp_send_json_error( array( 'message' => $result->get_error_message() ) );
+        }
         wp_send_json_success( array(
             'message' => __( 'Form saved successfully.', 'bits-accessible-forms' ),
             'form_id' => $result,
@@ -114,7 +177,14 @@ class BAF_Form_Builder {
         try {
             $parser = new BAF_BFL_Parser();
             $form_config = $parser->parse( $bfl_source );
-            wp_send_json_success( array( 'config' => $form_config ) );
+            // The form model read from the same text, with its line-numbered problems.
+            $read = BAF_BFL_Reader::read( $bfl_source );
+            wp_send_json_success( array(
+                'config'   => $form_config,
+                'model'    => $read['model'],
+                'errors'   => $read['errors'],
+                'warnings' => $read['warnings'],
+            ) );
         } catch ( Exception $e ) {
             wp_send_json_error( array( 'message' => $e->getMessage() ) );
         }

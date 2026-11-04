@@ -1,0 +1,71 @@
+{
+    "source": "BAF stored form",
+    "carried": 23,
+    "entries": [
+        {
+            "level": "changed",
+            "where": "field orphan",
+            "message": "Its page \"page_9\" does not exist, so it was put on the first page."
+        },
+        {
+            "level": "changed",
+            "where": "field full-name",
+            "message": "Its ID \"full-name\" became \"full_name\"."
+        },
+        {
+            "level": "dropped",
+            "where": "field email",
+            "message": "Its unique scope \"everywhere\" is not form or global."
+        },
+        {
+            "level": "changed",
+            "where": "field role",
+            "message": "The type \"dropdown\" is now \"select\"."
+        },
+        {
+            "level": "dropped",
+            "where": "field role",
+            "message": "Choice \"Sighted guide\" has \"colour\", which a choice cannot hold."
+        },
+        {
+            "level": "dropped",
+            "where": "field other_role",
+            "message": "A condition rule with operator \"sounds_like\" could not be read."
+        },
+        {
+            "level": "changed",
+            "where": "field agree",
+            "message": "A checkbox with no choices is one box; it got the choice yes|Yes."
+        },
+        {
+            "level": "changed",
+            "where": "field days",
+            "message": "The type \"checkboxes\" is now \"checkbox\"."
+        },
+        {
+            "level": "changed",
+            "where": "field days",
+            "message": "Its options became choices."
+        },
+        {
+            "level": "dropped",
+            "where": "field tagline",
+            "message": "The attribute \"onclick\" is not allowed."
+        },
+        {
+            "level": "dropped",
+            "where": "field beam",
+            "message": "The model has no field type \"teleporter\"; the field is kept under extensions.baf_legacy."
+        },
+        {
+            "level": "changed",
+            "where": "field divider",
+            "message": "The type \"divider\" is now an html field with element \"divider\"."
+        },
+        {
+            "level": "changed",
+            "where": "confirmation confirmation_2",
+            "message": "Its type \"popup\" is not one the model knows; it is now a message."
+        }
+    ]
+}

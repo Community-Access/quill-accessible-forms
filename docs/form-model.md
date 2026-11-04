@@ -126,9 +126,12 @@ everything in it. Sections may contain sections.
 | `props` | Settings particular to the field type, using the field class's own setting names (a matrix's `rows` and `columns`, an NPS field's `low_label`). |
 
 `props` never uses the names in the table above, nor BFL's older spellings of
-them (`readonly`, `class`, `css`, `admin`, `hidden`, `confirm`, `allowother`).
-That is what lets every prop be written in BFL as `@name value` without
-ambiguity.
+them (`readonly`, `class`, `css`, `admin`, `hidden`, `confirm`, `allowother`),
+nor the names BAF's stored field settings use for the same things
+(`default_value`, `input_mask`, `custom_attributes`, `conditional_logic`,
+`formula`, `correct_answers`, `options`, ...; the full list is in the schema).
+That is what lets every prop be written in BFL as `@name value`, and stored in
+BAF's builder format, without ambiguity.
 
 ### The field types
 
@@ -327,5 +330,39 @@ has no stored model yet. What it does:
 13. **Settings, confirmations and notifications** are carried as they are;
     a confirmation or notification without an ID gets one (`confirmation_1`).
 
+14. **Checkboxes without choices** are one box: they get the choice `yes|Yes`,
+    which is what conditions such as `#agree is "yes"` always assumed.
+15. **Builder defaults.** The settings every field class starts with (`size`
+    `medium`, `visibility` `visible`, empty ARIA overrides and so on) say
+    nothing and are not carried into `props`; nor are empty settings.
+
 Every step that could not carry something over says so in the import report
 the converter returns. Nothing is dropped without being listed.
+
+## How BAF stores the model
+
+The table does not change. A form's `config` column now holds:
+
+- `form_model`: the model itself. This is the form's definition.
+- `fields` and `pages`: the same form in the builder's flat shape, written
+  from the model (`BAF_Form_Model_Converter::to_legacy`), so the visual
+  builder and the renderer keep working unchanged. A section says how many
+  items follow it (`model_items`); a condition the builder's rule list cannot
+  say keeps its expression beside the rules.
+- `model_extra`: what the builder has no place for (rules, scoring,
+  translations, choice libraries, the form's language).
+- `model_version`: marks the shape as written from a model.
+
+`BAF_Form::get_model()` returns the stored model, or converts the builder's
+fields for a form saved before the model. `set_model()` stores a model and
+rewrites the builder's fields, settings, confirmations, notifications and BFL
+source from it. When the visual builder saves, `apply_builder_config()` reads
+its fields into the model and keeps what the builder cannot show from the
+model as it was. `save()` gives a form saved before the model its model, when
+it converts cleanly, and leaves the builder's fields as they are. A form with
+a stored model keeps its IDs when it is duplicated or imported, because its
+conditions and calculations name them.
+
+Converting a model to the builder's shape and back gives the same model, and
+the builder's shape written from a model converts back to the same shape;
+`tests/conformance/builder/` holds the cases.
