@@ -1,10 +1,33 @@
 # Plan: builder screens for rules, outcomes, translations and choice libraries
 
-Status: planned, not built (2026-11). The form model holds all four, BFL
-writes and reads them, QUILL edits them, and the visual builder keeps them
-when it saves (`BAF_Form::apply_builder_config`). What is missing is a way
-to edit them in BAF's own admin without writing BFL. This is the plan for
-that, so it can be built in small, separately reviewable steps.
+Status: built (2026-11), steps 1 to 5 below, except the per-question
+Scoring section in the Visual mode's field settings panel (step 4). Not
+yet checked by hand with a screen reader (step 6). The form model holds
+all four, BFL writes and reads them, QUILL edits them, and the visual
+builder keeps them when it saves (`BAF_Form::apply_builder_config`). This
+was the plan for editing them in BAF's own admin without writing BFL.
+
+Where it is:
+
+- `admin/partials/model-screens.php`: the tabs, panels and dialogs.
+- `admin/js/baf-model-editor-core.js`: the logic, with no DOM (the
+  expression check, rule sentences, pointer paths as words, translation
+  rows); `tests/js/model-editor.test.js` tests it.
+- `admin/js/baf-model-editor.js`: the shared pieces (tabs, saving, the
+  list screen, dialogs, errors, expression fields).
+- `admin/js/baf-model-screens.js`: the four screens.
+- `admin/model-editor-i18n.php`: every string the scripts use, checked
+  against them by `AccessibleScreensTest`.
+- New AJAX actions: `baf_read_choice_lines` (Paste choices, through
+  `BAF_BFL_Service::read_choice_lines`) and `baf_get_choice_library`.
+
+Differences from the plan as written: a save reads the stored model again
+and replaces only the screen's own part, so a visual-builder save made in
+between is not undone; the quiz "Try it" evaluates the outcomes against
+the typed score directly, since `BAFFormModel.outcome()` works the score
+out from answers; translations and libraries have no Move buttons, since
+their order means nothing; renaming a library or an outcome carries the
+new name to the questions and translations that use it.
 
 ## The shape every screen shares
 

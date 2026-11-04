@@ -114,4 +114,16 @@ class BAF_BFL_Service_Test extends BAF_Unit_Test_Case {
         $this->assertSame( 3, $r['errors'][0]['line'] );
         $this->assertSame( array(), BAF_BFL_Service::read_choice_lines( "  \n" )['choices'] );
     }
+    /**
+     * A model as the builder's Rules, Quiz outcomes, Translations and Choice
+     * libraries screens left it (captured from those screens): it is valid,
+     * and BFL written from it reads back to the same model.
+     */
+    public function test_a_model_edited_on_the_model_screens_is_what_bfl_gives() {
+        $model = json_decode( file_get_contents( BAF_PLUGIN_DIR . 'tests/unit/Model/fixtures/edited-on-model-screens.json' ), true );
+        $this->assertSame( array(), BAF_Form_Model::validate( $model ) );
+        $read = BAF_BFL_Reader::read( BAF_BFL_Writer::write( $model ) );
+        $this->assertSame( array(), $read['errors'] );
+        $this->assertTrue( BAF_Form_Model::same( $model, $read['model'] ) );
+    }
 }
