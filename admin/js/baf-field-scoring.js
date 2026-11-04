@@ -171,6 +171,11 @@
                 return;
             }
             var body = $('baf-settings-body');
+            // The panel held a question's settings, perhaps: they are closed now.
+            Array.prototype.forEach.call(document.querySelectorAll('.baf-field-edit[aria-expanded="true"]'), function (b) { b.setAttribute('aria-expanded', 'false'); });
+            if (window.jQuery) {
+                window.jQuery(panel()).removeData('field-id');
+            }
             body.innerHTML = json.data.html;
             var p = panel();
             p.hidden = false;
@@ -185,6 +190,16 @@
             E.say(live, (e && e.message) || t('scoringLoadFailed', 'The scoring could not be opened.'));
         });
     }
+
+    /** The settings panel is being given to something else: forget the open section quietly. */
+    window.BAFFieldScoring = {
+        reset: function () {
+            if (current) {
+                current.button.setAttribute('aria-expanded', 'false');
+                current = null;
+            }
+        }
+    };
 
     function init() {
         document.addEventListener('click', function (e) {

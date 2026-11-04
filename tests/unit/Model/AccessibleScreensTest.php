@@ -112,6 +112,79 @@ class BAF_Accessible_Screens_Test extends BAF_Unit_Test_Case {
         $this->assertStringContainsString( 'built-in library months', $doc->textContent );
     }
 
+    // ------------------------------------------------------------------
+    // The Visual mode's field settings panel and its cards
+    // ------------------------------------------------------------------
+
+    public function test_field_settings_are_labelled_and_show_the_model() {
+        require_once BAF_PLUGIN_DIR . 'includes/model/class-baf-builder-field-ops.php';
+        $m = self::quiz_model();
+        foreach ( array( 'q1' => false, 'q3' => true ) as $id => $has_placeholder ) {
+            $field = BAF_Field_Scoring_Panel::find( $m, $id );
+            $doc   = new DOMDocument();
+            libxml_use_internal_errors( true );
+            $doc->loadHTML( '<!DOCTYPE html><html><head><meta charset="utf-8"></head><body>' . BAF_Builder_Field_Ops::render_settings( $field, 'Quiz' ) . '</body></html>' );
+            $errors = array_filter( libxml_get_errors(), function ( $e ) { return ! preg_match( '/Tag section invalid/', $e->message ); } );
+            libxml_clear_errors();
+            $this->assertSame( array(), array_values( $errors ), $id );
+            $xp = new DOMXPath( $doc );
+            foreach ( $xp->query( '//input | //textarea | //select' ) as $c ) {
+                $this->assertSame( 1, $xp->query( '//label[@for="' . $c->getAttribute( 'id' ) . '"]' )->length, $id . ': no label for ' . $c->getAttribute( 'id' ) );
+            }
+            foreach ( $xp->query( '//*[@aria-describedby]' ) as $e ) {
+                foreach ( preg_split( '/\s+/', $e->getAttribute( 'aria-describedby' ) ) as $ref ) {
+                    $this->assertNotNull( $doc->getElementById( $ref ), $id . ': aria-describedby names ' . $ref );
+                }
+            }
+            $h = $doc->getElementById( 'baf-fs-heading' );
+            $this->assertSame( 'Settings: ' . $field['label'], $h->textContent );
+            $this->assertSame( '-1', $h->getAttribute( 'tabindex' ) );
+            $this->assertSame( 1, $xp->query( '//*[@role="status"]' )->length );
+            $this->assertSame( '-1', $doc->getElementById( 'baf-fs-summary' )->getAttribute( 'tabindex' ) );
+            $this->assertSame( $field['label'], $doc->getElementById( 'baf-fs-label' )->getAttribute( 'value' ) );
+            $this->assertSame( $has_placeholder, $doc->getElementById( 'baf-fs-placeholder' ) !== null, $id . ': a placeholder only where a box shows one' );
+            $this->assertSame( 1, $xp->query( '//button[@type="submit"][contains(@class,"baf-settings-save")]' )->length );
+            $this->assertSame( 1, $xp->query( '//button[contains(@class,"baf-settings-close")]' )->length );
+        }
+    }
+
+    public function test_card_buttons_carry_the_classes_the_script_listens_for() {
+        $card = file_get_contents( BAF_PLUGIN_DIR . 'admin/class-baf-form-builder.php' );
+        $js   = file_get_contents( BAF_PLUGIN_DIR . 'admin/js/baf-form-builder.js' );
+        preg_match_all( "/on\\('click', '\\.(baf-field-[a-z-]+)'/", $js, $m );
+        $this->assertGreaterThanOrEqual( 5, count( $m[1] ) );
+        foreach ( $m[1] as $class ) {
+            $this->assertMatchesRegularExpression( '/class="[^"]*\b' . preg_quote( $class, '/' ) . '\b/', $card, 'no card button has ' . $class );
+        }
+        $this->assertStringContainsString( "getElementById('baf-form-canvas')", $js );
+        $this->assertStringContainsString( "getElementById('baf-canvas-dropzone')", $js );
+        $page = file_get_contents( BAF_PLUGIN_DIR . 'admin/partials/form-builder.php' );
+        $this->assertStringContainsString( 'id="baf-canvas-dropzone"', $page );
+        $this->assertStringContainsString( 'id="baf-live-region"', $page, 'the announcer has a region to speak in' );
+        $this->assertStringNotContainsString( 'bafL10n', $js, 'the page localises bafBuilder' );
+        $this->assertStringNotContainsString( 'window.confirm(', $js );
+        $this->assertStringContainsString( 'document.activeElement === $activeCard[0]', $js, 'Enter and Delete act only on the card itself, so its buttons answer Enter' );
+        $this->assertStringNotContainsString( "prop('disabled', index", $js, 'a move button at either end keeps focus' );
+        $this->assertStringNotContainsString( 'disabled aria-disabled', $card );
+        $this->assertStringContainsString( "'(prefers-reduced-motion: reduce)'", $js );
+    }
+
+    public function test_every_card_action_has_a_handler_and_every_string_is_localised() {
+        $js    = file_get_contents( BAF_PLUGIN_DIR . 'admin/js/baf-form-builder.js' );
+        $boot  = file_get_contents( BAF_PLUGIN_DIR . 'bits-accessible-forms.php' );
+        $admin = file_get_contents( BAF_PLUGIN_DIR . 'admin/class-baf-admin.php' );
+        preg_match_all( "/post\\('(baf_[a-z_]+)'/", $js, $m );
+        $this->assertGreaterThanOrEqual( 6, count( array_unique( $m[1] ) ) );
+        foreach ( array_unique( $m[1] ) as $action ) {
+            $this->assertStringContainsString( "'wp_ajax_" . $action . "'", $boot, $action . ' has no handler' );
+        }
+        preg_match_all( "/\\bL\\('(\\w+)',\\s*'((?:[^'\\\\]|\\\\.)*)'/", $js, $s, PREG_SET_ORDER );
+        $this->assertNotEmpty( $s );
+        foreach ( $s as $x ) {
+            $this->assertMatchesRegularExpression( "/'" . $x[1] . "'\\s*=> __\\( '" . preg_quote( $x[2], '/' ) . "'/", $admin, $x[1] . ' is not in bafBuilder.i18n, or says something else' );
+        }
+    }
+
     public function test_only_scorable_types_get_a_scoring_button() {
         require_once BAF_PLUGIN_DIR . 'includes/model/class-baf-field-scoring-panel.php';
         foreach ( array( 'quiz', 'radio', 'checkbox', 'select', 'multiselect', 'text' ) as $type ) {

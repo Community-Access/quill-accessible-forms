@@ -282,7 +282,8 @@ class BAF_Admin {
                 'formId'      => isset( $_GET['form_id'] ) ? absint( $_GET['form_id'] ) : 0,
                 'fieldTypes'  => $field_registry->get_for_builder(),
                 'i18n'        => array(
-                    'confirmDelete'    => __( 'Are you sure you want to delete this field?', 'bits-accessible-forms' ),
+                    /* translators: %s: question label. */
+                    'confirmDelete'    => __( '%s will be deleted from the form.', 'bits-accessible-forms' ),
                     'saved'            => __( 'Form saved successfully.', 'bits-accessible-forms' ),
                     'saveError'        => __( 'Error saving form. Please try again.', 'bits-accessible-forms' ),
                     'addField'         => __( 'Add Field', 'bits-accessible-forms' ),
@@ -302,6 +303,29 @@ class BAF_Admin {
                     'bflHasErrors'     => __( 'The BFL has %d errors. They are listed after the editor.', 'bits-accessible-forms' ),
                     'bflFormatted'     => __( 'Formatted.', 'bits-accessible-forms' ),
                     'bflSynced'        => __( 'Saved. Reloading the visual builder.', 'bits-accessible-forms' ),
+                    // The field cards (baf-form-builder.js). %s, %d and %1$s are filled in by the script.
+                    // phpcs:disable WordPress.WP.I18n.MissingTranslatorsComment
+                    'addFailed'        => __( 'The question was not added.', 'bits-accessible-forms' ),
+                    'alreadyAtBottom'  => __( '%s is already last.', 'bits-accessible-forms' ),
+                    'alreadyAtTop'     => __( '%s is already first.', 'bits-accessible-forms' ),
+                    'deleteFailed'     => __( 'The question was not deleted.', 'bits-accessible-forms' ),
+                    'deleteRefused'    => __( '%1$s was not deleted. %2$s', 'bits-accessible-forms' ),
+                    'deleteTitle'      => __( 'Delete question %d?', 'bits-accessible-forms' ),
+                    'duplicateFailed'  => __( 'The question was not copied.', 'bits-accessible-forms' ),
+                    'fieldAdded'       => __( '%1$s added, at position %2$d.', 'bits-accessible-forms' ),
+                    'fieldDeleted'     => __( '%1$s deleted. %2$d questions left.', 'bits-accessible-forms' ),
+                    'fieldDuplicated'  => __( '%1$s copied, as %2$s, at position %3$d.', 'bits-accessible-forms' ),
+                    'fieldMoved'       => __( '%1$s moved to position %2$d of %3$d.', 'bits-accessible-forms' ),
+                    'moveDownAt'       => __( 'Move %1$s down (currently position %2$d of %3$d)', 'bits-accessible-forms' ),
+                    'moveFailed'       => __( 'The new order was not saved.', 'bits-accessible-forms' ),
+                    'moveStays'        => __( '%s stays with its page or section. Move it to another page in Structure mode.', 'bits-accessible-forms' ),
+                    'moveUpAt'         => __( 'Move %1$s up (currently position %2$d of %3$d)', 'bits-accessible-forms' ),
+                    'needLabel'        => __( 'A question needs a label, so people know what it asks.', 'bits-accessible-forms' ),
+                    'settingsFailed'   => __( 'The settings could not be opened.', 'bits-accessible-forms' ),
+                    'settingsHeading'  => __( 'Settings: %s', 'bits-accessible-forms' ),
+                    'settingsNotSaved' => __( 'The settings were not saved.', 'bits-accessible-forms' ),
+                    'settingsSaved'    => __( 'Settings saved for %s.', 'bits-accessible-forms' ),
+                    // phpcs:enable
                 ),
             ) );
 

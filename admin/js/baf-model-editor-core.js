@@ -618,6 +618,23 @@
     }
 
     /**
+     * Problems with a question's settings before they are sent, as
+     * BAF_Builder_Field_Ops::check_settings() finds them on the server.
+     */
+    function checkFieldSettings(settings, t) {
+        t = t || translator();
+        if (Object.prototype.hasOwnProperty.call(settings, 'label') && String(settings.label).trim() === '') {
+            return [{ field: 'label', message: t('needLabel', 'A question needs a label, so people know what it asks.') }];
+        }
+        return [];
+    }
+
+    /** Whether two lists of IDs are in the same order. */
+    function sameOrder(a, b) {
+        return a.length === b.length && a.every(function (id, i) { return String(id) === String(b[i]); });
+    }
+
+    /**
      * A problem the server found, joined to the Scoring section's field when
      * it is about this question: "/pages/0/items/2/scoring/points" is "points".
      */
@@ -738,6 +755,8 @@
         findItem: findItem,
         applyScoring: applyScoring,
         scoringField: scoringField,
+        checkFieldSettings: checkFieldSettings,
+        sameOrder: sameOrder,
         where: where
     };
 }));

@@ -288,10 +288,161 @@ class BAF_Form_Builder {
         ) );
     }
 
+    // ---------------------------------------------------------------------
+    // The Visual mode's field cards, on the form model
+    // ---------------------------------------------------------------------
+
     /**
-     * AJAX handler for getting field settings
+     * The form named by POST form_id and its model, or a JSON error.
+     *
+     * @return array array( BAF_Form, model ).
+     */
+    private function card_form() {
+        check_ajax_referer( 'baf_builder_nonce', 'nonce' );
+        if ( ! current_user_can( 'manage_options' ) ) {
+            wp_send_json_error( array( 'message' => __( 'Permission denied.', 'bits-accessible-forms' ) ) );
+        }
+        $form = new BAF_Form( isset( $_POST['form_id'] ) ? absint( $_POST['form_id'] ) : 0 );
+        if ( ! $form->id ) {
+            wp_send_json_error( array( 'message' => __( 'Save the form first, with Save Draft; then questions can be added and changed here.', 'bits-accessible-forms' ) ) );
+        }
+        return array( $form, $form->get_model() );
+    }
+
+    /**
+     * Save a changed model, or send why not (the message, and validate()'s
+     * problems with their JSON pointers).
+     *
+     * @param BAF_Form   $form  Form.
+     * @param array|null $model Model, or null when the question was not found.
+     */
+    private function card_save( $form, $model ) {
+        if ( $model === null ) {
+            wp_send_json_error( array( 'message' => __( 'That question is no longer in the form. Reload the builder.', 'bits-accessible-forms' ) ) );
+        }
+        $set = $form->set_model( $model );
+        if ( is_wp_error( $set ) ) {
+            $errors = (array) $set->get_error_data();
+            $first  = $errors ? $errors[0]['message'] : '';
+            wp_send_json_error( array( 'message' => trim( $set->get_error_message() . ' ' . $first ), 'errors' => $errors ) );
+        }
+        $saved = $form->save();
+        if ( is_wp_error( $saved ) ) {
+            wp_send_json_error( array( 'message' => $saved->get_error_message() ) );
+        }
+    }
+
+    /**
+     * A card for a question in the model.
+     *
+     * @param array $model Model.
+     * @param string $id   Question ID.
+     * @param int   $form_id Form ID.
+     * @return string HTML.
+     */
+    private function card_html( $model, $id, $form_id ) {
+        $field = BAF_Field_Scoring_Panel::find( $model, $id );
+        $total = max( 1, absint( $_POST['total'] ?? 1 ) );
+        return $this->render_field_card(
+            array(
+                'id'       => $id,
+                'type'     => $field['type'] ?? '',
+                'label'    => $field['label'] ?? '',
+                'required' => ! empty( $field['required'] ),
+            ),
+            $total,
+            $total,
+            $form_id
+        );
+    }
+
+    /** AJAX: add a question (POST form_id, field_type) at the end; returns its card. */
+    public function ajax_add_field() {
+        list( $form, $model ) = $this->card_form();
+        $type = sanitize_key( $_POST['field_type'] ?? '' );
+        $info = class_exists( 'BAF_Field_Registry' ) ? BAF_Field_Registry::get_instance()->get_field_type( $type ) : null;
+        if ( ! $info || ! BAF_Form_Model::is_field_type( $type ) ) {
+            wp_send_json_error( array( 'message' => __( 'That type of question cannot be added here.', 'bits-accessible-forms' ) ) );
+        }
+        list( $model, $id ) = BAF_Builder_Field_Ops::add( $model, $type, (string) $info['label'] );
+        $this->card_save( $form, $model );
+        wp_send_json_success( array( 'field_id' => $id, 'label' => $info['label'], 'html' => $this->card_html( $model, $id, $form->id ) ) );
+    }
+
+    /** AJAX: copy a question (POST form_id, field_id) just after it; returns the copy's card. */
+    public function ajax_duplicate_field() {
+        list( $form, $model ) = $this->card_form();
+        $done = BAF_Builder_Field_Ops::duplicate( $model, sanitize_text_field( wp_unslash( $_POST['field_id'] ?? '' ) ), __( ' (copy)', 'bits-accessible-forms' ) );
+        $this->card_save( $form, $done ? $done[0] : null );
+        $copy = BAF_Field_Scoring_Panel::find( $done[0], $done[1] );
+        wp_send_json_success( array( 'field_id' => $done[1], 'label' => $copy['label'] ?? '', 'html' => $this->card_html( $done[0], $done[1], $form->id ) ) );
+    }
+
+    /** AJAX: delete a question (POST form_id, field_id). */
+    public function ajax_delete_field() {
+        list( $form, $model ) = $this->card_form();
+        $id = sanitize_text_field( wp_unslash( $_POST['field_id'] ?? '' ) );
+        $this->card_save( $form, BAF_Builder_Field_Ops::remove( $model, $id ) );
+        wp_send_json_success( array( 'field_id' => $id ) );
+    }
+
+    /**
+     * AJAX: put the questions in a new order (POST form_id, field_order[]).
+     * Returns the order the model now has, which differs when a question
+     * was asked to move onto another page or section.
+     */
+    public function ajax_update_field_order() {
+        list( $form, $model ) = $this->card_form();
+        $ids   = array_map( 'sanitize_text_field', (array) wp_unslash( $_POST['field_order'] ?? array() ) );
+        $model = BAF_Builder_Field_Ops::reorder( $model, $ids );
+        $this->card_save( $form, $model );
+        wp_send_json_success( array( 'order' => BAF_Builder_Field_Ops::order( $model, $ids ) ) );
+    }
+
+    /** AJAX: save a question's settings (POST form_id, field_id, label, help, placeholder, required). */
+    public function ajax_save_field_settings() {
+        list( $form, $model ) = $this->card_form();
+        $id       = sanitize_text_field( wp_unslash( $_POST['field_id'] ?? '' ) );
+        $settings = array();
+        foreach ( BAF_Builder_Field_Ops::SETTINGS as $k ) {
+            if ( isset( $_POST[ $k ] ) ) {
+                $settings[ $k ] = $k === 'help' ? sanitize_textarea_field( wp_unslash( $_POST[ $k ] ) ) : sanitize_text_field( wp_unslash( $_POST[ $k ] ) );
+            }
+        }
+        // An unchecked box sends nothing; the form says it sent the box.
+        if ( ! empty( $_POST['has_required'] ) && ! isset( $settings['required'] ) ) {
+            $settings['required'] = '';
+        }
+        $problems = BAF_Builder_Field_Ops::check_settings( $settings );
+        if ( $problems ) {
+            wp_send_json_error( array( 'message' => $problems[0]['message'], 'problems' => $problems ) );
+        }
+        $model = BAF_Builder_Field_Ops::apply_settings( $model, $id, $settings );
+        $this->card_save( $form, $model );
+        $field = BAF_Field_Scoring_Panel::find( $model, $id );
+        wp_send_json_success( array( 'field_id' => $id, 'label' => $field['label'] ?? '', 'html' => $this->card_html( $model, $id, $form->id ) ) );
+    }
+
+    /**
+     * AJAX handler for getting field settings. With field_id (and form_id),
+     * the settings panel's content for that question in the stored model;
+     * with only field_type, the type's settings description, as before.
      */
     public function ajax_get_field_settings() {
+        if ( isset( $_POST['field_id'] ) ) {
+            list( $form, $model ) = $this->card_form();
+            $field = BAF_Field_Scoring_Panel::find( $model, sanitize_text_field( wp_unslash( $_POST['field_id'] ) ) );
+            if ( ! $field ) {
+                wp_send_json_error( array( 'message' => __( 'That question is no longer in the form. Reload the builder.', 'bits-accessible-forms' ) ) );
+            }
+            $info = class_exists( 'BAF_Field_Registry' ) ? BAF_Field_Registry::get_instance()->get_field_type( $field['type'] ?? '' ) : null;
+            wp_send_json_success( array(
+                'field_id' => $field['id'],
+                'label'    => $field['label'] ?? '',
+                'html'     => BAF_Builder_Field_Ops::render_settings( $field, $info ? (string) $info['label'] : '' ),
+            ) );
+        }
+
         check_ajax_referer( 'baf_builder_nonce', 'nonce' );
 
         if ( ! current_user_can( 'manage_options' ) ) {
@@ -468,20 +619,20 @@ class BAF_Form_Builder {
             <div class="baf-field-card-actions" role="toolbar" aria-label="<?php esc_attr_e( 'Field actions', 'bits-accessible-forms' ); ?>">
                 <!-- Move Up Button -->
                 <button type="button" 
-                        class="baf-action-btn baf-move-up" 
+                        class="baf-action-btn baf-move-up baf-field-move-up" 
                         data-action="move-up"
                         aria-label="<?php echo esc_attr( $move_attrs['move_up']['aria-label'] ); ?>"
-                        <?php echo $move_attrs['move_up']['disabled'] ? 'disabled aria-disabled="true"' : ''; ?>>
+                        <?php echo $move_attrs['move_up']['disabled'] ? 'aria-disabled="true"' : ''; ?>>
                     <span aria-hidden="true">↑</span>
                     <span class="baf-sr-only"><?php esc_html_e( 'Move Up', 'bits-accessible-forms' ); ?></span>
                 </button>
                 
                 <!-- Move Down Button -->
                 <button type="button" 
-                        class="baf-action-btn baf-move-down" 
+                        class="baf-action-btn baf-move-down baf-field-move-down" 
                         data-action="move-down"
                         aria-label="<?php echo esc_attr( $move_attrs['move_down']['aria-label'] ); ?>"
-                        <?php echo $move_attrs['move_down']['disabled'] ? 'disabled aria-disabled="true"' : ''; ?>>
+                        <?php echo $move_attrs['move_down']['disabled'] ? 'aria-disabled="true"' : ''; ?>>
                     <span aria-hidden="true">↓</span>
                     <span class="baf-sr-only"><?php esc_html_e( 'Move Down', 'bits-accessible-forms' ); ?></span>
                 </button>
@@ -502,8 +653,10 @@ class BAF_Form_Builder {
 
                 <!-- Edit Button -->
                 <button type="button" 
-                        class="baf-action-btn baf-edit" 
+                        class="baf-action-btn baf-edit baf-field-edit" 
                         data-action="edit"
+                        aria-controls="baf-field-settings"
+                        aria-expanded="false"
                         aria-label="<?php echo esc_attr( sprintf( __( 'Edit %s', 'bits-accessible-forms' ), $field_label ) ); ?>">
                     <span aria-hidden="true">✏️</span>
                     <span class="baf-sr-only"><?php esc_html_e( 'Edit', 'bits-accessible-forms' ); ?></span>
@@ -511,7 +664,7 @@ class BAF_Form_Builder {
                 
                 <!-- Duplicate Button -->
                 <button type="button" 
-                        class="baf-action-btn baf-duplicate" 
+                        class="baf-action-btn baf-duplicate baf-field-duplicate" 
                         data-action="duplicate"
                         aria-label="<?php echo esc_attr( sprintf( __( 'Duplicate %s', 'bits-accessible-forms' ), $field_label ) ); ?>">
                     <span aria-hidden="true">📋</span>
@@ -530,7 +683,7 @@ class BAF_Form_Builder {
                 
                 <!-- Delete Button -->
                 <button type="button" 
-                        class="baf-action-btn baf-delete" 
+                        class="baf-action-btn baf-delete baf-field-delete" 
                         data-action="delete"
                         aria-label="<?php echo esc_attr( sprintf( __( 'Delete %s', 'bits-accessible-forms' ), $field_label ) ); ?>">
                     <span aria-hidden="true">🗑️</span>

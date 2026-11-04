@@ -24,10 +24,18 @@ Where it is:
   `baf_get_field_scoring`), and `admin/js/baf-field-scoring.js` saves it with
   `BAFModelEditorCore.applyScoring`. A scored question's card (quiz, radio,
   checkbox, select, multiselect, text) has a Scoring button that opens it in
-  the field settings panel. That panel's own Edit flow has never worked (the
-  script and the server disagree on what is sent and returned, and
-  `baf_save_field_settings` has no handler), so the Scoring section does not
-  depend on it; mending that flow is separate work.
+  the field settings panel.
+- The Visual mode's field cards now work, each on the model:
+  `includes/model/class-baf-builder-field-ops.php` adds, copies, deletes and
+  reorders questions and saves a question's settings (label, help,
+  placeholder, required), each changing only its own question or the order,
+  saved through `BAF_Form::set_model()` so `validate()` checks it. The AJAX
+  actions the builder script always called now exist: `baf_add_field`,
+  `baf_duplicate_field`, `baf_delete_field`, `baf_update_field_order`,
+  `baf_save_field_settings`, and `baf_get_field_settings` with a `field_id`.
+  A new question's card comes from the server, so a scored one has its
+  Scoring button at once. Moving a question onto another page or section is
+  refused and said; that is done in Structure mode.
 
 Differences from the plan as written: a save reads the stored model again
 and replaces only the screen's own part, so a visual-builder save made in

@@ -234,6 +234,7 @@ final class BITS_Accessible_Forms {
         require_once BAF_PLUGIN_DIR . 'includes/model/class-baf-form-runtime.php';
         require_once BAF_PLUGIN_DIR . 'includes/model/class-baf-bfl-service.php';
         require_once BAF_PLUGIN_DIR . 'includes/model/class-baf-field-scoring-panel.php';
+        require_once BAF_PLUGIN_DIR . 'includes/model/class-baf-builder-field-ops.php';
 
         // Field Templates
         require_once BAF_PLUGIN_DIR . 'includes/core/class-baf-field-templates.php';
@@ -353,6 +354,12 @@ final class BITS_Accessible_Forms {
         $this->loader->add_action( 'wp_ajax_baf_read_choice_lines', $this->form_builder, 'ajax_read_choice_lines' );
         $this->loader->add_action( 'wp_ajax_baf_get_choice_library', $this->form_builder, 'ajax_get_choice_library' );
         $this->loader->add_action( 'wp_ajax_baf_get_field_scoring', $this->form_builder, 'ajax_get_field_scoring' );
+        // The Visual mode's field cards: each changes the model and saves it.
+        $this->loader->add_action( 'wp_ajax_baf_add_field', $this->form_builder, 'ajax_add_field' );
+        $this->loader->add_action( 'wp_ajax_baf_duplicate_field', $this->form_builder, 'ajax_duplicate_field' );
+        $this->loader->add_action( 'wp_ajax_baf_delete_field', $this->form_builder, 'ajax_delete_field' );
+        $this->loader->add_action( 'wp_ajax_baf_update_field_order', $this->form_builder, 'ajax_update_field_order' );
+        $this->loader->add_action( 'wp_ajax_baf_save_field_settings', $this->form_builder, 'ajax_save_field_settings' );
         $this->loader->add_action( 'wp_ajax_baf_import_csv', $this->form_builder, 'ajax_import_csv' );
         
         // Settings API registration

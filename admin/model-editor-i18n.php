@@ -87,6 +87,7 @@ return array(
         'needAction'              => __( 'Choose what the rule does.', 'bits-accessible-forms' ),
         'needChoiceLabel'         => __( 'Choice %d needs a label.', 'bits-accessible-forms' ),
         'needChoiceValue'         => __( 'Choice %d needs a value.', 'bits-accessible-forms' ),
+        'needLabel'               => __( 'A question needs a label, so people know what it asks.', 'bits-accessible-forms' ),
         'needMessage'             => __( 'Type the message the person sees.', 'bits-accessible-forms' ),
         'needNumber'              => __( 'Choice %1$d: the %2$s must be a number.', 'bits-accessible-forms' ),
         'needPage'                => __( 'Choose the page to skip to.', 'bits-accessible-forms' ),

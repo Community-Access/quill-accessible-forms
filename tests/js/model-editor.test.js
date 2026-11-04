@@ -220,6 +220,19 @@ test('scoring: choice points, and numbers that are not numbers', function () {
     assert.strictEqual(C.applyScoring(quiz, 'gone', {}).model, null);
 });
 
+test('field settings: a label is needed, other keys are free', function () {
+    assert.strictEqual(C.checkFieldSettings({ label: '  ' })[0].field, 'label');
+    assert.deepStrictEqual(C.checkFieldSettings({ label: 'Name', help: '' }), []);
+    assert.deepStrictEqual(C.checkFieldSettings({ help: '' }), [], 'a label not sent is not checked');
+});
+
+test('card order: the same IDs in the same order, numbers and strings alike', function () {
+    assert.strictEqual(C.sameOrder(['a', 'b'], ['a', 'b']), true);
+    assert.strictEqual(C.sameOrder(['a', 'b'], ['b', 'a']), false);
+    assert.strictEqual(C.sameOrder(['a'], ['a', 'b']), false);
+    assert.strictEqual(C.sameOrder([12, 'x'], ['12', 'x']), true);
+});
+
 test('scoring: the server\'s pointers are joined to the section\'s fields', function () {
     assert.strictEqual(C.itemPointer(quiz, 'q3'), '/pages/0/items/2');
     assert.strictEqual(C.itemPointer(model, 'size'), '/pages/0/items/2/items/0');
