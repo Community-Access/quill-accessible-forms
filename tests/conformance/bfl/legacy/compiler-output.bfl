@@ -1,0 +1,21 @@
+form "Contact Form"
+  @description "Compiled by the older BFL compiler"
+
+  settings
+    honeypot true
+    ajax true
+    saveAndContinue true
+
+  page "Contact Info"
+    text #name "Your Name"
+      @required
+      @placeholder "Enter your name"
+    section "Message"
+      @description "Tell us everything"
+      textarea #message "Message"
+        @rows 5
+
+  page "Choices"
+    select #topic "Topic"
+      + Sales
+      + sup|Support

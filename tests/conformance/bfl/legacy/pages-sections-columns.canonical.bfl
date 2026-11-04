@@ -1,0 +1,41 @@
+bfl 1
+form "Layout"
+
+page "Step 1"
+  section "Personal Info"
+    text #name "Name"
+      @required
+  section "Contact Info"
+    email #email "Email"
+      @required
+
+page "Step 2"
+  @description "Almost done"
+  columns 2
+    column
+      text #first "First Name"
+    column
+      text #last2 "Last Name"
+  columns 2
+    column
+      text #a "A"
+        @required
+    column
+      text #b "B"
+  columns 3
+    column
+      text #c "C"
+    column
+      text #d "D"
+    column
+      text #e "E"
+
+page "Step 3"
+  radio #type "Type"
+    + Personal
+    + Business
+  text #biz "Company Name"
+    @when #type is "Business"
+  html
+    @element "divider"
+  textarea #notes "Notes"

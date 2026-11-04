@@ -82,6 +82,8 @@ class BAF_Form_Model {
         'page'         => array( 'id', 'title', 'description', 'when', 'items', 'props' ),
         'confirmation' => array( 'id', 'type', 'message', 'url', 'page_id', 'when', 'props' ),
         'notification' => array( 'id', 'enabled', 'to', 'cc', 'bcc', 'from_name', 'from_email', 'reply_to', 'subject', 'message', 'when', 'props' ),
+        // BFL writes settings as form modifiers, beside these.
+        'settings'     => array( 'description', 'desc', 'language', 'extensions', 'ajax', 'honeypot', 'captcha' ),
     );
 
     /**
@@ -287,6 +289,11 @@ class BAF_Form_Model {
             $errors[] = array( 'path' => $path, 'message' => $message );
         };
 
+        foreach ( array_keys( $model['settings'] ?? array() ) as $k ) {
+            if ( in_array( $k, self::FIXED_NAMES['settings'], true ) ) {
+                $err( '/settings/' . $k, 'A setting cannot be called "' . $k . '".' );
+            }
+        }
         foreach ( $model['pages'] as $pi => $page ) {
             if ( isset( $page_ids[ $page['id'] ] ) ) {
                 $err( '/pages/' . $pi . '/id', 'The page ID "' . $page['id'] . '" is used twice.' );
@@ -642,7 +649,10 @@ class BAF_Form_Model {
         if ( $v === array() ) {
             return in_array( $key, $object_keys, true ) ? new stdClass() : array();
         }
-        if ( BAF_JSON_Schema::is_list( $v ) ) {
+        // A translation's choices map values to labels; values such as "0", "1"
+        // arrive as a PHP list but are still an object.
+        $is_label_map = $key === 'choices' && ! array_filter( $v, 'is_array' );
+        if ( BAF_JSON_Schema::is_list( $v ) && ! $is_label_map ) {
             return array_map( array( __CLASS__, 'objectify' ), $v );
         }
         $o = new stdClass();

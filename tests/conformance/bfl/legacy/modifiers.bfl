@@ -1,0 +1,23 @@
+form "Modifiers"
+text #code "Code" @pattern "[A-Z]{3}-[0-9]{4}" @autofocus @spellcheck "false"
+fileupload #doc "Document" @accept "image/*,.pdf"
+file #photo "Photo" @capture "environment"
+file #selfie "Selfie" @capture
+textarea #bio "Bio" @rows 10 @cols 80
+text #phone "Phone" @inputmode "tel" @enterkeyhint "next" @mask "(999) 999-9999"
+email #email "Email" @unique @unique_scope "global" @unique_message "Already registered" @confirm
+text #display_name "Name" @smart_default "user:display_name"
+date #start "Start" @smart_default "today+7"
+date #today "Today" @smart_default "today"
+text #where "Country" @smart_default "geo"
+hidden #ref "Referrer" @smart_default "query:ref"
+text #plain "Plain" @smart_default "Hello"
+address #ship "Shipping Address"
+  @autocomplete
+  @autocomplete_provider "google_places"
+  @autocomplete_countries ["US","CA"]
+  @autocomplete_types ["address"]
+text #tagged "Tagged" @attr "data-analytics" "contact-form" @attr aria-describedby "hint1" @attr onclick "steal()"
+text #ro "Read only" @readonly @disabled @class "wide" @admin-only @hidden @allow-other
+number #qty "Quantity" @min 1 @max 99 @step 1 @prefix "x" @suffix "items" @default 1
+repeater #kids "Children" @min_rows 1 @max_rows 4

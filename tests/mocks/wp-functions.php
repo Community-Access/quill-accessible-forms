@@ -155,3 +155,10 @@ if ( ! function_exists( 'is_wp_error' ) ) {
         return $thing instanceof WP_Error;
     }
 }
+
+if ( ! function_exists( 'sanitize_title' ) ) {
+    // Matches WordPress for plain ASCII titles, which is all the tests use.
+    function sanitize_title( $title ) {
+        return trim( preg_replace( '/[^a-z0-9]+/', '-', strtolower( (string) $title ) ), '-' );
+    }
+}

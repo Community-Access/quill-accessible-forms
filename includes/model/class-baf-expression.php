@@ -786,7 +786,7 @@ class BAF_Expression {
             return $v ? 'true' : 'false';
         }
         if ( is_int( $v ) || is_float( $v ) ) {
-            return json_encode( $v );
+            return json_encode( $v, JSON_PRESERVE_ZERO_FRACTION );
         }
         return self::quote( $v );
     }
