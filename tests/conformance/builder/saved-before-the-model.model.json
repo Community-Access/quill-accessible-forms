@@ -250,7 +250,7 @@
         }
     ],
     "extensions": {
-        "baf_legacy": {
+        "qaf_legacy": {
             "unknown_fields": [
                 {
                     "id": "beam",

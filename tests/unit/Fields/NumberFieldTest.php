@@ -2,23 +2,23 @@
 /**
  * Number Field Tests
  *
- * @package BAF
+ * @package QAF
  */
 
-class BAF_Field_Number_Test extends BAF_Unit_Test_Case {
+class QAF_Field_Number_Test extends QAF_Unit_Test_Case {
 
     /**
-     * @var BAF_Field_Number
+     * @var QAF_Field_Number
      */
     private $field;
 
     protected function setUp(): void {
         parent::setUp();
         
-        require_once BAF_PLUGIN_DIR . 'includes/core/class-baf-field.php';
-        require_once BAF_PLUGIN_DIR . 'includes/fields/class-baf-field-number.php';
+        require_once QAF_PLUGIN_DIR . 'includes/core/class-qaf-field.php';
+        require_once QAF_PLUGIN_DIR . 'includes/fields/class-qaf-field-number.php';
         
-        $this->field = new BAF_Field_Number( array(
+        $this->field = new QAF_Field_Number( array(
             'name'  => 'quantity',
             'label' => 'Quantity',
         ) );
@@ -49,7 +49,7 @@ class BAF_Field_Number_Test extends BAF_Unit_Test_Case {
     }
 
     public function test_minimum_value() {
-        $field = new BAF_Field_Number( array(
+        $field = new QAF_Field_Number( array(
             'name' => 'qty',
             'min'  => 1,
         ) );
@@ -62,7 +62,7 @@ class BAF_Field_Number_Test extends BAF_Unit_Test_Case {
     }
 
     public function test_maximum_value() {
-        $field = new BAF_Field_Number( array(
+        $field = new QAF_Field_Number( array(
             'name' => 'qty',
             'max'  => 100,
         ) );
@@ -75,7 +75,7 @@ class BAF_Field_Number_Test extends BAF_Unit_Test_Case {
     }
 
     public function test_step_validation() {
-        $field = new BAF_Field_Number( array(
+        $field = new QAF_Field_Number( array(
             'name' => 'qty',
             'step' => 5,
         ) );
@@ -88,7 +88,7 @@ class BAF_Field_Number_Test extends BAF_Unit_Test_Case {
     }
 
     public function test_integer_only() {
-        $field = new BAF_Field_Number( array(
+        $field = new QAF_Field_Number( array(
             'name'    => 'qty',
             'integer' => true,
         ) );
@@ -106,7 +106,7 @@ class BAF_Field_Number_Test extends BAF_Unit_Test_Case {
     }
 
     public function test_currency_format() {
-        $field = new BAF_Field_Number( array(
+        $field = new QAF_Field_Number( array(
             'name'   => 'price',
             'format' => 'currency',
         ) );
@@ -116,7 +116,7 @@ class BAF_Field_Number_Test extends BAF_Unit_Test_Case {
     }
 
     public function test_input_attributes() {
-        $field = new BAF_Field_Number( array(
+        $field = new QAF_Field_Number( array(
             'name' => 'qty',
             'min'  => 0,
             'max'  => 100,
@@ -136,7 +136,7 @@ class BAF_Field_Number_Test extends BAF_Unit_Test_Case {
     }
 
     public function test_positive_only() {
-        $field = new BAF_Field_Number( array(
+        $field = new QAF_Field_Number( array(
             'name'     => 'qty',
             'positive' => true,
         ) );
@@ -146,7 +146,7 @@ class BAF_Field_Number_Test extends BAF_Unit_Test_Case {
     }
 
     public function test_precision() {
-        $field = new BAF_Field_Number( array(
+        $field = new QAF_Field_Number( array(
             'name'      => 'price',
             'precision' => 2,
         ) );

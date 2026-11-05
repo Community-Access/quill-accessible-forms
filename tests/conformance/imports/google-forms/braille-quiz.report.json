@@ -5,22 +5,22 @@
         {
             "level": "changed",
             "where": "item 99ii (Practice time per day)",
-            "message": "Google Forms asked for a length of time; BAF asks for a time of day."
+            "message": "Google Forms asked for a length of time; QAF asks for a time of day."
         },
         {
             "level": "changed",
             "where": "item aajj (A braille cell)",
-            "message": "The picture has no text alternative in Google Forms; add one in BAF."
+            "message": "The picture has no text alternative in Google Forms; add one in QAF."
         },
         {
             "level": "changed",
             "where": "item ddll (Upload a photo of your work)",
-            "message": "Files go to BAF's uploads, not a Google Drive folder."
+            "message": "Files go to QAF's uploads, not a Google Drive folder."
         },
         {
             "level": "dropped",
             "where": "settings",
-            "message": "Google Forms collected email addresses itself; add an email field in BAF if you need one."
+            "message": "Google Forms collected email addresses itself; add an email field in QAF if you need one."
         }
     ]
 }

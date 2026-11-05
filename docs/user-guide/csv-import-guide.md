@@ -12,7 +12,7 @@ The CSV Import Wizard analyzes your CSV file and automatically:
 
 ## Quick Start
 
-1. **Navigate to**: BAF Forms → Import CSV
+1. **Navigate to**: QAF Forms → Import CSV
 2. **Upload**: Drag and drop your CSV file or click to browse
 3. **Review**: Check the detected field types and adjust as needed
 4. **Create**: Generate your form with one click
@@ -124,9 +124,9 @@ For each detected column, you can customize:
 The wizard generates:
 
 1. **Form Configuration**: Ready-to-use WordPress form
-2. **BFL Code**: Exportable form definition you can edit
+2. **QAF Form Language**: Exportable form definition you can edit
 
-### Example BFL Output
+### Example the QAF form language Output
 
 ```bfl
 form "Contact Form"
@@ -197,7 +197,7 @@ If your CSV contains special characters:
 ### Programmatic Import
 
 ```php
-$builder = new BAF_CSV_Form_Builder();
+$builder = new QAF_CSV_Form_Builder();
 
 // Analyze CSV
 $analysis = $builder->analyze( '/path/to/file.csv', array(
@@ -213,7 +213,7 @@ $form = $builder->generate_form( $analysis, array(
     'title' => 'My Imported Form',
 ) );
 
-// Get BFL code
+// Get QAF form language code
 $bfl = $builder->generate_bfl( $form );
 
 // Or create directly
@@ -225,7 +225,7 @@ $result = $builder->import_and_create( '/path/to/file.csv', array(
 ### Loading Lookup Tables
 
 ```php
-$builder = new BAF_CSV_Form_Builder();
+$builder = new QAF_CSV_Form_Builder();
 
 // Load choices from lookup CSV
 $choices = $builder->load_lookup_table(
@@ -246,6 +246,6 @@ $mapping = $builder->load_cascade_mapping(
 
 ## See Also
 
-- [BFL Language Guide](bfl-language-guide.md) - Edit generated BFL code
+- [QAF Form Language Guide](qaf-form-language-guide.md) - Edit generated QAF form language code
 - [Field Types Guide](field-types-guide.md) - Available field configurations
 - [Complete Guide](complete-guide.md) - Full plugin documentation

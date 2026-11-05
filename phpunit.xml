@@ -8,10 +8,10 @@
     convertWarningsToExceptions="true"
     >
     <testsuites>
-        <testsuite name="BAF Test Suite">
+        <testsuite name="QAF Test Suite">
             <directory suffix="Test.php">./tests/unit</directory>
         </testsuite>
-        <testsuite name="BAF Integration Tests">
+        <testsuite name="QAF Integration Tests">
             <directory suffix="Test.php">./tests/integration</directory>
         </testsuite>
     </testsuites>
@@ -28,6 +28,6 @@
     </filter>
     <php>
         <const name="WP_TESTS_MULTISITE" value="0"/>
-        <const name="BAF_TESTING" value="true"/>
+        <const name="QAF_TESTING" value="true"/>
     </php>
 </phpunit>

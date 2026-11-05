@@ -1,0 +1,1091 @@
+/**
+ * QUILL Accessible Forms - Admin & Form Builder Styles
+ *
+ * Full WCAG 2.2 AA compliant styling with proper focus indicators,
+ * color contrast, and accessible motion preferences.
+ *
+ * @package QAF
+ * @since 1.0.0
+ */
+
+/* ==========================================================================
+   CSS Custom Properties
+   ========================================================================== */
+
+:root {
+    /* Brand Colors */
+    --qaf-primary: #0073aa;
+    --qaf-primary-dark: #005177;
+    --qaf-primary-light: #2196f3;
+    
+    /* Semantic Colors */
+    --qaf-success: #46b450;
+    --qaf-warning: #ffb900;
+    --qaf-error: #dc3232;
+    --qaf-info: #00a0d2;
+    
+    /* Neutral Colors - Ensures WCAG AA contrast */
+    --qaf-text: #1d2327;
+    --qaf-text-light: #50575e;
+    --qaf-border: #c3c4c7;
+    --qaf-border-light: #dcdcde;
+    --qaf-bg: #f0f0f1;
+    --qaf-bg-white: #ffffff;
+    
+    /* Focus Ring */
+    --qaf-focus-color: #2271b1;
+    --qaf-focus-ring: 0 0 0 2px var(--qaf-focus-color);
+    
+    /* Spacing */
+    --qaf-spacing-xs: 4px;
+    --qaf-spacing-sm: 8px;
+    --qaf-spacing-md: 16px;
+    --qaf-spacing-lg: 24px;
+    --qaf-spacing-xl: 32px;
+    
+    /* Border Radius */
+    --qaf-radius-sm: 4px;
+    --qaf-radius-md: 6px;
+    --qaf-radius-lg: 8px;
+    
+    /* Transitions */
+    --qaf-transition-fast: 150ms ease;
+    --qaf-transition-normal: 250ms ease;
+}
+
+/* Respect user motion preferences */
+@media (prefers-reduced-motion: reduce) {
+    *,
+    *::before,
+    *::after {
+        animation-duration: 0.01ms !important;
+        animation-iteration-count: 1 !important;
+        transition-duration: 0.01ms !important;
+    }
+}
+
+/* ==========================================================================
+   Form Builder Layout
+   ========================================================================== */
+
+.qaf-builder-container {
+    display: grid;
+    grid-template-columns: 280px 1fr 320px;
+    gap: var(--qaf-spacing-md);
+    min-height: calc(100vh - 150px);
+    margin: var(--qaf-spacing-md) 0;
+}
+
+/* Field Palette - Left Panel */
+.qaf-field-palette {
+    background: var(--qaf-bg-white);
+    border: 1px solid var(--qaf-border);
+    border-radius: var(--qaf-radius-md);
+    padding: var(--qaf-spacing-md);
+    overflow-y: auto;
+    max-height: calc(100vh - 180px);
+}
+
+.qaf-palette-section {
+    margin-bottom: var(--qaf-spacing-lg);
+}
+
+.qaf-palette-section h3 {
+    font-size: 13px;
+    font-weight: 600;
+    text-transform: uppercase;
+    letter-spacing: 0.05em;
+    color: var(--qaf-text-light);
+    margin: 0 0 var(--qaf-spacing-sm);
+    padding-bottom: var(--qaf-spacing-xs);
+    border-bottom: 1px solid var(--qaf-border-light);
+}
+
+.qaf-palette-fields {
+    list-style: none;
+    margin: 0;
+    padding: 0;
+}
+
+.qaf-field-type {
+    display: flex;
+    align-items: center;
+    gap: var(--qaf-spacing-sm);
+    width: 100%;
+    padding: var(--qaf-spacing-sm) var(--qaf-spacing-md);
+    margin-bottom: var(--qaf-spacing-xs);
+    background: var(--qaf-bg);
+    border: 1px solid transparent;
+    border-radius: var(--qaf-radius-sm);
+    cursor: pointer;
+    font-size: 13px;
+    color: var(--qaf-text);
+    text-align: left;
+    transition: all var(--qaf-transition-fast);
+}
+
+.qaf-field-type:hover {
+    background: var(--qaf-bg-white);
+    border-color: var(--qaf-primary);
+}
+
+.qaf-field-type:focus {
+    outline: none;
+    box-shadow: var(--qaf-focus-ring);
+}
+
+.qaf-field-type .dashicons {
+    color: var(--qaf-text-light);
+}
+
+/* Canvas - Center Panel */
+.qaf-builder-canvas {
+    background: var(--qaf-bg-white);
+    border: 1px solid var(--qaf-border);
+    border-radius: var(--qaf-radius-md);
+    display: flex;
+    flex-direction: column;
+}
+
+.qaf-canvas-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    padding: var(--qaf-spacing-md);
+    border-bottom: 1px solid var(--qaf-border-light);
+}
+
+.qaf-mode-switcher {
+    display: flex;
+    gap: var(--qaf-spacing-xs);
+    padding: 2px;
+    background: var(--qaf-bg);
+    border-radius: var(--qaf-radius-sm);
+}
+
+.qaf-mode-btn {
+    padding: var(--qaf-spacing-xs) var(--qaf-spacing-md);
+    background: transparent;
+    border: none;
+    border-radius: var(--qaf-radius-sm);
+    font-size: 13px;
+    color: var(--qaf-text-light);
+    cursor: pointer;
+    transition: all var(--qaf-transition-fast);
+}
+
+.qaf-mode-btn:hover {
+    color: var(--qaf-text);
+}
+
+.qaf-mode-btn:focus {
+    outline: none;
+    box-shadow: var(--qaf-focus-ring);
+}
+
+.qaf-mode-btn[aria-pressed="true"],
+.qaf-mode-btn.active {
+    background: var(--qaf-bg-white);
+    color: var(--qaf-primary);
+    box-shadow: 0 1px 3px rgba(0, 0, 0, 0.1);
+}
+
+.qaf-dropzone {
+    flex: 1;
+    padding: var(--qaf-spacing-md);
+    min-height: 400px;
+    overflow-y: auto;
+}
+
+.qaf-dropzone:focus {
+    outline: none;
+    box-shadow: inset var(--qaf-focus-ring);
+}
+
+.qaf-dropzone-empty {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    height: 100%;
+    color: var(--qaf-text-light);
+    text-align: center;
+}
+
+.qaf-dropzone-empty .dashicons {
+    font-size: 48px;
+    width: 48px;
+    height: 48px;
+    margin-bottom: var(--qaf-spacing-md);
+    opacity: 0.5;
+}
+
+/* ==========================================================================
+   Field Cards
+   ========================================================================== */
+
+.qaf-field-card {
+    background: var(--qaf-bg-white);
+    border: 1px solid var(--qaf-border);
+    border-radius: var(--qaf-radius-md);
+    margin-bottom: var(--qaf-spacing-md);
+    transition: all var(--qaf-transition-fast);
+}
+
+.qaf-field-card:hover {
+    border-color: var(--qaf-primary);
+    box-shadow: 0 2px 8px rgba(0, 0, 0, 0.08);
+}
+
+.qaf-field-card:focus-within {
+    border-color: var(--qaf-focus-color);
+    box-shadow: var(--qaf-focus-ring);
+}
+
+.qaf-field-card.qaf-dragging {
+    opacity: 0.5;
+}
+
+.qaf-field-card-header {
+    display: flex;
+    align-items: center;
+    gap: var(--qaf-spacing-sm);
+    padding: var(--qaf-spacing-sm) var(--qaf-spacing-md);
+    background: var(--qaf-bg);
+    border-bottom: 1px solid var(--qaf-border-light);
+    border-radius: var(--qaf-radius-md) var(--qaf-radius-md) 0 0;
+}
+
+.qaf-field-drag-handle {
+    cursor: grab;
+    color: var(--qaf-text-light);
+    padding: var(--qaf-spacing-xs);
+}
+
+.qaf-field-drag-handle:active {
+    cursor: grabbing;
+}
+
+.qaf-field-type-badge {
+    font-size: 11px;
+    padding: 2px 6px;
+    background: var(--qaf-bg-white);
+    border: 1px solid var(--qaf-border-light);
+    border-radius: var(--qaf-radius-sm);
+    color: var(--qaf-text-light);
+}
+
+.qaf-field-label {
+    flex: 1;
+    font-weight: 500;
+    color: var(--qaf-text);
+}
+
+.qaf-field-required {
+    color: var(--qaf-error);
+    font-weight: bold;
+}
+
+/* Move Up/Down Buttons */
+.qaf-field-move-controls {
+    display: flex;
+    flex-direction: column;
+    gap: 2px;
+}
+
+.qaf-field-move-up,
+.qaf-field-move-down {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    width: 24px;
+    height: 18px;
+    padding: 0;
+    background: var(--qaf-bg-white);
+    border: 1px solid var(--qaf-border);
+    border-radius: var(--qaf-radius-sm);
+    color: var(--qaf-text-light);
+    cursor: pointer;
+    font-size: 12px;
+    line-height: 1;
+    transition: all var(--qaf-transition-fast);
+}
+
+.qaf-field-move-up:hover,
+.qaf-field-move-down:hover {
+    background: var(--qaf-primary);
+    border-color: var(--qaf-primary);
+    color: white;
+}
+
+.qaf-field-move-up:focus,
+.qaf-field-move-down:focus {
+    outline: none;
+    box-shadow: var(--qaf-focus-ring);
+    z-index: 1;
+}
+
+.qaf-field-move-up:disabled,
+.qaf-field-move-down:disabled {
+    opacity: 0.4;
+    cursor: not-allowed;
+}
+
+.qaf-field-move-up:disabled:hover,
+.qaf-field-move-down:disabled:hover {
+    background: var(--qaf-bg-white);
+    border-color: var(--qaf-border);
+    color: var(--qaf-text-light);
+}
+
+/* Field Card Actions */
+.qaf-field-actions {
+    display: flex;
+    gap: var(--qaf-spacing-xs);
+}
+
+.qaf-field-edit,
+.qaf-field-duplicate,
+.qaf-field-delete {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    width: 28px;
+    height: 28px;
+    padding: 0;
+    background: transparent;
+    border: 1px solid transparent;
+    border-radius: var(--qaf-radius-sm);
+    color: var(--qaf-text-light);
+    cursor: pointer;
+    transition: all var(--qaf-transition-fast);
+}
+
+.qaf-field-edit:hover,
+.qaf-field-duplicate:hover {
+    background: var(--qaf-bg-white);
+    border-color: var(--qaf-border);
+    color: var(--qaf-primary);
+}
+
+.qaf-field-delete:hover {
+    background: var(--qaf-error);
+    border-color: var(--qaf-error);
+    color: white;
+}
+
+.qaf-field-edit:focus,
+.qaf-field-duplicate:focus,
+.qaf-field-delete:focus {
+    outline: none;
+    box-shadow: var(--qaf-focus-ring);
+}
+
+.qaf-field-card-body {
+    padding: var(--qaf-spacing-md);
+}
+
+.qaf-field-preview {
+    opacity: 0.7;
+    pointer-events: none;
+}
+
+/* Drop Indicator */
+.qaf-drop-indicator {
+    height: 3px;
+    background: var(--qaf-primary);
+    border-radius: 2px;
+    margin: var(--qaf-spacing-sm) 0;
+}
+
+/* ==========================================================================
+   Settings Panel - Right Panel
+   ========================================================================== */
+
+.qaf-field-settings {
+    background: var(--qaf-bg-white);
+    border: 1px solid var(--qaf-border);
+    border-radius: var(--qaf-radius-md);
+    padding: var(--qaf-spacing-md);
+    max-height: calc(100vh - 180px);
+    overflow-y: auto;
+    opacity: 0;
+    visibility: hidden;
+    transition: opacity var(--qaf-transition-normal);
+}
+
+.qaf-field-settings.qaf-panel-open {
+    opacity: 1;
+    visibility: visible;
+}
+
+.qaf-settings-section {
+    margin-bottom: var(--qaf-spacing-lg);
+}
+
+.qaf-settings-section h3 {
+    font-size: 14px;
+    font-weight: 600;
+    margin: 0 0 var(--qaf-spacing-md);
+    padding-bottom: var(--qaf-spacing-sm);
+    border-bottom: 1px solid var(--qaf-border-light);
+}
+
+.qaf-settings-row {
+    margin-bottom: var(--qaf-spacing-md);
+}
+
+.qaf-settings-row label {
+    display: block;
+    font-weight: 500;
+    margin-bottom: var(--qaf-spacing-xs);
+    font-size: 13px;
+}
+
+.qaf-settings-row input[type="text"],
+.qaf-settings-row input[type="email"],
+.qaf-settings-row input[type="number"],
+.qaf-settings-row textarea,
+.qaf-settings-row select {
+    width: 100%;
+    padding: var(--qaf-spacing-sm);
+    border: 1px solid var(--qaf-border);
+    border-radius: var(--qaf-radius-sm);
+    font-size: 14px;
+}
+
+.qaf-settings-row input:focus,
+.qaf-settings-row textarea:focus,
+.qaf-settings-row select:focus {
+    outline: none;
+    border-color: var(--qaf-focus-color);
+    box-shadow: var(--qaf-focus-ring);
+}
+
+/* ==========================================================================
+   Structure Mode - Tree View
+   ========================================================================== */
+
+.qaf-structure-mode {
+    padding: var(--qaf-spacing-md);
+}
+
+.qaf-structure-tree {
+    list-style: none;
+    margin: 0;
+    padding: 0;
+}
+
+.qaf-structure-tree ul {
+    list-style: none;
+    margin: 0;
+    padding-left: var(--qaf-spacing-lg);
+}
+
+.qaf-tree-item {
+    display: flex;
+    align-items: center;
+    gap: var(--qaf-spacing-sm);
+    padding: var(--qaf-spacing-sm) var(--qaf-spacing-md);
+    margin: 2px 0;
+    background: var(--qaf-bg);
+    border: 2px solid transparent;
+    border-radius: var(--qaf-radius-sm);
+    cursor: pointer;
+    transition: all var(--qaf-transition-fast);
+}
+
+.qaf-tree-item:hover {
+    background: var(--qaf-bg-white);
+    border-color: var(--qaf-border);
+}
+
+.qaf-tree-item:focus {
+    outline: none;
+    border-color: var(--qaf-focus-color);
+    box-shadow: var(--qaf-focus-ring);
+}
+
+.qaf-tree-item[aria-selected="true"],
+.qaf-tree-item.qaf-tree-selected {
+    background: var(--qaf-primary-light);
+    background: rgba(33, 150, 243, 0.1);
+    border-color: var(--qaf-primary);
+}
+
+.qaf-tree-toggle {
+    width: 20px;
+    height: 20px;
+    padding: 0;
+    background: transparent;
+    border: none;
+    cursor: pointer;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    color: var(--qaf-text-light);
+    transition: transform var(--qaf-transition-fast);
+}
+
+.qaf-tree-toggle:focus {
+    outline: none;
+    box-shadow: var(--qaf-focus-ring);
+    border-radius: var(--qaf-radius-sm);
+}
+
+.qaf-tree-item[aria-expanded="true"] .qaf-tree-toggle {
+    transform: rotate(90deg);
+}
+
+.qaf-tree-icon {
+    color: var(--qaf-text-light);
+}
+
+.qaf-tree-label {
+    flex: 1;
+    font-size: 13px;
+}
+
+/* Keyboard Shortcuts Help */
+.qaf-keyboard-shortcuts {
+    background: var(--qaf-bg);
+    border: 1px solid var(--qaf-border);
+    border-radius: var(--qaf-radius-md);
+    padding: var(--qaf-spacing-md);
+    margin-bottom: var(--qaf-spacing-md);
+}
+
+.qaf-keyboard-shortcuts h3 {
+    margin: 0 0 var(--qaf-spacing-md);
+    font-size: 14px;
+}
+
+.qaf-keyboard-shortcuts dl {
+    display: grid;
+    grid-template-columns: auto 1fr;
+    gap: var(--qaf-spacing-sm) var(--qaf-spacing-md);
+    margin: 0;
+}
+
+.qaf-keyboard-shortcuts dt {
+    font-family: monospace;
+    background: var(--qaf-bg-white);
+    padding: 2px 6px;
+    border: 1px solid var(--qaf-border-light);
+    border-radius: var(--qaf-radius-sm);
+    font-size: 12px;
+}
+
+.qaf-keyboard-shortcuts dd {
+    margin: 0;
+    font-size: 13px;
+    color: var(--qaf-text-light);
+}
+
+/* ==========================================================================
+   Settings Page Tabs
+   ========================================================================== */
+
+.qaf-settings-tabs {
+    background: var(--qaf-bg-white);
+    border: 1px solid var(--qaf-border);
+    border-radius: var(--qaf-radius-md);
+    margin-top: var(--qaf-spacing-md);
+}
+
+.qaf-tabs-nav {
+    display: flex;
+    gap: var(--qaf-spacing-xs);
+    padding: var(--qaf-spacing-md);
+    border-bottom: 1px solid var(--qaf-border);
+    background: var(--qaf-bg);
+}
+
+.qaf-tab-btn {
+    padding: var(--qaf-spacing-sm) var(--qaf-spacing-md);
+    background: transparent;
+    border: 1px solid transparent;
+    border-radius: var(--qaf-radius-sm);
+    font-size: 14px;
+    color: var(--qaf-text-light);
+    cursor: pointer;
+    transition: all var(--qaf-transition-fast);
+}
+
+.qaf-tab-btn:hover {
+    color: var(--qaf-text);
+    background: var(--qaf-bg-white);
+}
+
+.qaf-tab-btn:focus {
+    outline: none;
+    box-shadow: var(--qaf-focus-ring);
+}
+
+.qaf-tab-btn.active,
+.qaf-tab-btn[aria-selected="true"] {
+    background: var(--qaf-bg-white);
+    border-color: var(--qaf-border);
+    border-bottom-color: var(--qaf-bg-white);
+    color: var(--qaf-primary);
+    font-weight: 500;
+    margin-bottom: -1px;
+}
+
+.qaf-tab-panel {
+    padding: var(--qaf-spacing-lg);
+}
+
+.qaf-tab-panel[hidden] {
+    display: none;
+}
+
+/* ==========================================================================
+   Modals
+   ========================================================================== */
+
+.qaf-modal {
+    position: fixed;
+    top: 0;
+    left: 0;
+    right: 0;
+    bottom: 0;
+    background: rgba(0, 0, 0, 0.5);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    z-index: 100000;
+    opacity: 0;
+    visibility: hidden;
+    transition: all var(--qaf-transition-normal);
+}
+
+.qaf-modal[aria-hidden="false"] {
+    opacity: 1;
+    visibility: visible;
+}
+
+.qaf-modal-content {
+    background: var(--qaf-bg-white);
+    border-radius: var(--qaf-radius-lg);
+    box-shadow: 0 10px 40px rgba(0, 0, 0, 0.2);
+    max-width: 500px;
+    width: 90%;
+    max-height: 80vh;
+    overflow-y: auto;
+}
+
+.qaf-modal-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    padding: var(--qaf-spacing-md) var(--qaf-spacing-lg);
+    border-bottom: 1px solid var(--qaf-border-light);
+}
+
+.qaf-modal-header h2 {
+    margin: 0;
+    font-size: 18px;
+}
+
+.qaf-modal-close {
+    width: 32px;
+    height: 32px;
+    padding: 0;
+    background: transparent;
+    border: none;
+    border-radius: var(--qaf-radius-sm);
+    cursor: pointer;
+    color: var(--qaf-text-light);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    transition: all var(--qaf-transition-fast);
+}
+
+.qaf-modal-close:hover {
+    background: var(--qaf-bg);
+    color: var(--qaf-text);
+}
+
+.qaf-modal-close:focus {
+    outline: none;
+    box-shadow: var(--qaf-focus-ring);
+}
+
+.qaf-modal-body {
+    padding: var(--qaf-spacing-lg);
+}
+
+.qaf-modal-footer {
+    display: flex;
+    justify-content: flex-end;
+    gap: var(--qaf-spacing-sm);
+    padding: var(--qaf-spacing-md) var(--qaf-spacing-lg);
+    border-top: 1px solid var(--qaf-border-light);
+    background: var(--qaf-bg);
+}
+
+/* ==========================================================================
+   Skip Links
+   ========================================================================== */
+
+.qaf-skip-link {
+    position: absolute;
+    top: -100px;
+    left: 0;
+    background: var(--qaf-primary);
+    color: white;
+    padding: var(--qaf-spacing-sm) var(--qaf-spacing-md);
+    z-index: 100001;
+    transition: top var(--qaf-transition-fast);
+}
+
+.qaf-skip-link:focus {
+    top: 0;
+    outline: none;
+    box-shadow: var(--qaf-focus-ring);
+}
+
+/* ==========================================================================
+   ARIA Live Regions (visually hidden)
+   ========================================================================== */
+
+.qaf-live-region {
+    position: absolute;
+    width: 1px;
+    height: 1px;
+    padding: 0;
+    margin: -1px;
+    overflow: hidden;
+    clip: rect(0, 0, 0, 0);
+    white-space: nowrap;
+    border: 0;
+}
+
+/* ==========================================================================
+   Utility Classes
+   ========================================================================== */
+
+.screen-reader-text {
+    position: absolute;
+    width: 1px;
+    height: 1px;
+    padding: 0;
+    margin: -1px;
+    overflow: hidden;
+    clip: rect(0, 0, 0, 0);
+    white-space: nowrap;
+    border: 0;
+}
+
+.qaf-visually-hidden:not(:focus):not(:active) {
+    position: absolute;
+    width: 1px;
+    height: 1px;
+    padding: 0;
+    margin: -1px;
+    overflow: hidden;
+    clip: rect(0, 0, 0, 0);
+    white-space: nowrap;
+    border: 0;
+}
+
+/* ==========================================================================
+   Forms List Table
+   ========================================================================== */
+
+.qaf-forms-table {
+    border-collapse: collapse;
+    width: 100%;
+}
+
+.qaf-forms-table th,
+.qaf-forms-table td {
+    padding: var(--qaf-spacing-sm) var(--qaf-spacing-md);
+    text-align: left;
+    border-bottom: 1px solid var(--qaf-border-light);
+}
+
+.qaf-forms-table th {
+    background: var(--qaf-bg);
+    font-weight: 600;
+    font-size: 13px;
+}
+
+.qaf-forms-table tr:hover td {
+    background: var(--qaf-bg);
+}
+
+.qaf-forms-table tr:focus-within td {
+    box-shadow: inset var(--qaf-focus-ring);
+}
+
+.qaf-status-badge {
+    display: inline-block;
+    padding: 2px 8px;
+    border-radius: 10px;
+    font-size: 11px;
+    font-weight: 500;
+}
+
+.qaf-status-badge.published {
+    background: rgba(70, 180, 80, 0.1);
+    color: var(--qaf-success);
+}
+
+.qaf-status-badge.draft {
+    background: rgba(80, 87, 94, 0.1);
+    color: var(--qaf-text-light);
+}
+
+.qaf-shortcode-copy {
+    font-family: monospace;
+    background: var(--qaf-bg);
+    padding: 2px 6px;
+    border-radius: var(--qaf-radius-sm);
+    font-size: 12px;
+    cursor: pointer;
+}
+
+.qaf-shortcode-copy:focus {
+    outline: none;
+    box-shadow: var(--qaf-focus-ring);
+}
+
+/* ==========================================================================
+   Responsive Design
+   ========================================================================== */
+
+@media (max-width: 1200px) {
+    .qaf-builder-container {
+        grid-template-columns: 240px 1fr 280px;
+    }
+}
+
+@media (max-width: 992px) {
+    .qaf-builder-container {
+        grid-template-columns: 1fr;
+    }
+    
+    .qaf-field-palette {
+        order: 2;
+    }
+    
+    .qaf-builder-canvas {
+        order: 1;
+    }
+    
+    .qaf-field-settings {
+        order: 3;
+    }
+}
+
+
+/* ==========================================================================
+   Model screens: Rules, Quiz outcomes, Translations, Choice libraries
+   ========================================================================== */
+
+.qaf-model-panel {
+    max-width: 1100px;
+    padding: var(--qaf-spacing-lg);
+}
+
+.qaf-model-table {
+    margin: var(--qaf-spacing-md) 0;
+}
+
+.qaf-model-table caption {
+    text-align: left;
+    font-weight: 600;
+    padding: var(--qaf-spacing-sm) 0;
+}
+
+.qaf-model-table th[scope="row"] {
+    width: 4em;
+}
+
+.qaf-row-actions .button {
+    margin: 0 4px 4px 0;
+}
+
+.qaf-row-actions .button[aria-disabled="true"] {
+    opacity: 0.6;
+}
+
+.qaf-model-modal {
+    position: fixed;
+    inset: 0;
+    z-index: 100001;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+}
+
+.qaf-model-modal[hidden] {
+    display: none;
+}
+
+.qaf-model-backdrop {
+    position: absolute;
+    inset: 0;
+    background: rgba(0, 0, 0, 0.5);
+}
+
+.qaf-model-dialog {
+    position: relative;
+    max-width: 640px;
+    max-height: 90vh;
+}
+
+.qaf-model-dialog-wide {
+    max-width: 1000px;
+    width: 95%;
+}
+
+.qaf-error-summary {
+    border: 2px solid var(--qaf-error);
+    border-left-width: 6px;
+    padding: var(--qaf-spacing-sm) var(--qaf-spacing-md);
+    margin: 0 0 var(--qaf-spacing-md);
+    background: #fff;
+}
+
+.qaf-error-summary:focus {
+    outline: 2px solid var(--qaf-focus-color);
+    outline-offset: 2px;
+}
+
+.qaf-error-summary h3 {
+    margin: 0 0 4px;
+    font-size: 14px;
+}
+
+.qaf-model-panel .qaf-field-error,
+.qaf-model-modal .qaf-field-error,
+.qaf-scoring-section .qaf-field-error {
+    display: block;
+    color: var(--qaf-error);
+    font-weight: 600;
+}
+
+.qaf-model-modal [aria-invalid="true"],
+.qaf-scoring-section [aria-invalid="true"] {
+    border-color: var(--qaf-error);
+    box-shadow: 0 0 0 1px var(--qaf-error);
+}
+
+.qaf-expression-field {
+    margin: var(--qaf-spacing-md) 0;
+}
+
+.qaf-expression-check {
+    display: block;
+    font-style: italic;
+    margin: 2px 0 4px;
+}
+
+.qaf-check-list {
+    max-height: 14em;
+    overflow-y: auto;
+    margin: 0;
+    padding: 4px;
+    border: 1px solid var(--qaf-border-light);
+}
+
+.qaf-check-list li[hidden],
+.qaf-model-table tr[hidden] {
+    display: none;
+}
+
+.qaf-fields-list {
+    border: 1px solid var(--qaf-border-light);
+    padding: var(--qaf-spacing-sm);
+    margin-top: 4px;
+    max-height: 14em;
+    overflow-y: auto;
+}
+
+.qaf-model-panel .qaf-sr-only,
+.qaf-model-modal .qaf-sr-only,
+.qaf-scoring-section .qaf-sr-only {
+    position: absolute;
+    width: 1px;
+    height: 1px;
+    margin: -1px;
+    padding: 0;
+    overflow: hidden;
+    clip: rect(0, 0, 0, 0);
+    border: 0;
+}
+
+.qaf-translation-grid input[type="text"],
+.qaf-translation-grid textarea {
+    width: 100%;
+}
+
+.qaf-choice-grid input {
+    width: 100%;
+    min-width: 5em;
+}
+
+@media (prefers-reduced-motion: reduce) {
+    .qaf-model-modal,
+    .qaf-model-modal * {
+        transition: none !important;
+        animation: none !important;
+    }
+}
+
+/* ==========================================================================
+   Visual mode canvas: pages, sections and columns, drawn from the model
+   ========================================================================== */
+
+.qaf-canvas-page {
+    margin: var(--qaf-spacing-lg) 0 var(--qaf-spacing-sm);
+    font-size: 15px;
+}
+
+.qaf-card-list {
+    display: flex;
+    flex-direction: column;
+    gap: var(--qaf-spacing-sm);
+}
+
+.qaf-group-card {
+    border: 1px dashed var(--qaf-border);
+    border-radius: var(--qaf-radius-md);
+    padding: var(--qaf-spacing-sm) var(--qaf-spacing-md);
+}
+
+.qaf-group-label {
+    font-weight: 600;
+    margin: 0 0 var(--qaf-spacing-sm);
+}
+
+.qaf-column-label {
+    font-weight: 500;
+    margin-top: var(--qaf-spacing-sm);
+}
+
+.qaf-group-empty {
+    font-style: italic;
+    margin: 0;
+}
+
+.qaf-save-status {
+    margin: 0 0 0 var(--qaf-spacing-sm);
+    align-self: center;
+}
+
+.qaf-picker-types ul {
+    margin: 0 0 var(--qaf-spacing-md);
+}
+
+.qaf-picker-types [hidden] {
+    display: none;
+}
+
+.qaf-btn[aria-disabled="true"] {
+    opacity: 0.6;
+}

@@ -1,5 +1,5 @@
 {
-    "source": "BAF stored form",
+    "source": "QAF stored form",
     "carried": 23,
     "entries": [
         {
@@ -55,7 +55,7 @@
         {
             "level": "dropped",
             "where": "field beam",
-            "message": "The model has no field type \"teleporter\"; the field is kept under extensions.baf_legacy."
+            "message": "The model has no field type \"teleporter\"; the field is kept under extensions.qaf_legacy."
         },
         {
             "level": "changed",

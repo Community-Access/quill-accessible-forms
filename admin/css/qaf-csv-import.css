@@ -1,0 +1,570 @@
+/**
+ * CSV Import Wizard Styles
+ *
+ * @package QAF
+ * @since 1.1.0
+ */
+
+/* Wizard Container */
+.qaf-csv-import-wizard {
+    max-width: 1200px;
+}
+
+.qaf-wizard-container {
+    background: #fff;
+    border: 1px solid #c3c4c7;
+    border-radius: 4px;
+    margin-top: 20px;
+}
+
+/* Progress Steps */
+.qaf-wizard-steps {
+    background: #f6f7f7;
+    border-bottom: 1px solid #c3c4c7;
+    padding: 20px;
+}
+
+.qaf-wizard-steps ol {
+    display: flex;
+    justify-content: center;
+    list-style: none;
+    margin: 0;
+    padding: 0;
+    gap: 40px;
+}
+
+.qaf-wizard-steps li {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    color: #646970;
+    position: relative;
+}
+
+.qaf-wizard-steps li:not(:last-child)::after {
+    content: '';
+    position: absolute;
+    right: -25px;
+    top: 50%;
+    width: 10px;
+    height: 2px;
+    background: #c3c4c7;
+}
+
+.qaf-wizard-steps .step-number {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    width: 32px;
+    height: 32px;
+    border-radius: 50%;
+    background: #c3c4c7;
+    color: #fff;
+    font-weight: 600;
+}
+
+.qaf-wizard-steps li.active .step-number {
+    background: #2271b1;
+}
+
+.qaf-wizard-steps li.completed .step-number {
+    background: #00a32a;
+}
+
+.qaf-wizard-steps li.completed .step-number::before {
+    content: '✓';
+}
+
+.qaf-wizard-steps li.active .step-label {
+    color: #1d2327;
+    font-weight: 600;
+}
+
+/* Wizard Steps Content */
+.qaf-wizard-step {
+    padding: 30px;
+}
+
+.qaf-wizard-step h2 {
+    margin-top: 0;
+    margin-bottom: 15px;
+    font-size: 1.5em;
+}
+
+.qaf-wizard-step > .description {
+    font-size: 14px;
+    color: #646970;
+    margin-bottom: 20px;
+}
+
+/* Upload Dropzone */
+.qaf-upload-dropzone {
+    border: 2px dashed #c3c4c7;
+    border-radius: 8px;
+    padding: 40px;
+    text-align: center;
+    background: #f6f7f7;
+    transition: all 0.2s ease;
+    margin-bottom: 20px;
+}
+
+.qaf-upload-dropzone.dragover {
+    border-color: #2271b1;
+    background: #f0f6fc;
+}
+
+.qaf-upload-dropzone .dashicons {
+    font-size: 48px;
+    width: 48px;
+    height: 48px;
+    color: #646970;
+}
+
+.qaf-upload-dropzone p {
+    margin: 10px 0;
+    font-size: 14px;
+}
+
+.qaf-upload-dropzone .upload-hint {
+    color: #646970;
+    font-size: 12px;
+}
+
+.qaf-upload-browse {
+    color: #2271b1;
+    cursor: pointer;
+    text-decoration: underline;
+}
+
+.qaf-upload-browse:hover {
+    color: #135e96;
+}
+
+.dropzone-selected .dashicons {
+    color: #00a32a;
+}
+
+.dropzone-selected .selected-filename {
+    font-weight: 600;
+    color: #1d2327;
+}
+
+/* CSV Options */
+.qaf-csv-options {
+    border: 1px solid #c3c4c7;
+    border-radius: 4px;
+    padding: 20px;
+    margin-bottom: 20px;
+    background: #f6f7f7;
+}
+
+.qaf-csv-options legend {
+    font-weight: 600;
+    padding: 0 10px;
+}
+
+.qaf-form-row {
+    margin-bottom: 15px;
+}
+
+.qaf-form-row:last-child {
+    margin-bottom: 0;
+}
+
+.qaf-form-row label {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+}
+
+.qaf-form-row select,
+.qaf-form-row input[type="text"],
+.qaf-form-row textarea {
+    margin-left: 10px;
+}
+
+/* Wizard Actions */
+.qaf-wizard-actions {
+    display: flex;
+    justify-content: flex-end;
+    gap: 10px;
+    padding-top: 20px;
+    border-top: 1px solid #c3c4c7;
+    margin-top: 20px;
+}
+
+.qaf-wizard-actions .button {
+    display: inline-flex;
+    align-items: center;
+    gap: 5px;
+}
+
+.qaf-wizard-actions .spinner {
+    margin: 0;
+    float: none;
+}
+
+/* Analysis Summary */
+.qaf-analysis-summary {
+    background: #f0f6fc;
+    border: 1px solid #c5d9ed;
+    border-radius: 4px;
+    padding: 15px;
+    margin-bottom: 20px;
+}
+
+.qaf-analysis-summary p {
+    margin: 5px 0;
+}
+
+/* Form Settings */
+.qaf-form-settings {
+    background: #f6f7f7;
+    border: 1px solid #c3c4c7;
+    border-radius: 4px;
+    padding: 20px;
+    margin-bottom: 20px;
+}
+
+.qaf-form-settings h3 {
+    margin-top: 0;
+}
+
+/* Field Mapping Table */
+.qaf-field-mapping {
+    margin-bottom: 20px;
+}
+
+.qaf-field-mapping h3 {
+    margin-bottom: 10px;
+}
+
+#field-mapping-table {
+    margin-top: 10px;
+}
+
+#field-mapping-table .column-include {
+    width: 40px;
+    text-align: center;
+}
+
+#field-mapping-table .column-confidence {
+    width: 100px;
+}
+
+#field-mapping-table .column-required {
+    width: 80px;
+    text-align: center;
+}
+
+#field-mapping-table .column-actions {
+    width: 80px;
+}
+
+.field-type-badge {
+    display: inline-block;
+    background: #e5e5e5;
+    padding: 2px 8px;
+    border-radius: 3px;
+    font-size: 12px;
+    font-family: monospace;
+}
+
+.choice-count {
+    color: #646970;
+    font-size: 12px;
+}
+
+.confidence-high {
+    color: #00a32a;
+}
+
+.confidence-medium {
+    color: #dba617;
+}
+
+.confidence-low {
+    color: #d63638;
+}
+
+.field-label {
+    width: 100%;
+}
+
+/* Cascade Info */
+.qaf-cascade-info {
+    background: #fcf9e8;
+    border: 1px solid #dba617;
+    border-radius: 4px;
+    padding: 15px;
+    margin-bottom: 20px;
+}
+
+.qaf-cascade-info h3 {
+    margin-top: 0;
+    color: #8b6914;
+}
+
+.qaf-cascade-info ul {
+    margin: 0;
+    padding-left: 20px;
+}
+
+.qaf-cascade-info li {
+    margin-bottom: 5px;
+}
+
+/* Preview Tabs */
+.qaf-preview-tabs {
+    display: flex;
+    border-bottom: 1px solid #c3c4c7;
+    margin-bottom: 20px;
+}
+
+.qaf-preview-tabs .tab-button {
+    background: none;
+    border: none;
+    padding: 10px 20px;
+    cursor: pointer;
+    font-size: 14px;
+    color: #646970;
+    border-bottom: 2px solid transparent;
+    margin-bottom: -1px;
+}
+
+.qaf-preview-tabs .tab-button:hover {
+    color: #2271b1;
+}
+
+.qaf-preview-tabs .tab-button.active {
+    color: #2271b1;
+    border-bottom-color: #2271b1;
+    font-weight: 600;
+}
+
+.qaf-preview-content {
+    min-height: 300px;
+}
+
+/* Form Preview */
+.qaf-form-preview {
+    max-width: 600px;
+    margin: 0 auto;
+}
+
+.qaf-preview-form {
+    background: #fff;
+    border: 1px solid #c3c4c7;
+    border-radius: 4px;
+    padding: 30px;
+}
+
+.qaf-preview-form h3 {
+    margin-top: 0;
+    margin-bottom: 10px;
+}
+
+.qaf-preview-form .form-description {
+    color: #646970;
+    margin-bottom: 20px;
+}
+
+.preview-field {
+    margin-bottom: 20px;
+}
+
+.preview-field label {
+    display: block;
+    font-weight: 600;
+    margin-bottom: 5px;
+}
+
+.preview-field .required {
+    color: #d63638;
+}
+
+.preview-field input[type="text"],
+.preview-field input[type="email"],
+.preview-field input[type="tel"],
+.preview-field input[type="url"],
+.preview-field input[type="number"],
+.preview-field input[type="date"],
+.preview-field select,
+.preview-field textarea {
+    width: 100%;
+    padding: 8px;
+    border: 1px solid #8c8f94;
+    border-radius: 4px;
+    background: #f0f0f1;
+}
+
+.preview-field .radio-label,
+.preview-field .checkbox-label {
+    display: block;
+    font-weight: normal;
+    margin-bottom: 5px;
+}
+
+/* BFL Output */
+#bfl-output {
+    width: 100%;
+    font-family: Consolas, Monaco, 'Andale Mono', monospace;
+    font-size: 13px;
+    background: #23282d;
+    color: #e0e0e0;
+    padding: 15px;
+    border-radius: 4px;
+    resize: vertical;
+}
+
+#btn-copy-bfl {
+    margin-top: 10px;
+}
+
+/* Success Message */
+.qaf-success-message {
+    text-align: center;
+    padding: 40px;
+}
+
+.qaf-success-message .dashicons {
+    font-size: 64px;
+    width: 64px;
+    height: 64px;
+    color: #00a32a;
+}
+
+.qaf-success-message h2 {
+    margin: 20px 0 10px;
+    color: #00a32a;
+}
+
+.qaf-success-actions {
+    display: flex;
+    justify-content: center;
+    gap: 10px;
+    margin-top: 30px;
+}
+
+/* Modal */
+.qaf-modal {
+    position: fixed;
+    top: 0;
+    left: 0;
+    right: 0;
+    bottom: 0;
+    background: rgba(0, 0, 0, 0.5);
+    z-index: 100000;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+}
+
+.qaf-modal-content {
+    background: #fff;
+    border-radius: 4px;
+    width: 500px;
+    max-width: 90%;
+    max-height: 90vh;
+    overflow: auto;
+    box-shadow: 0 5px 20px rgba(0, 0, 0, 0.3);
+}
+
+.qaf-modal-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    padding: 15px 20px;
+    border-bottom: 1px solid #c3c4c7;
+    background: #f6f7f7;
+}
+
+.qaf-modal-header h3 {
+    margin: 0;
+}
+
+.qaf-modal-close {
+    background: none;
+    border: none;
+    cursor: pointer;
+    padding: 0;
+    color: #646970;
+}
+
+.qaf-modal-close:hover {
+    color: #d63638;
+}
+
+.qaf-modal-body {
+    padding: 20px;
+}
+
+.qaf-modal-footer {
+    display: flex;
+    justify-content: flex-end;
+    gap: 10px;
+    padding: 15px 20px;
+    border-top: 1px solid #c3c4c7;
+    background: #f6f7f7;
+}
+
+/* Choices Section */
+.qaf-choices-section {
+    margin-top: 20px;
+    padding-top: 20px;
+    border-top: 1px solid #c3c4c7;
+}
+
+.qaf-choices-section h4 {
+    margin-top: 0;
+}
+
+.choice-row {
+    display: flex;
+    gap: 10px;
+    margin-bottom: 8px;
+    align-items: center;
+}
+
+.choice-row input {
+    flex: 1;
+}
+
+.choice-row .remove-choice {
+    color: #d63638;
+    font-size: 18px;
+    line-height: 1;
+    text-decoration: none;
+    cursor: pointer;
+}
+
+.qaf-choices-actions {
+    display: flex;
+    gap: 10px;
+    margin-top: 10px;
+}
+
+/* Responsive */
+@media screen and (max-width: 782px) {
+    .qaf-wizard-steps ol {
+        flex-direction: column;
+        gap: 15px;
+    }
+
+    .qaf-wizard-steps li:not(:last-child)::after {
+        display: none;
+    }
+
+    .qaf-wizard-step {
+        padding: 20px;
+    }
+
+    #field-mapping-table {
+        display: block;
+        overflow-x: auto;
+    }
+
+    .qaf-success-actions {
+        flex-direction: column;
+    }
+}

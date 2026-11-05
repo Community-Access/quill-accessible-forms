@@ -2,15 +2,15 @@
 This guide is intentionally **hand-holding**: it tells you *what each field is for*, *how it behaves*, and *what settings you will see* in the builder — based on the actual field definitions in the plugin.
 Quick accessibility rule of thumb:
 - **Single inputs** (text/email/number/etc.) use a label tied to one control.
-- **Grouped choices** (radio/checkbox/likert/ranking/etc.) should be labeled as a group. BAF uses **`<fieldset>` + `<legend>`** for these where appropriate.
+- **Grouped choices** (radio/checkbox/likert/ranking/etc.) should be labeled as a group. QAF uses **`<fieldset>` + `<legend>`** for these where appropriate.
 
 ---
 
 ## HTML5 Attributes (All Text-Based Fields)
 
-These attributes are available on text, email, number, textarea, and other text-based fields via BFL or the Visual Builder's Advanced settings:
+These attributes are available on text, email, number, textarea, and other text-based fields via QAF form language or the Visual Builder's Advanced settings:
 
-| Attribute | BFL Example | Description |
+| Attribute | the QAF form language Example | Description |
 | --------- | ----------- | ----------- |
 | `pattern` | `@pattern "[A-Z]{3}-[0-9]{4}"` | Regex pattern for validation |
 | `autofocus` | `@autofocus` | Auto-focus field on page load |
@@ -36,7 +36,7 @@ Use this when you need a **single line text** style input. If you’re unsure, a
 They will see the label, optional help text, and an input/control appropriate for this field type.
 **Accessibility notes**
 - This field renders as a single control with an associated label.
-**BFL example**
+**QAF form language example**
 ```bfl
 text "Example"
   @required
@@ -100,7 +100,7 @@ Use this when you need a **paragraph text** style input. If you’re unsure, add
 They will see the label, optional help text, and an input/control appropriate for this field type.
 **Accessibility notes**
 - This field renders as a single control with an associated label.
-**BFL example**
+**QAF form language example**
 ```bfl
 textarea "Example"
   @required
@@ -113,7 +113,7 @@ Use this when you need a **number** style input. If you’re unsure, add it and 
 They will see the label, optional help text, and an input/control appropriate for this field type.
 **Accessibility notes**
 - This field renders as a single control with an associated label.
-**BFL example**
+**QAF form language example**
 ```bfl
 number "Example"
   @required
@@ -155,7 +155,7 @@ Use this when you need an **email** style input. If you’re unsure, add it and 
 They will see the label, optional help text, and an input/control appropriate for this field type.
 **Accessibility notes**
 - This field renders as a single control with an associated label.
-**BFL example**
+**QAF form language example**
 ```bfl
 email "Example"
   @required
@@ -209,7 +209,7 @@ Use this when you need a **phone** style input. If you’re unsure, add it and p
 They will see the label, optional help text, and an input/control appropriate for this field type.
 **Accessibility notes**
 - This field renders as a single control with an associated label.
-**BFL example**
+**QAF form language example**
 ```bfl
 phone "Example"
   @required
@@ -245,7 +245,7 @@ Use this when you need a **website / url** style input. If you’re unsure, add 
 They will see the label, optional help text, and an input/control appropriate for this field type.
 **Accessibility notes**
 - This field renders as a single control with an associated label.
-**BFL example**
+**QAF form language example**
 ```bfl
 website "Example"
   @required
@@ -279,7 +279,7 @@ Use this when you need a **hidden** style input. If you’re unsure, add it and 
 They will see the label, optional help text, and an input/control appropriate for this field type.
 **Accessibility notes**
 - This field renders as a single control with an associated label.
-**BFL example**
+**QAF form language example**
 ```bfl
 hidden "Example"
   @required
@@ -311,7 +311,7 @@ Use this when you need a **password** style input. If you’re unsure, add it an
 They will see the label, optional help text, and an input/control appropriate for this field type.
 **Accessibility notes**
 - This field renders as a single control with an associated label.
-**BFL example**
+**QAF form language example**
 ```bfl
 password "Example"
   @required
@@ -359,7 +359,7 @@ Use this when you need a **color picker** style input. If you’re unsure, add i
 They will see the label, optional help text, and an input/control appropriate for this field type.
 **Accessibility notes**
 - This field renders as a single control with an associated label.
-**BFL example**
+**QAF form language example**
 ```bfl
 color "Example"
   @required
@@ -393,7 +393,7 @@ Use this when you need a **range slider** style input. If you’re unsure, add i
 They will see the label, optional help text, and an input/control appropriate for this field type.
 **Accessibility notes**
 - This field renders as a single control with an associated label.
-**BFL example**
+**QAF form language example**
 ```bfl
 range "Example"
   @required
@@ -442,7 +442,7 @@ Use this when you need a **dropdown** style input. If you’re unsure, add it an
 They will see the label, optional help text, and an input/control appropriate for this field type.
 **Accessibility notes**
 - This field renders as a single control with an associated label.
-**BFL example**
+**QAF form language example**
 ```bfl
 select "Example"
   + Option A
@@ -499,7 +499,7 @@ Use this when you need a **multi-select** style input. If you’re unsure, add i
 They will see the label, optional help text, and an input/control appropriate for this field type.
 **Accessibility notes**
 - This field renders as a single control with an associated label.
-**BFL example**
+**QAF form language example**
 ```bfl
 multiselect "Example"
   + Option A
@@ -550,7 +550,7 @@ Use this when you need a **radio buttons** style input. If you’re unsure, add 
 They will see the label, optional help text, and an input/control appropriate for this field type.
 **Accessibility notes**
 - This field renders a grouped control using **`<fieldset>` + `<legend>`** (your field label becomes the legend).
-**BFL example**
+**QAF form language example**
 ```bfl
 radio "Example"
   + Option A
@@ -595,7 +595,7 @@ Use this when you need a **checkboxes** style input. If you’re unsure, add it 
 They will see the label, optional help text, and an input/control appropriate for this field type.
 **Accessibility notes**
 - This field renders a grouped control using **`<fieldset>` + `<legend>`** (your field label becomes the legend).
-**BFL example**
+**QAF form language example**
 ```bfl
 checkbox "Example"
   + Option A
@@ -646,7 +646,7 @@ Use this when you need a **consent / terms** style input. If you’re unsure, ad
 They will see the label, optional help text, and an input/control appropriate for this field type.
 **Accessibility notes**
 - This field renders as a single control with an associated label.
-**BFL example**
+**QAF form language example**
 ```bfl
 consent "Example"
   @required
@@ -680,7 +680,7 @@ Use this when you need a **toggle switch** style input. If you’re unsure, add 
 They will see the label, optional help text, and an input/control appropriate for this field type.
 **Accessibility notes**
 - This field renders as a single control with an associated label.
-**BFL example**
+**QAF form language example**
 ```bfl
 toggle "Example"
   @required
@@ -722,7 +722,7 @@ Use this when you need a **likert scale** style input. If you’re unsure, add i
 They will see the label, optional help text, and an input/control appropriate for this field type.
 **Accessibility notes**
 - This field renders a grouped control using **`<fieldset>` + `<legend>`** (your field label becomes the legend).
-**BFL example**
+**QAF form language example**
 ```bfl
 likert "Example"
   + Option A
@@ -767,7 +767,7 @@ Use this when you need a **ranking** style input. If you’re unsure, add it and
 They will see the label, optional help text, and an input/control appropriate for this field type.
 **Accessibility notes**
 - This field renders a grouped control using **`<fieldset>` + `<legend>`** (your field label becomes the legend).
-**BFL example**
+**QAF form language example**
 ```bfl
 ranking "Example"
   + Option A
@@ -802,7 +802,7 @@ Use this when you need a **star rating** style input. If you’re unsure, add it
 They will see the label, optional help text, and an input/control appropriate for this field type.
 **Accessibility notes**
 - This field renders a grouped control using **`<fieldset>` + `<legend>`** (your field label becomes the legend).
-**BFL example**
+**QAF form language example**
 ```bfl
 rating "Example"
   + Option A
@@ -851,7 +851,7 @@ Use this when you need a **net promoter score** style input. If you’re unsure,
 They will see the label, optional help text, and an input/control appropriate for this field type.
 **Accessibility notes**
 - This field renders as a single control with an associated label.
-**BFL example**
+**QAF form language example**
 ```bfl
 nps "Example"
   + Option A
@@ -868,7 +868,7 @@ Use this when you need a **date picker** style input. If you’re unsure, add it
 They will see the label, optional help text, and an input/control appropriate for this field type.
 **Accessibility notes**
 - This field renders as a single control with an associated label.
-**BFL example**
+**QAF form language example**
 ```bfl
 date "Example"
   @required
@@ -910,7 +910,7 @@ Use this when you need a **time picker** style input. If you’re unsure, add it
 They will see the label, optional help text, and an input/control appropriate for this field type.
 **Accessibility notes**
 - This field renders as a single control with an associated label.
-**BFL example**
+**QAF form language example**
 ```bfl
 time "Example"
   @required
@@ -952,7 +952,7 @@ Use this when you need a **date & time** style input. If you’re unsure, add it
 They will see the label, optional help text, and an input/control appropriate for this field type.
 **Accessibility notes**
 - This field renders a grouped control using **`<fieldset>` + `<legend>`** (your field label becomes the legend).
-**BFL example**
+**QAF form language example**
 ```bfl
 datetime "Example"
   @required
@@ -1006,7 +1006,7 @@ Use this when you need a **date range** style input. If you’re unsure, add it 
 They will see the label, optional help text, and an input/control appropriate for this field type.
 **Accessibility notes**
 - This field renders a grouped control using **`<fieldset>` + `<legend>`** (your field label becomes the legend).
-**BFL example**
+**QAF form language example**
 ```bfl
 daterange "Example"
   @required
@@ -1055,7 +1055,7 @@ Use this when you need a **name** style input. If you’re unsure, add it and pr
 They will see the label, optional help text, and an input/control appropriate for this field type.
 **Accessibility notes**
 - This field renders a grouped control using **`<fieldset>` + `<legend>`** (your field label becomes the legend).
-**BFL example**
+**QAF form language example**
 ```bfl
 name "Example"
   @required
@@ -1101,7 +1101,7 @@ Use this when you need a **address** style input. If you’re unsure, add it and
 They will see the label, optional help text, and an input/control appropriate for this field type.
 **Accessibility notes**
 - This field renders a grouped control using **`<fieldset>` + `<legend>`** (your field label becomes the legend).
-**BFL example**
+**QAF form language example**
 ```bfl
 address "Example"
   @required
@@ -1143,7 +1143,7 @@ Use this when you need a **file upload** style input. If you’re unsure, add it
 They will see the label, optional help text, and an input/control appropriate for this field type.
 **Accessibility notes**
 - This field renders as a single control with an associated label.
-**BFL example**
+**QAF form language example**
 ```bfl
 fileupload "Example"
   @required
@@ -1189,7 +1189,7 @@ Use this when you need a **signature** style input. If you’re unsure, add it a
 They will see the label, optional help text, and an input/control appropriate for this field type.
 **Accessibility notes**
 - This field renders as a single control with an associated label.
-**BFL example**
+**QAF form language example**
 ```bfl
 signature "Example"
   @required
@@ -1227,7 +1227,7 @@ Use this when you need a **captcha** style input. If you’re unsure, add it and
 They will see the label, optional help text, and an input/control appropriate for this field type.
 **Accessibility notes**
 - This field renders as a single control with an associated label.
-**BFL example**
+**QAF form language example**
 ```bfl
 captcha "Example"
   @required
@@ -1269,7 +1269,7 @@ Use this when you need a **repeater** style input. If you’re unsure, add it an
 They will see the label, optional help text, and an input/control appropriate for this field type.
 **Accessibility notes**
 - This field renders a grouped control using **`<fieldset>` + `<legend>`** (your field label becomes the legend).
-**BFL example**
+**QAF form language example**
 ```bfl
 repeater "Example"
   @required
@@ -1311,7 +1311,7 @@ Use this when you need a **calculation** style input. If you’re unsure, add it
 They will see the label, optional help text, and an input/control appropriate for this field type.
 **Accessibility notes**
 - This field renders as a single control with an associated label.
-**BFL example**
+**QAF form language example**
 ```bfl
 calculation "Example"
   @required
@@ -1358,7 +1358,7 @@ They see a text input that automatically formats their entry as currency (e.g., 
 **Accessibility notes**
 - Includes both a formatted display input and hidden raw value input for form submission.
 - Screen readers announce the currency symbol and formatted value.
-**BFL example**
+**QAF form language example**
 ```bfl
 currency "Annual Salary"
   @currency_code(USD)
@@ -1394,7 +1394,7 @@ They see a series of individual input boxes (typically 4-6) that auto-advance as
 - Keyboard navigation with arrow keys between digits
 - Backspace moves to previous digit when empty
 - Paste distributes code across all inputs
-**BFL example**
+**QAF form language example**
 ```bfl
 otp "Verification Code"
   @length(6)
@@ -1424,7 +1424,7 @@ They type their name in a text field and see it rendered in a signature font bel
 - Works with all assistive technologies
 - Captures timestamp and IP for legal compliance
 - Confirmation checkbox ensures intentional signing
-**BFL example**
+**QAF form language example**
 ```bfl
 typed_signature "Electronic Signature"
   @font_style(cursive)
@@ -1458,7 +1458,7 @@ They see a draggable slider with optional min/max labels, a live value display, 
 - Proper ARIA attributes (aria-valuenow, aria-valuemin, aria-valuemax, aria-valuetext)
 - Live region announces value changes
 - Keyboard: Arrow keys adjust value by step amount
-**BFL example**
+**QAF form language example**
 ```bfl
 slider "Satisfaction Rating"
   @min(0)
@@ -1498,7 +1498,7 @@ They see a grid of clickable cards containing images/icons with labels. Selected
 - Full keyboard navigation with arrow keys
 - Visual selection indicator (checkmark) alongside border highlight
 - Screen readers announce option labels
-**BFL example**
+**QAF form language example**
 ```bfl
 image_choice "Select Your Plan"
   + Basic {icon: "star"} "Free tier"
@@ -1535,7 +1535,7 @@ A table with row headers (questions/items) and column headers (options/ratings).
 - Each cell input has aria-label combining row and column context
 - Keyboard navigation works with Tab and arrow keys
 - Mobile-responsive with stacked card view option
-**BFL example**
+**QAF form language example**
 ```bfl
 matrix "Rate the following aspects"
   rows:
@@ -1580,7 +1580,7 @@ A WYSIWYG editor with a formatting toolbar (bold, italic, links, lists, headings
 - Editor area uses contenteditable with proper ARIA roles
 - Character counter announces updates via live region
 - Hidden textarea syncs content for form submission
-**BFL example**
+**QAF form language example**
 ```bfl
 rich_text "Your Message"
   @toolbar(standard)
@@ -1617,7 +1617,7 @@ A visual indicator showing current step, completed steps, and remaining steps. M
 - Completed steps can be clickable (if enabled) for back-navigation
 - Live region announces progress changes
 - Current step marked with aria-current="step"
-**BFL example**
+**QAF form language example**
 ```bfl
 progress
   @style(steps)
@@ -1654,7 +1654,7 @@ A formatted display of all previously entered data, organized by section or page
 - Edit buttons are properly labeled for each field
 - Collapsible sections use proper ARIA expanded states
 - Modal edit dialog is fully keyboard accessible
-**BFL example**
+**QAF form language example**
 ```bfl
 summary "Review Your Application"
   @layout(table)
@@ -1688,7 +1688,7 @@ A question with answer options, optional hints, and instant feedback upon submis
 - Hint button uses aria-expanded and aria-controls
 - Feedback announced via live region
 - Timer announced to screen readers
-**BFL example**
+**QAF form language example**
 ```bfl
 quiz "What is the capital of France?"
   + London
@@ -1732,7 +1732,7 @@ A calendar for date selection alongside a time slot picker showing available tim
 - Time slots are in a listbox with keyboard navigation
 - Disabled dates/times marked with aria-disabled
 - Selected appointment announced via live region
-**BFL example**
+**QAF form language example**
 ```bfl
 appointment "Schedule Your Consultation"
   @duration(60)
@@ -1772,7 +1772,7 @@ An interactive map where they can search for addresses, click to place a pin, or
 - "Use My Location" button with proper labeling
 - Keyboard-accessible clear button
 - Address components available separately for processing
-**BFL example**
+**QAF form language example**
 ```bfl
 map "Delivery Address"
   @provider(leaflet)
@@ -1812,7 +1812,7 @@ Input fields with network icons, automatic URL validation, and optional username
 - Validation errors are specific to each platform
 - Multiple-entry mode has proper add/remove controls
 - All inputs properly labeled
-**BFL example**
+**QAF form language example**
 ```bfl
 social "Your Social Profiles"
   @mode(specific)
@@ -1849,7 +1849,7 @@ A spreadsheet-like grid where they can enter data in cells, add/remove rows, and
 - Each cell input is individually labeled
 - Add/delete actions have clear labels
 - Mobile view shows stacked cards instead of table
-**BFL example**
+**QAF form language example**
 ```bfl
 table "Expense Items"
   columns:
@@ -1896,7 +1896,7 @@ A secure payment form with amount display, optional tip selection, payment metho
 - Tip options use proper radio button semantics
 - Total updates announced via live region
 - Security badge provides reassurance
-**BFL example**
+**QAF form language example**
 ```bfl
 payment "Complete Your Order"
   @provider(stripe)
@@ -1938,7 +1938,7 @@ Use this when you need a **product** style input. If you’re unsure, add it and
 They will see the label, optional help text, and an input/control appropriate for this field type.
 **Accessibility notes**
 - This field renders a grouped control using **`<fieldset>` + `<legend>`** (your field label becomes the legend).
-**BFL example**
+**QAF form language example**
 ```bfl
 product "Example"
   + Option A
@@ -2003,7 +2003,7 @@ Use this when you need a **quantity** style input. If you’re unsure, add it an
 They will see the label, optional help text, and an input/control appropriate for this field type.
 **Accessibility notes**
 - This field renders as a single control with an associated label.
-**BFL example**
+**QAF form language example**
 ```bfl
 quantity "Example"
   @required
@@ -2063,7 +2063,7 @@ Use this when you need a **price** style input. If you’re unsure, add it and p
 They will see the label, optional help text, and an input/control appropriate for this field type.
 **Accessibility notes**
 - This field renders as a single control with an associated label.
-**BFL example**
+**QAF form language example**
 ```bfl
 price "Example"
   @required
@@ -2109,7 +2109,7 @@ Use this when you need a **total** style input. If you’re unsure, add it and p
 They will see the label, optional help text, and an input/control appropriate for this field type.
 **Accessibility notes**
 - This field renders as a single control with an associated label.
-**BFL example**
+**QAF form language example**
 ```bfl
 total "Example"
   @required
@@ -2165,7 +2165,7 @@ Use this when you need a **coupon** style input. If you’re unsure, add it and 
 They will see the label, optional help text, and an input/control appropriate for this field type.
 **Accessibility notes**
 - This field renders as a single control with an associated label.
-**BFL example**
+**QAF form language example**
 ```bfl
 coupon "Example"
   @required
@@ -2240,7 +2240,7 @@ Use this when you need a **section break** style input. If you’re unsure, add 
 They will see the label, optional help text, and an input/control appropriate for this field type.
 **Accessibility notes**
 - This field renders as a single control with an associated label.
-**BFL example**
+**QAF form language example**
 ```bfl
 section "Example"
   @required
@@ -2284,7 +2284,7 @@ Use this when you need a **page break** style input. If you’re unsure, add it 
 They will see the label, optional help text, and an input/control appropriate for this field type.
 **Accessibility notes**
 - This field renders as a single control with an associated label.
-**BFL example**
+**QAF form language example**
 ```bfl
 page "Example"
   @required
@@ -2320,7 +2320,7 @@ Use this when you need a **html** style input. If you’re unsure, add it and pr
 They will see the label, optional help text, and an input/control appropriate for this field type.
 **Accessibility notes**
 - This field renders as a single control with an associated label.
-**BFL example**
+**QAF form language example**
 ```bfl
 html "Example"
   @required
@@ -2333,7 +2333,7 @@ Use this when you need a **columns** style input. If you’re unsure, add it and
 They will see the label, optional help text, and an input/control appropriate for this field type.
 **Accessibility notes**
 - This field renders as a single control with an associated label.
-**BFL example**
+**QAF form language example**
 ```bfl
 columns "Example"
   @required
@@ -2366,7 +2366,7 @@ Use this when you need a **submit button** style input. If you’re unsure, add 
 They will see the label, optional help text, and an input/control appropriate for this field type.
 **Accessibility notes**
 - This field renders as a single control with an associated label.
-**BFL example**
+**QAF form language example**
 ```bfl
 submit "Example"
   @required
@@ -2406,7 +2406,7 @@ Use this when you need a **save progress button** style input. If you’re unsur
 They will see the label, optional help text, and an input/control appropriate for this field type.
 **Accessibility notes**
 - This field renders as a single control with an associated label.
-**BFL example**
+**QAF form language example**
 ```bfl
 save "Example"
   @required
@@ -2457,7 +2457,7 @@ Use this when you need a **post title** style input. If you’re unsure, add it 
 They will see the label, optional help text, and an input/control appropriate for this field type.
 **Accessibility notes**
 - This field renders as a single control with an associated label.
-**BFL example**
+**QAF form language example**
 ```bfl
 post_title "Example"
   @required
@@ -2470,7 +2470,7 @@ Use this when you need a **post content** style input. If you’re unsure, add i
 They will see the label, optional help text, and an input/control appropriate for this field type.
 **Accessibility notes**
 - This field renders as a single control with an associated label.
-**BFL example**
+**QAF form language example**
 ```bfl
 post_content "Example"
   @required
@@ -2483,7 +2483,7 @@ Use this when you need a **post excerpt** style input. If you’re unsure, add i
 They will see the label, optional help text, and an input/control appropriate for this field type.
 **Accessibility notes**
 - This field renders as a single control with an associated label.
-**BFL example**
+**QAF form language example**
 ```bfl
 post_excerpt "Example"
   @required
@@ -2496,7 +2496,7 @@ Use this when you need a **post category** style input. If you’re unsure, add 
 They will see the label, optional help text, and an input/control appropriate for this field type.
 **Accessibility notes**
 - This field renders as a single control with an associated label.
-**BFL example**
+**QAF form language example**
 ```bfl
 post_category "Example"
   @required
@@ -2509,7 +2509,7 @@ Use this when you need a **post tags** style input. If you’re unsure, add it a
 They will see the label, optional help text, and an input/control appropriate for this field type.
 **Accessibility notes**
 - This field renders as a single control with an associated label.
-**BFL example**
+**QAF form language example**
 ```bfl
 post_tags "Example"
   @required
@@ -2522,7 +2522,7 @@ Use this when you need a **featured image** style input. If you’re unsure, add
 They will see the label, optional help text, and an input/control appropriate for this field type.
 **Accessibility notes**
 - This field renders as a single control with an associated label.
-**BFL example**
+**QAF form language example**
 ```bfl
 post_image "Example"
   @required
@@ -2535,7 +2535,7 @@ Use this when you need a **custom field** style input. If you’re unsure, add i
 They will see the label, optional help text, and an input/control appropriate for this field type.
 **Accessibility notes**
 - This field renders as a single control with an associated label.
-**BFL example**
+**QAF form language example**
 ```bfl
 post_custom "Example"
   @required
@@ -2549,7 +2549,7 @@ Use this when you need a **username** style input. If you’re unsure, add it an
 They will see the label, optional help text, and an input/control appropriate for this field type.
 **Accessibility notes**
 - This field renders as a single control with an associated label.
-**BFL example**
+**QAF form language example**
 ```bfl
 user_login "Example"
   @required
@@ -2562,7 +2562,7 @@ Use this when you need a **user email** style input. If you’re unsure, add it 
 They will see the label, optional help text, and an input/control appropriate for this field type.
 **Accessibility notes**
 - This field renders as a single control with an associated label.
-**BFL example**
+**QAF form language example**
 ```bfl
 user_email "Example"
   @required
@@ -2575,7 +2575,7 @@ Use this when you need a **user password** style input. If you’re unsure, add 
 They will see the label, optional help text, and an input/control appropriate for this field type.
 **Accessibility notes**
 - This field renders as a single control with an associated label.
-**BFL example**
+**QAF form language example**
 ```bfl
 user_password "Example"
   @required

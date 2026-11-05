@@ -2,10 +2,10 @@
 /**
  * Field Base Class Tests
  *
- * @package BAF
+ * @package QAF
  */
 
-class BAF_Field_Test extends BAF_Unit_Test_Case {
+class QAF_Field_Test extends QAF_Unit_Test_Case {
 
     /**
      * Test field initialization
@@ -19,7 +19,7 @@ class BAF_Field_Test extends BAF_Unit_Test_Case {
             'placeholder' => 'Enter text...',
         );
 
-        $field = new BAF_Field( $config );
+        $field = new QAF_Field( $config );
 
         $this->assertEquals( 'test_field', $field->get_name() );
         $this->assertEquals( 'text', $field->get_type() );
@@ -31,7 +31,7 @@ class BAF_Field_Test extends BAF_Unit_Test_Case {
      * Test field default values
      */
     public function test_field_default_values() {
-        $field = new BAF_Field( array(
+        $field = new QAF_Field( array(
             'name' => 'test',
             'type' => 'text',
         ) );
@@ -46,7 +46,7 @@ class BAF_Field_Test extends BAF_Unit_Test_Case {
      * Test field validation - required
      */
     public function test_field_validation_required() {
-        $field = new BAF_Field( array(
+        $field = new QAF_Field( array(
             'name'     => 'test',
             'type'     => 'text',
             'required' => true,
@@ -64,7 +64,7 @@ class BAF_Field_Test extends BAF_Unit_Test_Case {
      * Test field sanitization
      */
     public function test_field_sanitization() {
-        $field = new BAF_Field( array(
+        $field = new QAF_Field( array(
             'name' => 'test',
             'type' => 'text',
         ) );
@@ -77,21 +77,21 @@ class BAF_Field_Test extends BAF_Unit_Test_Case {
      * Test field ID generation
      */
     public function test_field_id_generation() {
-        $field = new BAF_Field( array(
+        $field = new QAF_Field( array(
             'name' => 'user_email',
             'type' => 'email',
         ) );
 
         $id = $field->get_id();
         $this->assertStringContainsString( 'user_email', $id );
-        $this->assertStringStartsWith( 'baf-field-', $id );
+        $this->assertStringStartsWith( 'qaf-field-', $id );
     }
 
     /**
      * Test field CSS classes
      */
     public function test_field_css_classes() {
-        $field = new BAF_Field( array(
+        $field = new QAF_Field( array(
             'name'     => 'test',
             'type'     => 'text',
             'required' => true,
@@ -99,9 +99,9 @@ class BAF_Field_Test extends BAF_Unit_Test_Case {
         ) );
 
         $classes = $field->get_classes();
-        $this->assertContains( 'baf-field', $classes );
-        $this->assertContains( 'baf-field-text', $classes );
-        $this->assertContains( 'baf-field-required', $classes );
+        $this->assertContains( 'qaf-field', $classes );
+        $this->assertContains( 'qaf-field-text', $classes );
+        $this->assertContains( 'qaf-field-required', $classes );
         $this->assertContains( 'custom-class', $classes );
     }
 
@@ -109,7 +109,7 @@ class BAF_Field_Test extends BAF_Unit_Test_Case {
      * Test field ARIA attributes
      */
     public function test_field_aria_attributes() {
-        $field = new BAF_Field( array(
+        $field = new QAF_Field( array(
             'name'        => 'test',
             'type'        => 'text',
             'required'    => true,
@@ -126,7 +126,7 @@ class BAF_Field_Test extends BAF_Unit_Test_Case {
      * Test field conditional logic
      */
     public function test_field_conditional_logic() {
-        $field = new BAF_Field( array(
+        $field = new QAF_Field( array(
             'name'        => 'test',
             'type'        => 'text',
             'conditional' => array(
@@ -148,7 +148,7 @@ class BAF_Field_Test extends BAF_Unit_Test_Case {
      * Test field render attributes
      */
     public function test_field_render_attributes() {
-        $field = new BAF_Field( array(
+        $field = new QAF_Field( array(
             'name'        => 'test',
             'type'        => 'text',
             'maxlength'   => 100,
@@ -166,7 +166,7 @@ class BAF_Field_Test extends BAF_Unit_Test_Case {
      * Test field value transformation
      */
     public function test_field_value_transformation() {
-        $field = new BAF_Field( array(
+        $field = new QAF_Field( array(
             'name'      => 'test',
             'type'      => 'text',
             'transform' => 'uppercase',
@@ -181,7 +181,7 @@ class BAF_Field_Test extends BAF_Unit_Test_Case {
      * Test field export data
      */
     public function test_field_export_data() {
-        $field = new BAF_Field( array(
+        $field = new QAF_Field( array(
             'name'  => 'test_field',
             'type'  => 'text',
             'label' => 'Test Field',
@@ -197,7 +197,7 @@ class BAF_Field_Test extends BAF_Unit_Test_Case {
      * Test field JSON serialization
      */
     public function test_field_json_serialization() {
-        $field = new BAF_Field( array(
+        $field = new QAF_Field( array(
             'name' => 'test',
             'type' => 'text',
         ) );

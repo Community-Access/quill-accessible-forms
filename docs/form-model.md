@@ -1,17 +1,17 @@
-# The BAF form model
+# The QAF form model
 
-A BAF form is one JSON document. That document is the definition of the form;
+A QAF form is one JSON document. That document is the definition of the form;
 everything else is a view of it:
 
-- BAF's visual builder edits it;
-- BFL is a readable notation of it (`docs/bfl-and-the-model.md`);
+- QAF's visual builder edits it;
+- QAF form language is a readable notation of it (`docs/qaf-form-language-and-the-model.md`);
 - QUILL's form windows read and write it.
 
 Every feature exists in the model first, so no view can fall behind another.
 
 - **Schema:** `schema/form.schema.json` (JSON Schema 2020-12).
 - **Expressions:** `docs/expression-language.md`.
-- **PHP:** `includes/model/` (`BAF_Form_Model::validate()` checks the schema
+- **PHP:** `includes/model/` (`QAF_Form_Model::validate()` checks the schema
   and the rules below it).
 - **Shared tests:** `tests/conformance/` (QUILL's Python reader runs the same files).
 
@@ -77,7 +77,7 @@ are unique across the whole form, because expressions name them (`#email`).
 ```
 
 A page with `when` is skipped when its condition does not hold. `props` holds
-the page settings of BAF's page field (`next_button_text`, `prev_button_text`,
+the page settings of QAF's page field (`next_button_text`, `prev_button_text`,
 `show_progress`, `progress_style`, `validate_on_next`).
 
 ## Items: fields, sections and columns
@@ -117,7 +117,7 @@ everything in it. Sections may contain sections.
 | `when` | An expression; the field is shown only when it holds. |
 | `calculation` | An expression for the field's value (calculation, total, price and quantity fields). |
 | `choices` | The answers to choose from (below). |
-| `choice_library` | The name of a choice list: BAF's built-in libraries (`countries`, `us_states`, ...) or one in `choice_libraries`. |
+| `choice_library` | The name of a choice list: QAF's built-in libraries (`countries`, `us_states`, ...) or one in `choice_libraries`. |
 | `cascade` | This list depends on another field: `{ "from": "country", "library": "states", "empty_message": "...", "loading_message": "..." }`. |
 | `validation` | `min`, `max` (numbers, or dates for date fields), `min_length`, `max_length`, `pattern` (a regular expression), `message` (the error to show), `unique`, `unique_scope` (`form` or `global`), `unique_message`. |
 | `scoring` | Quiz scoring (below). |
@@ -125,13 +125,13 @@ everything in it. Sections may contain sections.
 | `items` | A repeater's own fields. Only a repeater has them. |
 | `props` | Settings particular to the field type, using the field class's own setting names (a matrix's `rows` and `columns`, an NPS field's `low_label`). |
 
-`props` never uses the names in the table above, nor BFL's older spellings of
+`props` never uses the names in the table above, nor the QAF form language's older spellings of
 them (`readonly`, `class`, `css`, `admin`, `hidden`, `confirm`, `allowother`),
-nor the names BAF's stored field settings use for the same things
+nor the names QAF's stored field settings use for the same things
 (`default_value`, `input_mask`, `custom_attributes`, `conditional_logic`,
 `formula`, `correct_answers`, `options`, ...; the full list is in the schema).
-That is what lets every prop be written in BFL as `@name value`, and stored in
-BAF's builder format, without ambiguity.
+That is what lets every prop be written in QAF form language as `@name value`, and stored in
+QAF's builder format, without ambiguity.
 
 ### The field types
 
@@ -170,7 +170,7 @@ pricing fields, `image` for image choice, `points` for scored questions
 (personality quizzes, weighted surveys), `selected` marks a default choice.
 
 A form can define its own lists in `choice_libraries` and use them from any
-field with `choice_library`. A name not defined there is one of BAF's
+field with `choice_library`. A name not defined there is one of QAF's
 built-in libraries (`docs/CHOICE-LIBRARIES.md`).
 
 ## Rules, calculations and conditions
@@ -237,16 +237,16 @@ in; `translations` gives the others, side by side:
 
 A missing translation falls back to the form's own text. `messages` holds the
 form's built-in messages (`required`, `invalid_email`, `submit`, ...), named
-by BAF's message keys.
+by QAF's message keys.
 
 ## Settings
 
-`settings` holds BAF's form settings under their own names
-(`BAF_Form::get_default_settings()`): `ajax_submission`, `enable_honeypot`,
+`settings` holds QAF's form settings under their own names
+(`QAF_Form::get_default_settings()`): `ajax_submission`, `enable_honeypot`,
 `enable_captcha`, `captcha_type`, `save_continue_enabled`,
 `rate_limit_enabled`, `validation_mode`, `progress_indicator`, the schedule
 and entry-limit settings, and so on, plus `submit_label`. A setting the
-model does not list is kept as it is. Only settings that differ from BAF's
+model does not list is kept as it is. Only settings that differ from QAF's
 defaults need to be written.
 
 ## Confirmations and notifications
@@ -266,13 +266,13 @@ notification whose `when` holds is sent.
 
 `settings`, `props`, `attributes`, `translations`, `choice_libraries` and
 the other objects in the model are JSON objects: write an empty one as `{}`.
-PHP decodes `{}` and `[]` to the same thing, so BAF also accepts an empty
-`[]` where an object belongs; QUILL rejects it, as the schema says. BAF's own
+PHP decodes `{}` and `[]` to the same thing, so QAF also accepts an empty
+`[]` where an object belongs; QUILL rejects it, as the schema says. QAF's own
 writer always writes `{}`, so this only arises in a model written by hand.
 
 ## Rules beyond the schema
 
-`BAF_Form_Model::validate()` also checks what a JSON Schema cannot say:
+`QAF_Form_Model::validate()` also checks what a JSON Schema cannot say:
 
 - every page and item ID is unique, and confirmation, notification and outcome IDs are unique among themselves;
 - every expression parses, and every `#id` it names exists;
@@ -289,15 +289,15 @@ writer always writes `{}`, so this only arises in a model written by hand.
 - A change that only adds optional properties, field types or functions keeps
   the version. Anything that changes the meaning of an existing form makes a
   new version, with a written migration from the one before.
-- A BFL file carries its version on its first line: `bfl 1`.
+- a .qaf file carries its version on its first line: `bfl 1`.
 
-## Migrating the forms BAF stores today
+## Migrating the forms QAF stores today
 
-Until now BAF stored a form as columns of the `baf_forms` table: `config`
+Until now QAF stored a form as columns of the `qaf_forms` table: `config`
 (a flat list of fields, each naming its page, plus a list of pages),
 `settings`, `confirmations`, `notifications` and `bfl_source`. Those forms are
-not broken and do not need re-saving. `BAF_Form_Model_Converter::from_legacy()`
-reads them into the model, and `BAF_Form::get_model()` uses it whenever a form
+not broken and do not need re-saving. `QAF_Form_Model_Converter::from_legacy()`
+reads them into the model, and `QAF_Form::get_model()` uses it whenever a form
 has no stored model yet. What it does:
 
 1. **Pages.** `config.pages` become the pages, and each field goes to the page
@@ -310,7 +310,7 @@ has no stored model yet. What it does:
 5. **Type names.** `dropdown` becomes `select`, `paragraph` `textarea`,
    `url` `website`, `checkboxes` `checkbox`, `file` `fileupload`, `savebutton`
    `save`, `divider` and `spacer` an `html` field with `props.element`. A type
-   the model does not know is kept under `extensions.baf_legacy` and listed in
+   the model does not know is kept under `extensions.qaf_legacy` and listed in
    the report.
 6. **Names.** `description` becomes `help`, `default_value` `default`,
    `input_mask` `mask`, `custom_attributes` `attributes`, and `formula`
@@ -334,7 +334,7 @@ has no stored model yet. What it does:
     `geo` `geo()`; any other text becomes a quoted text value.
 12. **Everything else** a field holds goes into `props` under its own name
     (`readonly` is `read_only`), except a name `props` cannot use, which goes
-    to `extensions.baf_legacy` and is listed in the report.
+    to `extensions.qaf_legacy` and is listed in the report.
 13. **Settings, confirmations and notifications** are carried as they are;
     a confirmation or notification without an ID gets one (`confirmation_1`).
 
@@ -350,8 +350,8 @@ the converter returns. Nothing is dropped without being listed.
 ## On a published form
 
 A form saved with a model runs the model on the page, with the same rules the
-server applies: `public/js/baf-expression.js` is a copy of the expression
-language and `public/js/baf-form-model.js` of the model's runtime, and both
+server applies: `public/js/qaf-expression.js` is a copy of the expression
+language and `public/js/qaf-form-model.js` of the model's runtime, and both
 run the conformance suite (`node tests/js/run-conformance.js`).
 
 - **What is shown:** every item's own condition, its sections' and its
@@ -368,27 +368,27 @@ run the conformance suite (`node tests/js/run-conformance.js`).
   date; `user()` gives only the facts the form's expressions ask for, about
   the signed-in visitor; `query()` reads the page's link).
 - **Translations:** the form is drawn in the language asked for with
-  `?baf_lang=es`, else the visitor's locale when the form has that
+  `?qaf_lang=es`, else the visitor's locale when the form has that
   translation, else its own. Labels, help, placeholders, choice labels, page
   titles, the title, the Submit button and the outcome message are translated.
 - **Quiz outcomes are chosen on the server** when the form is sent, and the
   reply carries the outcome's message (and the score, with `show_score`).
   The page never receives correct answers, choice points, outcomes,
   confirmations, notifications or settings
-  (`BAF_Form_Runtime::public_model()`), so a quiz's answers are not in its
+  (`QAF_Form_Runtime::public_model()`), so a quiz's answers are not in its
   source and no address is. A condition on the page that uses `score`
   therefore sees 0; put score-based messages in outcomes.
 
 A form saved before the model keeps the builder's per-field rules, run as
 before.
 
-## How BAF stores the model
+## How QAF stores the model
 
 The table does not change. A form's `config` column now holds:
 
 - `form_model`: the model itself. This is the form's definition.
 - `fields` and `pages`: the same form in the builder's flat shape, written
-  from the model (`BAF_Form_Model_Converter::to_legacy`), so the visual
+  from the model (`QAF_Form_Model_Converter::to_legacy`), so the visual
   builder and the renderer keep working unchanged. A section says how many
   items follow it (`model_items`); a condition the builder's rule list cannot
   say keeps its expression beside the rules.
@@ -396,9 +396,9 @@ The table does not change. A form's `config` column now holds:
   translations, choice libraries, the form's language).
 - `model_version`: marks the shape as written from a model.
 
-`BAF_Form::get_model()` returns the stored model, or converts the builder's
+`QAF_Form::get_model()` returns the stored model, or converts the builder's
 fields for a form saved before the model. `set_model()` stores a model and
-rewrites the builder's fields, settings, confirmations, notifications and BFL
+rewrites the builder's fields, settings, confirmations, notifications and the QAF form language
 source from it. When the visual builder saves, `apply_builder_config()` reads
 its fields into the model and keeps what the builder cannot show from the
 model as it was. `save()` gives a form saved before the model its model, when

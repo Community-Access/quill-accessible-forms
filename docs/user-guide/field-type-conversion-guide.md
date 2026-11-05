@@ -1,10 +1,10 @@
 # Field Type Conversion Guide
 
-This guide explains how to convert fields between types in BAF, preserving properties and handling conditional logic safely.
+This guide explains how to convert fields between types in QAF, preserving properties and handling conditional logic safely.
 
 ## Overview
 
-BAF allows you to change a field's type after creation. This is useful when:
+QAF allows you to change a field's type after creation. This is useful when:
 
 - Realizing a text field should be a dropdown
 - Converting radio buttons to checkboxes for multiple selection
@@ -87,7 +87,7 @@ Fields are classified by conversion compatibility:
 
 ## Property Preservation
 
-BAF intelligently preserves properties during conversion.
+QAF intelligently preserves properties during conversion.
 
 ### Always Preserved
 
@@ -122,7 +122,7 @@ Properties that don't apply to the target type are dropped. You'll see these in 
 
 When converting a text field to a choice field (select, radio, checkbox):
 
-1. BAF generates default placeholder choices
+1. QAF generates default placeholder choices
 2. Edit the field after conversion to add your options
 3. Any existing data will be preserved as-is
 
@@ -137,7 +137,7 @@ Option 3
 
 When converting a star rating to radio buttons:
 
-1. BAF generates choices from the rating scale
+1. QAF generates choices from the rating scale
 2. A 5-star rating becomes choices: "1 star", "2 stars", etc.
 3. Max stars determines number of choices
 
@@ -145,7 +145,7 @@ When converting a star rating to radio buttons:
 
 When converting an NPS field:
 
-1. BAF generates 0-10 scale choices
+1. QAF generates 0-10 scale choices
 2. Labels are numeric (0, 1, 2, ... 10)
 3. Existing responses map directly
 
@@ -159,11 +159,11 @@ When converting a Likert scale:
 
 ## Conditional Logic Impact
 
-When you convert a field, BAF checks for conditional logic that references it:
+When you convert a field, QAF checks for conditional logic that references it:
 
 ### Automatic Detection
 
-BAF scans all fields for conditions that:
+QAF scans all fields for conditions that:
 - Reference the converted field's ID
 - Use operators that may become invalid
 
@@ -185,7 +185,7 @@ Check "Automatically repair compatible conditions" to:
 
 ### Manual Review
 
-For complex conditions, BAF shows:
+For complex conditions, QAF shows:
 - Which fields are affected
 - What the current condition is
 - Suggested fix
@@ -202,7 +202,7 @@ All settings that will carry over to the new field type.
 Settings that don't apply to the target type.
 
 ### New Defaults Added
-Default values BAF adds for the target type.
+Default values QAF adds for the target type.
 
 ### Conditional Logic Warnings
 Any rules that may be affected by the conversion.

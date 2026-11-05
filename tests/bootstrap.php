@@ -2,7 +2,7 @@
 /**
  * PHPUnit bootstrap file
  *
- * @package BAF
+ * @package QAF
  */
 
 // Composer autoloader
@@ -12,9 +12,9 @@ if ( file_exists( $autoloader ) ) {
 }
 
 // Test constants
-define( 'BAF_PLUGIN_DIR', dirname( __DIR__ ) . '/' );
-define( 'BAF_TESTS_DIR', __DIR__ . '/' );
-define( 'BAF_TESTING', true );
+define( 'QAF_PLUGIN_DIR', dirname( __DIR__ ) . '/' );
+define( 'QAF_TESTS_DIR', __DIR__ . '/' );
+define( 'QAF_TESTING', true );
 
 // Find WordPress test suite
 $_tests_dir = getenv( 'WP_TESTS_DIR' );
@@ -31,7 +31,7 @@ if ( file_exists( $_tests_dir . '/includes/functions.php' ) ) {
      * Manually load the plugin being tested.
      */
     function _manually_load_plugin() {
-        require BAF_PLUGIN_DIR . 'bits-accessible-forms.php';
+        require QAF_PLUGIN_DIR . 'quill-accessible-forms.php';
     }
 
     tests_add_filter( 'muplugins_loaded', '_manually_load_plugin' );
@@ -46,9 +46,9 @@ if ( file_exists( $_tests_dir . '/includes/functions.php' ) ) {
 // Load test base classes
 // Only load WP_UnitTestCase-based tests when WP test suite is available.
 if ( file_exists( $_tests_dir . '/includes/functions.php' ) ) {
-    require_once __DIR__ . '/class-baf-test-case.php';
+    require_once __DIR__ . '/class-qaf-test-case.php';
 }
-require_once __DIR__ . '/class-baf-unit-test-case.php';
+require_once __DIR__ . '/class-qaf-unit-test-case.php';
 
 /**
  * Create test form data
@@ -56,7 +56,7 @@ require_once __DIR__ . '/class-baf-unit-test-case.php';
  * @param array $overrides Override default values.
  * @return array Form data.
  */
-function baf_get_test_form_data( $overrides = array() ) {
+function qaf_get_test_form_data( $overrides = array() ) {
     return array_merge( array(
         'title'    => 'Test Form',
         'slug'     => 'test-form',
@@ -89,7 +89,7 @@ function baf_get_test_form_data( $overrides = array() ) {
  * @param array $overrides Override default values.
  * @return array Entry data.
  */
-function baf_get_test_entry_data( $form_id, $overrides = array() ) {
+function qaf_get_test_entry_data( $form_id, $overrides = array() ) {
     return array_merge( array(
         'form_id'      => $form_id,
         'status'       => 'new',
@@ -108,7 +108,7 @@ function baf_get_test_entry_data( $form_id, $overrides = array() ) {
  *
  * @return string BFL source code.
  */
-function baf_get_test_bfl() {
+function qaf_get_test_bfl() {
     return <<<'BFL'
 form "Contact Form" {
     page "Contact Info" {

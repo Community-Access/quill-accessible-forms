@@ -5,7 +5,7 @@
         {
             "level": "dropped",
             "where": "field 11 (Two columns)",
-            "message": "BAF has no field like WPForms' \"layout\"."
+            "message": "QAF has no field like WPForms' \"layout\"."
         }
     ]
 }

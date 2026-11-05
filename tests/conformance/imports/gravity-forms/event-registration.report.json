@@ -5,7 +5,7 @@
         {
             "level": "changed",
             "where": "field 1 (Name)",
-            "message": "Its parts (first name, city and so on) are BAF's own name parts."
+            "message": "Its parts (first name, city and so on) are QAF's own name parts."
         },
         {
             "level": "changed",
@@ -15,12 +15,12 @@
         {
             "level": "dropped",
             "where": "field 18 (Referral code)",
-            "message": "Its default \"{embed_url}\" is a Gravity Forms merge tag BAF does not have."
+            "message": "Its default \"{embed_url}\" is a Gravity Forms merge tag QAF does not have."
         },
         {
             "level": "dropped",
             "where": "field 19 (Coupon)",
-            "message": "BAF has no field like Gravity Forms' \"coupon\"."
+            "message": "QAF has no field like Gravity Forms' \"coupon\"."
         },
         {
             "level": "dropped",

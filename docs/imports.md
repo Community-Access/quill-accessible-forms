@@ -1,14 +1,14 @@
 # Importing forms from other builders
 
-BAF reads five other form builders' forms into its form model
+QAF reads five other form builders' forms into its form model
 (`docs/form-model.md`). Each import is a mapping to the model, and each
 returns an import report: what came across changed, what did not come across
 at all, and what to check. Nothing is dropped without being listed.
 
-- **Code:** `includes/model/class-baf-importers.php`
-  (`BAF_Importers::import( $source, $text )`).
-- **On the site:** BAF Forms, Import and Export (below). The AJAX action
-  `baf_import_form` behind it saves the result as a draft form and returns
+- **Code:** `includes/model/class-qaf-importers.php`
+  (`QAF_Importers::import( $source, $text )`).
+- **On the site:** QAF Forms, Import and Export (below). The AJAX action
+  `qaf_import_form` behind it saves the result as a draft form and returns
   the report, both as data and as plain sentences, and the builder link.
 - **Tests:** `tests/conformance/imports/`, one realistic export per source,
   with the model and report it must give.
@@ -28,9 +28,9 @@ at all, and what to check. Nothing is dropped without being listed.
   Google Forms. A renamed ID is reported.
 - Conditions become one expression, read as a sentence; a condition that
   names a field the form does not have is reported, and the rest of it kept.
-- Merge tags in confirmations and notifications become BAF's `{name}` tags
+- Merge tags in confirmations and notifications become QAF's `{name}` tags
   (`[your-name]`, `{Name:1}`, `{field_id="1"}` and `{field:email}` become
-  `{your_name}`, `{field_1}`, `{field_1}`, `{email}`); one with no BAF
+  `{your_name}`, `{field_1}`, `{field_1}`, `{email}`); one with no QAF
   equivalent is left as it is and reported.
 - A choice field with no choices gets one, `yes|Yes`, and that is reported.
 - A field without a label is carried over and listed under "Check": a
@@ -39,7 +39,7 @@ at all, and what to check. Nothing is dropped without being listed.
 
 ## Gravity Forms
 
-- Fields map one to one where BAF has the type: text, paragraph, drop down,
+- Fields map one to one where QAF has the type: text, paragraph, drop down,
   multi select, number, checkboxes, radio buttons, hidden, HTML, section,
   name, date, time, phone, address, website, email, file upload, CAPTCHA, list
   (a table), consent, the post fields, product, quantity, option, shipping,
@@ -56,11 +56,11 @@ at all, and what to check. Nothing is dropped without being listed.
 - `{date_mdy}` and `{user:display_name}` defaults become smart defaults.
 - Confirmations (message, page, redirect) and notifications carry over with
   their conditions. **Not carried:** coupon fields, notification routing,
-  other merge-tag defaults, and add-on fields BAF has no type for.
+  other merge-tag defaults, and add-on fields QAF has no type for.
 
 ## WPForms
 
-- Fields map one to one where BAF has the type, including number slider,
+- Fields map one to one where QAF has the type, including number slider,
   likert, net promoter score, rich text, entry preview (summary), GDPR
   checkbox (consent) and the payment fields (with prices).
 - Page breaks start pages; a divider is a section that holds the fields
@@ -69,7 +69,7 @@ at all, and what to check. Nothing is dropped without being listed.
   "and"; a rule about a choice names the choice by its key, which becomes
   the choice's value.
 - Choices with pictures become an image choice field. **Not carried:** the
-  layout field (columns), and fields BAF has no type for.
+  layout field (columns), and fields QAF has no type for.
 
 ## Contact Form 7
 
@@ -91,15 +91,15 @@ at all, and what to check. Nothing is dropped without being listed.
 
 ## Ninja Forms
 
-- Fields map one to one where BAF has the type; first name, last name,
+- Fields map one to one where QAF has the type; first name, last name,
   address, city and post code are text fields with the right autocomplete;
-  the country and US state lists use BAF's choice libraries.
+  the country and US state lists use QAF's choice libraries.
 - Choice `calc` values become choice points.
 - Calculations become calculation fields (`{field:rooms}` becomes `#rooms`).
 - Success message and redirect actions become confirmations; email actions
   become notifications. **Not carried:** the Conditional Logic add-on's
   conditions (its own format), the fields inside a repeater (not in the
-  export), calculations using functions BAF does not have, and other actions.
+  export), calculations using functions QAF does not have, and other actions.
 
 ## Google Forms
 
@@ -113,15 +113,15 @@ at all, and what to check. Nothing is dropped without being listed.
   feedback), and a quiz form shows its score.
 - Text, image and video items become HTML; an image with no description is
   reported, so it gets one.
-- `BAF_Importers::fetch_google_form( $form_id, $access_token )` fetches the
+- `QAF_Importers::fetch_google_form( $form_id, $access_token )` fetches the
   form from the API. It needs an OAuth access token with the
-  `forms.body.readonly` scope; BAF does not store it. **Not carried:** "submit
+  `forms.body.readonly` scope; QAF does not store it. **Not carried:** "submit
   form" and "restart form" branching, and Google's own email collection.
 
 ## The Import and Export screen
 
-BAF Forms, Import and Export (`admin/partials/import-export.php`,
-`admin/js/baf-import-export.js`) does both directions, from the keyboard
+QAF Forms, Import and Export (`admin/partials/import-export.php`,
+`admin/js/qaf-import-export.js`) does both directions, from the keyboard
 alone:
 
 - **Import:** a group of radio buttons for the builder, each with a line on
@@ -143,10 +143,10 @@ results have status regions and headings.
 
 ## Exports
 
-`includes/model/class-baf-exporters.php`
-(`BAF_Exporters::export( $target, $model )`) writes a model in each
+`includes/model/class-qaf-exporters.php`
+(`QAF_Exporters::export( $target, $model )`) writes a model in each
 builder's own format, with a report in the same shape as an import report
-(its `direction` is `export`). The AJAX action is `baf_export_form`.
+(its `direction` is `export`). The AJAX action is `qaf_export_form`.
 
 | Target | What it writes | What it keeps |
 | --- | --- | --- |
@@ -159,13 +159,13 @@ builder's own format, with a report in the same shape as an import report
 Every export reads back through the importer to the same questions and
 choices, and Gravity Forms and WPForms conditions to the same sentence
 (`tests/unit/Model/ExportersTest.php`). `tests/conformance/exports/` holds
-one export per builder byte for byte, with its report (BAF only).
+one export per builder byte for byte, with its report (QAF only).
 
 What none of them can hold is reported, never silently left out: rules,
 quiz outcomes, translations, notifications, smart defaults, cascades,
 repeaters, conditions the builder cannot say (dates, field-to-field, mixed
 groups), calculations beyond arithmetic, and field types the builder lacks.
-A field whose choices come from BAF's built-in libraries gets them written
+A field whose choices come from QAF's built-in libraries gets them written
 out on the site (the plugin supplies them); without the plugin it is
 reported.
 

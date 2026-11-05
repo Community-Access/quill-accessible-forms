@@ -1,8 +1,8 @@
 #!/usr/bin/env node
 /**
  * Runs the conformance suite's expression and behaviour cases against the
- * JavaScript copy of the evaluator (public/js/baf-expression.js) and the
- * model runtime (public/js/baf-form-model.js), so the published form and the
+ * JavaScript copy of the evaluator (public/js/qaf-expression.js) and the
+ * model runtime (public/js/qaf-form-model.js), so the published form and the
  * server agree. No dependencies: `node tests/js/run-conformance.js`.
  *
  * Exit status 0 when every case passes.
@@ -11,8 +11,8 @@
 
 var fs = require('fs');
 var path = require('path');
-var X = require('../../public/js/baf-expression.js');
-var M = require('../../public/js/baf-form-model.js');
+var X = require('../../public/js/qaf-expression.js');
+var M = require('../../public/js/qaf-form-model.js');
 
 var root = path.join(__dirname, '..', 'conformance');
 var manifest = JSON.parse(fs.readFileSync(path.join(root, 'manifest.json'), 'utf8'));

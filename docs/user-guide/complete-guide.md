@@ -1,6 +1,6 @@
-# BITS Accessible Forms (BAF) Complete User Guide
+# QUILL Accessible Forms (QAF) Complete User Guide
 
-Welcome to BITS Accessible Forms (BAF), an accessible WordPress form builder. This comprehensive guide will walk you through every feature, from your first form to advanced workflows. Whether you prefer using a mouse, keyboard, or assistive technology, BAF treats every user as a first-class citizen.
+Welcome to QUILL Accessible Forms (QAF), an accessible WordPress form builder. This comprehensive guide will walk you through every feature, from your first form to advanced workflows. Whether you prefer using a mouse, keyboard, or assistive technology, QAF treats every user as a first-class citizen.
 
 ## Table of Contents
 
@@ -10,7 +10,7 @@ Welcome to BITS Accessible Forms (BAF), an accessible WordPress form builder. Th
 4. [Keyboard Navigation &amp; Accessibility](#keyboard-navigation--accessibility)
 5. [Field Types Reference](#field-types-reference) (60+ field types)
 6. [Predefined Choice Templates](#predefined-choice-templates)
-7. [BFL Language Reference](#bfl-language-reference)
+7. [QAF form language Reference](#bfl-language-reference)
 8. [Conditional Logic](#conditional-logic)
 9. [Calculations &amp; Formulas](#calculations--formulas)
 10. [Merge Tags](#merge-tags)
@@ -31,9 +31,9 @@ Welcome to BITS Accessible Forms (BAF), an accessible WordPress form builder. Th
 
 ## Introduction
 
-### What Makes BAF Different?
+### What Makes QAF Different?
 
-BITS Accessible Forms (BAF) was built with one core belief: **form building should be accessible to everyone**. This isn't an afterthought—accessibility is woven into every feature, every interaction, and every line of code.
+QUILL Accessible Forms (QAF) was built with one core belief: **form building should be accessible to everyone**. This isn't an afterthought—accessibility is woven into every feature, every interaction, and every line of code.
 
 **For Users Who Prefer Keyboards**: Our Structure Mode provides a tree-view interface where you can navigate, reorder, edit, copy, and delete fields entirely with your keyboard. No mouse required, ever.
 
@@ -41,7 +41,7 @@ BITS Accessible Forms (BAF) was built with one core belief: **form building shou
 
 **For Visual Users**: The Visual Builder provides familiar drag-and-drop interactions with beautiful, high-contrast visuals that work in any color scheme.
 
-**For Developers**: Write forms as code using BFL (Barrier-Free Language), version control them, and automate creation.
+**For Developers**: Write forms as code using the QAF form language (Barrier-Free Language), version control them, and automate creation.
 
 ### System Requirements
 
@@ -55,7 +55,7 @@ Before installing, ensure your environment meets these requirements:
 
 ### Browser Support
 
-BAF works beautifully in all modern browsers:
+QAF works beautifully in all modern browsers:
 
 - Chrome 90+
 - Firefox 90+
@@ -72,15 +72,15 @@ BAF works beautifully in all modern browsers:
 
 #### Method 1: WordPress Admin (Recommended)
 
-The easiest way to install BITS Accessible Forms (BAF):
+The easiest way to install QUILL Accessible Forms (QAF):
 
 1. Log into your WordPress admin dashboard
 2. Navigate to **Plugins → Add New**
-3. Search for "BITS Accessible Forms" (or "BAF")
+3. Search for "QUILL Accessible Forms" (or "QAF")
 4. Click **Install Now**
 5. Once installed, click **Activate**
 
-That's it! BAF is now ready to use.
+That's it! QAF is now ready to use.
 
 #### Method 2: Manual Upload
 
@@ -95,12 +95,12 @@ If you have a ZIP file:
 #### Method 3: Composer (For Developers)
 
 ```bash
-composer require bits-accessible-forms/baf
+composer require quill-accessible-forms/qaf
 ```
 
 ### What Happens After Activation
 
-When you activate BAF, several things happen automatically:
+When you activate QAF, several things happen automatically:
 
 1. **Database tables are created** for storing forms, entries, and settings
 2. **Default templates** are added to help you get started quickly
@@ -109,7 +109,7 @@ When you activate BAF, several things happen automatically:
 
 ### Initial Configuration
 
-Navigate to **BAF Forms → Settings** to configure your installation:
+Navigate to **QAF Forms → Settings** to configure your installation:
 
 #### General Settings
 
@@ -120,7 +120,7 @@ Navigate to **BAF Forms → Settings** to configure your installation:
 
 #### Accessibility Settings
 
-These settings control how BAF communicates with assistive technology:
+These settings control how QAF communicates with assistive technology:
 
 - **Screen Reader Verbosity**: Choose between "Concise" (essential announcements only) or "Verbose" (detailed announcements for every action)
 - **Focus Indicator Style**: "Default" uses browser focus styles; "Enhanced" adds high-visibility focus rings
@@ -144,19 +144,19 @@ These settings control how BAF communicates with assistive technology:
 
 ## The Three Ways to Build Forms
 
-BAF offers three distinct interfaces for building forms. Each is fully accessible and equally capable—choose the one that matches how you prefer to work.
+QAF offers three distinct interfaces for building forms. Each is fully accessible and equally capable—choose the one that matches how you prefer to work.
 
 ### Visual Builder
 
 The Visual Builder is the fastest way to build forms when you want to *see* the form take shape as you work.
 
-If this is your first time opening it, the three-panel layout can feel like a lot at once. That’s normal—BAF is powerful. The easiest way to start is to **ignore the Settings panel** for a minute, add a few fields to the canvas, then come back and refine.
+If this is your first time opening it, the three-panel layout can feel like a lot at once. That’s normal—QAF is powerful. The easiest way to start is to **ignore the Settings panel** for a minute, add a few fields to the canvas, then come back and refine.
 
 Think of it as three panels working together: a list of building blocks, a live preview, and a settings editor.
 
 #### Getting There
 
-1. In WordPress admin, go to **BAF Forms → Add New**.
+1. In WordPress admin, go to **QAF Forms → Add New**.
 2. You’ll land in the **Visual Builder** automatically.
 
 If you opened an existing form, use the **Visual Builder** tab to return to this view.
@@ -254,7 +254,7 @@ In **Field Settings**, you’ll commonly configure:
 
 ### Structure Mode (Keyboard-First Tree View)
 
-Structure Mode is BAF’s industry-first keyboard-native form builder. It presents your form as a tree structure, similar to a file browser, and supports complete keyboard navigation.
+Structure Mode is QAF’s industry-first keyboard-native form builder. It presents your form as a tree structure, similar to a file browser, and supports complete keyboard navigation.
 
 #### Getting There
 
@@ -330,16 +330,16 @@ Every action in Structure Mode triggers a screen reader announcement:
 - "Full Name moved up, now position 2 of 12"
 - "Address section collapsed"
 
-### BFL Code Mode
+### QAF Form Language Mode
 
-BFL (Barrier-Free Language) is BAF’s domain-specific language for defining forms as code. It's perfect for developers, for version control, and for creating forms programmatically.
+the QAF form language (Barrier-Free Language) is QAF’s domain-specific language for defining forms as code. It's perfect for developers, for version control, and for creating forms programmatically.
 
 #### Getting There
 
 1. Open any form in the editor
-2. Click the **BFL** tab (or press **Alt+B**)
+2. Click the **the QAF form language** tab (or press **Alt+B**)
 
-#### Why Use BFL?
+#### Why Use the QAF form language?
 
 - **Version control**: Track form changes with Git
 - **Portability**: Copy forms between sites as text
@@ -348,7 +348,7 @@ BFL (Barrier-Free Language) is BAF’s domain-specific language for defining for
 
 #### Basic Syntax
 
-BFL uses clean, indentation-based syntax:
+QAF form language uses clean, indentation-based syntax:
 
 ```bfl
 form "Contact Us"
@@ -375,7 +375,7 @@ form "Contact Us"
 
 #### Validation and Formatting
 
-The BFL editor includes:
+The QAF form language editor includes:
 
 - **Syntax highlighting**: Keywords, strings, and values are color-coded
 - **Real-time validation**: Errors are highlighted as you type
@@ -384,21 +384,21 @@ The BFL editor includes:
 
 ---
 
-## Product Philosophy: What Makes BAF Different
+## Product Philosophy: What Makes QAF Different
 
-BAF is built on a simple promise: forms should work for everyone out of the box. That means accessibility is not an add-on, and keyboard and screen-reader support are treated as first-class requirements.
+QAF is built on a simple promise: forms should work for everyone out of the box. That means accessibility is not an add-on, and keyboard and screen-reader support are treated as first-class requirements.
 
 At a practical level, this shows up in a few core ideas:
 
 - **Accessibility-first defaults**: sensible labels, predictable focus order, and clear error messaging.
-- **Multiple ways to build**: Visual Builder, Structure Mode, and BFL each produce the same form.
+- **Multiple ways to build**: Visual Builder, Structure Mode, and QAF form language each produce the same form.
 - **Progressive enhancement**: the form still works if a browser feature or optional integration is unavailable.
 
 ## Accessibility Compliance & Standards (WCAG 2.2 AA)
 
-BAF is designed to meet WCAG 2.2 AA requirements by default. In addition to the keyboard patterns documented below, the product requirements include explicit WCAG coverage across perceivable, operable, understandable, and robust criteria.
+QAF is designed to meet WCAG 2.2 AA requirements by default. In addition to the keyboard patterns documented below, the product requirements include explicit WCAG coverage across perceivable, operable, understandable, and robust criteria.
 
-Here’s the high-level checklist BAF is designed to satisfy:
+Here’s the high-level checklist QAF is designed to satisfy:
 
 - **Perceivable**: text alternatives, meaningful structure, instructions not based on shape/color, strong contrast, reflow at high zoom.
 - **Operable**: fully keyboard accessible, no traps, visible focus, predictable navigation.
@@ -409,11 +409,11 @@ For the full criterion-by-criterion list, see `docs/PRD.md` → **Accessibility 
 
 ## Keyboard Navigation & Accessibility
 
-Accessibility isn't a feature in BAF—it's the foundation. This section documents every keyboard shortcut, screen reader behavior, and accessible pattern in detail.
+Accessibility isn't a feature in QAF—it's the foundation. This section documents every keyboard shortcut, screen reader behavior, and accessible pattern in detail.
 
 ### Universal Keyboard Shortcuts
 
-These shortcuts work throughout BAF:
+These shortcuts work throughout QAF:
 
 | Shortcut | Action |
 | -------- | ------ |
@@ -430,7 +430,7 @@ These shortcuts work throughout BAF:
 | -------- | ------ |
 | Alt+V | Switch to Visual Builder |
 | Alt+S | Switch to Structure Mode |
-| Alt+B | Switch to BFL Code Mode |
+| Alt+B | Switch to QAF Form Language Mode |
 | Ctrl+Z | Undo last action |
 | Ctrl+Shift+Z | Redo |
 | Ctrl+F | Find field by name |
@@ -510,14 +510,14 @@ When the settings panel is open:
 
 ### ARIA Live Regions
 
-BAF uses ARIA live regions to announce important changes:
+QAF uses ARIA live regions to announce important changes:
 
 - **Polite announcements** (aria-live="polite"): Used for non-urgent updates like "Field moved to position 3"
 - **Assertive announcements** (aria-live="assertive"): Used for errors and urgent feedback
 
 ### Focus Management
 
-Focus is carefully managed throughout BAF:
+Focus is carefully managed throughout QAF:
 
 - **Focus trapping**: When dialogs or panels open, focus is trapped inside until closed
 - **Focus restoration**: When panels close, focus returns to the trigger element
@@ -526,7 +526,7 @@ Focus is carefully managed throughout BAF:
 
 ### High Contrast Support
 
-BAF automatically adapts to Windows High Contrast Mode:
+QAF automatically adapts to Windows High Contrast Mode:
 
 - All text meets minimum contrast ratios
 - Focus indicators use system colors
@@ -544,7 +544,7 @@ When users have "prefers-reduced-motion" enabled:
 
 ## Field Types Reference
 
-BAF includes a wide set of field types. Each field is built for accessibility with proper labeling, keyboard support, and screen reader compatibility.
+QAF includes a wide set of field types. Each field is built for accessibility with proper labeling, keyboard support, and screen reader compatibility.
 
 If you want the **fully comprehensive, beginner-first walkthrough of every field and its real settings**, use:
 - `docs/user-guide/field-types-guide.md`
@@ -817,7 +817,7 @@ select "Subcategory"
 
 Allow selecting multiple options.
 
-**BFL note:** choice-field options are written as `+` lines, then modifiers (like `@required`).
+**QAF form language note:** choice-field options are written as `+` lines, then modifiers (like `@required`).
 
 ```bfl
 multiselect "Skills"
@@ -834,7 +834,7 @@ multiselect "Skills"
 
 Single-selection button group.
 
-Accessibility note: BAF renders radio groups inside a `<fieldset>` with a `<legend>` (your field label) so screen readers announce the group question correctly.
+Accessibility note: QAF renders radio groups inside a `<fieldset>` with a `<legend>` (your field label) so screen readers announce the group question correctly.
 
 ```bfl
 radio "Payment Method"
@@ -958,7 +958,7 @@ text "Name"
 ```
 
 Supported tokens:
-- `geo` (resolved via the `baf_smart_default_geo` filter)
+- `geo` (resolved via the `qaf_smart_default_geo` filter)
 - `today+N` (relative date)
 - `user:property` (e.g. `user:display_name`, `user:user_email`)
 
@@ -1086,7 +1086,7 @@ address "Shipping Address"
 
 **Notes:**
 - Address autocomplete is progressive-enhancement: if a Google Maps API key is not configured, the address field works normally.
-- Configure the API key under **BAF Forms → Settings → Integrations → Google Maps API Key**.
+- Configure the API key under **QAF Forms → Settings → Integrations → Google Maps API Key**.
 
 ### Special Fields
 
@@ -1506,7 +1506,7 @@ repeater "Work Experience"
 
 ## Predefined Choice Templates
 
-BAF includes **125+ ready-to-use choice templates** for common form fields. These presets help you build forms faster, keep wording consistent, and reduce data-entry mistakes.
+QAF includes **125+ ready-to-use choice templates** for common form fields. These presets help you build forms faster, keep wording consistent, and reduce data-entry mistakes.
 
 In practice, presets are most useful when:
 - You want standardized lists (countries, states/provinces, timezones).
@@ -1531,7 +1531,7 @@ All ISO 3166-1 countries with proper names and 2-letter codes.
 
 #### States & Provinces (25+ Countries)
 
-BAF includes state/province libraries for 25+ countries with automatic cascading:
+QAF includes state/province libraries for 25+ countries with automatic cascading:
 
 | Preset | Country | Count |
 |--------|---------|-------|
@@ -2321,18 +2321,18 @@ select "State/Province"
 
 Most teams can rely on the built-in choice templates. When you can’t (for example: departments, locations, user roles, product catalogs), you can register your own libraries in PHP.
 
-BAF supports:
+QAF supports:
 - **Static libraries** (a fixed list of choices)
 - **Callback libraries** (choices generated dynamically)
 - **Custom cascades** (parent choice filters child choice)
 
 For the complete PHP examples and API surface, see `docs/CHOICE-LIBRARIES.md` → **Custom Libraries** and **API Reference**.
 
-## BFL Language Guide (Beginner)
+## QAF Form Language Guide (Beginner)
 
 If you’re new to building forms, start here:
 
-- `docs/user-guide/bfl-language-guide.md`
+- `docs/user-guide/qaf-form-language-guide.md`
 
 That guide is written as an “instructor in your pocket” tutorial and includes:
 - your first copy/paste form
@@ -2756,7 +2756,7 @@ form "Long Application"
 ### Email Customization
 
 ```php
-add_filter( 'baf_save_continue_email', function( $email, $draft, $form ) {
+add_filter( 'qaf_save_continue_email', function( $email, $draft, $form ) {
     $email['subject'] = 'Continue your ' . $form->title;
     $email['message'] = sprintf(
         'You have a saved draft. Click here to continue: %s',
@@ -2965,7 +2965,7 @@ view "Events"
 
 **Gutenberg Block:**
 
-Add the "BAF View" block and select your view.
+Add the "QAF View" block and select your view.
 
 **PHP:**
 
@@ -3182,7 +3182,7 @@ form "Contact"
 
 ## REST API
 
-BAF provides a complete REST API for programmatic access.
+QAF provides a complete REST API for programmatic access.
 
 ### Authentication
 
@@ -3232,12 +3232,12 @@ curl -X POST \
 
 ```php
 // Before form renders
-add_action( 'baf_before_form', function( $form_id ) {
+add_action( 'qaf_before_form', function( $form_id ) {
     // Customize form before display
 } );
 
 // After form renders
-add_action( 'baf_after_form', function( $form_id ) {
+add_action( 'qaf_after_form', function( $form_id ) {
     // Add content after form
 } );
 ```
@@ -3246,13 +3246,13 @@ add_action( 'baf_after_form', function( $form_id ) {
 
 ```php
 // Before entry is saved
-add_filter( 'baf_pre_save_entry', function( $data, $form_id ) {
+add_filter( 'qaf_pre_save_entry', function( $data, $form_id ) {
     // Modify entry data
     return $data;
 }, 10, 2 );
 
 // After entry is saved
-add_action( 'baf_entry_created', function( $entry_id, $form_id, $data ) {
+add_action( 'qaf_entry_created', function( $entry_id, $form_id, $data ) {
     // Trigger external actions
 }, 10, 3 );
 ```
@@ -3261,7 +3261,7 @@ add_action( 'baf_entry_created', function( $entry_id, $form_id, $data ) {
 
 ```php
 // Custom validation
-add_filter( 'baf_validate_field', function( $is_valid, $value, $field, $form ) {
+add_filter( 'qaf_validate_field', function( $is_valid, $value, $field, $form ) {
     if ( $field['id'] === 'promo_code' ) {
         return validate_promo_code( $value );
     }
@@ -3273,7 +3273,7 @@ add_filter( 'baf_validate_field', function( $is_valid, $value, $field, $form ) {
 
 ```php
 // Modify notification before sending
-add_filter( 'baf_notification_message', function( $message, $entry, $form ) {
+add_filter( 'qaf_notification_message', function( $message, $entry, $form ) {
     return $message . "\n\nSent from " . get_bloginfo('name');
 }, 10, 3 );
 ```
@@ -3290,7 +3290,7 @@ For detailed documentation on specific features, see these dedicated guides:
 | [Field Type Conversion](field-type-conversion-guide.md) | Converting fields between types while preserving properties and conditional logic |
 | [Accessibility Coach](accessibility-coach-guide.md) | Real-time accessibility scoring, issue detection, and fix suggestions |
 | [CSV Import](csv-import-guide.md) | Generate forms from CSV files with intelligent field type detection |
-| [BFL Language Guide](bfl-language-guide.md) | Comprehensive BFL tutorial with recipes for common patterns |
+| [QAF Form Language Guide](qaf-form-language-guide.md) | Comprehensive QAF form language tutorial with recipes for common patterns |
 | [Field Types Guide](field-types-guide.md) | Field-by-field walkthrough with examples |
 
 ---
@@ -3341,6 +3341,6 @@ For detailed documentation on specific features, see these dedicated guides:
 
 ## Credits
 
-BAF is developed with accessibility as a first-class citizen.
+QAF is developed with accessibility as a first-class citizen.
 
 Licensed under the MIT License.

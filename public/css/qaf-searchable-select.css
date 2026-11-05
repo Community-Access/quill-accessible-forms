@@ -1,0 +1,384 @@
+/**
+ * QAF Searchable Select Styles
+ * 
+ * Accessible, high-contrast styles for the searchable select component.
+ * 
+ * @package QAF
+ * @since 1.0.0
+ */
+
+/* Container */
+.qaf-searchable-select {
+    position: relative;
+    width: 100%;
+}
+
+/* Input wrapper */
+.qaf-ss-input-wrapper {
+    display: flex;
+    align-items: center;
+    position: relative;
+    border: 2px solid #767676;
+    border-radius: 4px;
+    background: #fff;
+    transition: border-color 0.15s ease, box-shadow 0.15s ease;
+}
+
+.qaf-ss-input-wrapper:focus-within {
+    border-color: #0073aa;
+    box-shadow: 0 0 0 3px rgba(0, 115, 170, 0.25);
+}
+
+.qaf-ss--open .qaf-ss-input-wrapper {
+    border-bottom-left-radius: 0;
+    border-bottom-right-radius: 0;
+}
+
+/* Input field */
+.qaf-ss-input {
+    flex: 1;
+    min-width: 0;
+    padding: 10px 12px;
+    border: none;
+    background: transparent;
+    font-size: 16px;
+    line-height: 1.4;
+    outline: none;
+}
+
+.qaf-ss-input::placeholder {
+    color: #666;
+    opacity: 1;
+}
+
+/* Clear button */
+.qaf-ss-clear {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    width: 32px;
+    height: 32px;
+    padding: 0;
+    border: none;
+    background: transparent;
+    color: #666;
+    font-size: 18px;
+    cursor: pointer;
+    flex-shrink: 0;
+}
+
+.qaf-ss-clear:hover,
+.qaf-ss-clear:focus {
+    color: #c00;
+}
+
+.qaf-ss-clear:focus {
+    outline: 2px solid #0073aa;
+    outline-offset: -2px;
+}
+
+/* Toggle button */
+.qaf-ss-toggle {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    width: 36px;
+    height: 100%;
+    padding: 0;
+    border: none;
+    border-left: 1px solid #ddd;
+    background: #f7f7f7;
+    cursor: pointer;
+    flex-shrink: 0;
+    border-radius: 0 2px 2px 0;
+}
+
+.qaf-ss-toggle:hover {
+    background: #eee;
+}
+
+.qaf-ss-toggle:focus {
+    outline: 2px solid #0073aa;
+    outline-offset: -2px;
+}
+
+/* Arrow indicator */
+.qaf-ss-arrow {
+    display: block;
+    width: 0;
+    height: 0;
+    border-left: 5px solid transparent;
+    border-right: 5px solid transparent;
+    border-top: 6px solid #555;
+    transition: transform 0.15s ease;
+}
+
+.qaf-ss--open .qaf-ss-arrow {
+    transform: rotate(180deg);
+}
+
+/* Tags container (multiple select) */
+.qaf-ss-tags {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 4px;
+    padding: 4px 8px;
+    min-height: 0;
+}
+
+.qaf-ss-tags:empty {
+    display: none;
+}
+
+/* Individual tag */
+.qaf-ss-tag {
+    display: inline-flex;
+    align-items: center;
+    gap: 4px;
+    padding: 4px 8px;
+    background: #e0e0e0;
+    border-radius: 3px;
+    font-size: 14px;
+    line-height: 1.2;
+}
+
+.qaf-ss-tag-label {
+    max-width: 200px;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+}
+
+.qaf-ss-tag-remove {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    width: 18px;
+    height: 18px;
+    padding: 0;
+    border: none;
+    background: transparent;
+    color: #666;
+    font-size: 14px;
+    cursor: pointer;
+    border-radius: 2px;
+}
+
+.qaf-ss-tag-remove:hover,
+.qaf-ss-tag-remove:focus {
+    background: #c00;
+    color: #fff;
+}
+
+.qaf-ss-tag-remove:focus {
+    outline: 2px solid #0073aa;
+    outline-offset: 1px;
+}
+
+/* Listbox dropdown */
+.qaf-ss-listbox {
+    position: absolute;
+    top: 100%;
+    left: 0;
+    right: 0;
+    max-height: 300px;
+    overflow-y: auto;
+    margin: 0;
+    padding: 0;
+    list-style: none;
+    background: #fff;
+    border: 2px solid #0073aa;
+    border-top: none;
+    border-radius: 0 0 4px 4px;
+    box-shadow: 0 4px 8px rgba(0, 0, 0, 0.15);
+    z-index: 1000;
+}
+
+/* Options */
+.qaf-ss-option {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    padding: 10px 12px;
+    cursor: pointer;
+    transition: background-color 0.1s ease;
+}
+
+.qaf-ss-option:hover,
+.qaf-ss-option--highlighted {
+    background: #f0f0f0;
+}
+
+.qaf-ss-option--selected {
+    background: #e6f3ff;
+}
+
+.qaf-ss-option--highlighted.qaf-ss-option--selected {
+    background: #cce5ff;
+}
+
+.qaf-ss-option[aria-disabled="true"] {
+    opacity: 0.5;
+    cursor: not-allowed;
+}
+
+/* Option checkbox indicator (multiple) */
+.qaf-ss-checkbox {
+    flex-shrink: 0;
+    font-size: 16px;
+    line-height: 1;
+}
+
+/* Option label */
+.qaf-ss-option-label {
+    flex: 1;
+    min-width: 0;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+}
+
+/* Optgroup header */
+.qaf-ss-optgroup {
+    padding: 8px 12px 4px;
+    font-size: 12px;
+    font-weight: 600;
+    text-transform: uppercase;
+    color: #666;
+    background: #f7f7f7;
+    border-top: 1px solid #ddd;
+}
+
+.qaf-ss-optgroup:first-child {
+    border-top: none;
+}
+
+/* No results message */
+.qaf-ss-no-results {
+    padding: 12px;
+    text-align: center;
+    color: #666;
+    font-style: italic;
+}
+
+/* Screen reader only text */
+.qaf-sr-only {
+    position: absolute;
+    width: 1px;
+    height: 1px;
+    padding: 0;
+    margin: -1px;
+    overflow: hidden;
+    clip: rect(0, 0, 0, 0);
+    white-space: nowrap;
+    border: 0;
+}
+
+/* High contrast mode support */
+@media (prefers-contrast: high) {
+    .qaf-ss-input-wrapper {
+        border-width: 3px;
+    }
+    
+    .qaf-ss-input-wrapper:focus-within {
+        outline: 3px solid;
+        outline-offset: 2px;
+    }
+    
+    .qaf-ss-option--highlighted {
+        outline: 2px solid;
+        outline-offset: -2px;
+    }
+    
+    .qaf-ss-tag {
+        border: 1px solid;
+    }
+}
+
+/* Reduced motion */
+@media (prefers-reduced-motion: reduce) {
+    .qaf-ss-arrow,
+    .qaf-ss-input-wrapper {
+        transition: none;
+    }
+}
+
+/* Focus visible styles */
+.qaf-ss-input:focus-visible {
+    outline: none;
+}
+
+/* Loading state (for cascade) */
+.qaf-searchable-select.qaf-ss--loading .qaf-ss-input {
+    background-image: url('data:image/svg+xml,<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="%23666" stroke-width="2"><circle cx="12" cy="12" r="10" stroke-dasharray="31.4" stroke-dashoffset="10"><animateTransform attributeName="transform" type="rotate" from="0 12 12" to="360 12 12" dur="1s" repeatCount="indefinite"/></circle></svg>');
+    background-repeat: no-repeat;
+    background-position: right 40px center;
+    background-size: 20px 20px;
+}
+
+/* Dark mode support */
+@media (prefers-color-scheme: dark) {
+    .qaf-searchable-select {
+        color-scheme: dark;
+    }
+    
+    .qaf-ss-input-wrapper {
+        background: #1e1e1e;
+        border-color: #555;
+    }
+    
+    .qaf-ss-input {
+        color: #eee;
+    }
+    
+    .qaf-ss-input::placeholder {
+        color: #999;
+    }
+    
+    .qaf-ss-toggle {
+        background: #2d2d2d;
+        border-color: #444;
+    }
+    
+    .qaf-ss-toggle:hover {
+        background: #3d3d3d;
+    }
+    
+    .qaf-ss-arrow {
+        border-top-color: #aaa;
+    }
+    
+    .qaf-ss-listbox {
+        background: #1e1e1e;
+        border-color: #0073aa;
+    }
+    
+    .qaf-ss-option:hover,
+    .qaf-ss-option--highlighted {
+        background: #2d2d2d;
+    }
+    
+    .qaf-ss-option--selected {
+        background: #1a3a4d;
+    }
+    
+    .qaf-ss-optgroup {
+        background: #252525;
+        border-color: #444;
+        color: #aaa;
+    }
+    
+    .qaf-ss-tag {
+        background: #3d3d3d;
+        color: #eee;
+    }
+    
+    .qaf-ss-clear,
+    .qaf-ss-tag-remove {
+        color: #aaa;
+    }
+    
+    .qaf-ss-no-results {
+        color: #999;
+    }
+}

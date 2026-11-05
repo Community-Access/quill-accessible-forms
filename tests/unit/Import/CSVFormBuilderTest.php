@@ -2,7 +2,7 @@
 /**
  * CSV Form Builder Tests
  *
- * @package BAF
+ * @package QAF
  * @subpackage Tests
  */
 
@@ -59,15 +59,15 @@ if ( ! function_exists( 'is_wp_error' ) ) {
 }
 
 // Include the class under test
-require_once dirname( dirname( dirname( __DIR__ ) ) ) . '/includes/import/class-baf-csv-form-builder.php';
+require_once dirname( dirname( dirname( __DIR__ ) ) ) . '/includes/import/class-qaf-csv-form-builder.php';
 
 /**
- * Test class for BAF_CSV_Form_Builder
+ * Test class for QAF_CSV_Form_Builder
  */
 class CSVFormBuilderTest extends TestCase {
 
     /**
-     * @var BAF_CSV_Form_Builder
+     * @var QAF_CSV_Form_Builder
      */
     private $builder;
 
@@ -80,8 +80,8 @@ class CSVFormBuilderTest extends TestCase {
      * Set up test fixtures
      */
     protected function setUp(): void {
-        $this->builder = new BAF_CSV_Form_Builder();
-        $this->temp_dir = sys_get_temp_dir() . '/baf_csv_tests_' . uniqid();
+        $this->builder = new QAF_CSV_Form_Builder();
+        $this->temp_dir = sys_get_temp_dir() . '/qaf_csv_tests_' . uniqid();
         mkdir( $this->temp_dir );
     }
 

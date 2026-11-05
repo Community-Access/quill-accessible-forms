@@ -1,6 +1,6 @@
 #!/usr/bin/env node
 /**
- * The logic behind the builder's model screens (admin/js/baf-model-editor-core.js):
+ * The logic behind the builder's model screens (admin/js/qaf-model-editor-core.js):
  * the expression check and its messages, rule sentences, pointer paths as
  * words, moves, translation rows, library users and the quiz "Try it".
  * `node tests/js/model-editor.test.js`.
@@ -10,7 +10,7 @@
 var fs = require('fs');
 var path = require('path');
 var assert = require('assert');
-var C = require('../../admin/js/baf-model-editor-core.js');
+var C = require('../../admin/js/qaf-model-editor-core.js');
 
 function load(name) {
     return JSON.parse(fs.readFileSync(path.join(__dirname, '..', 'conformance', 'models', 'valid', name), 'utf8'));
@@ -177,7 +177,7 @@ test('an outcome is checked', function () {
     assert.deepStrictEqual(C.checkOutcome(quiz.scoring.outcomes[0], 0, quiz), []);
 });
 
-test('slug matches BAF_Form_Model::slug', function () {
+test('slug matches QAF_Form_Model::slug', function () {
     assert.strictEqual(C.slug('Odd: one'), 'odd-one');
     assert.strictEqual(C.slug('  Extra Large!! '), 'extra-large');
 });

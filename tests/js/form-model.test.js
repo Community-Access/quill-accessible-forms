@@ -2,15 +2,15 @@
 /**
  * What the published form applies from its model, beyond the shared suite:
  * requirements, enabling, "set", calculations, skipping pages and smart
- * defaults (BAFFormModel.evaluateForm). `node tests/js/form-model.test.js`.
+ * defaults (QAFFormModel.evaluateForm). `node tests/js/form-model.test.js`.
  */
 'use strict';
 
 var fs = require('fs');
 var path = require('path');
 var assert = require('assert');
-var M = require('../../public/js/baf-form-model.js');
-var X = require('../../public/js/baf-expression.js');
+var M = require('../../public/js/qaf-form-model.js');
+var X = require('../../public/js/qaf-expression.js');
 
 var model = JSON.parse(fs.readFileSync(path.join(__dirname, '..', 'conformance', 'models', 'valid', 'logic-and-layout.json'), 'utf8'));
 var quiz = JSON.parse(fs.readFileSync(path.join(__dirname, '..', 'conformance', 'models', 'valid', 'quiz-and-translations.json'), 'utf8'));

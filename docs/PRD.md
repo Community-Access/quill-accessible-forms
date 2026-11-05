@@ -1,4 +1,4 @@
-# BITS Accessible Forms (BAF) - Product Requirements Document
+# QUILL Accessible Forms (QAF) - Product Requirements Document
 
 **Version:** 1.0  
 **Last Updated:** January 27, 2026  
@@ -16,7 +16,7 @@
 5. [Accessibility Requirements (WCAG 2.2 AA)](#accessibility-requirements-wcag-22-aa)
 6. [Feature Specifications](#feature-specifications)
 7. [Technical Architecture](#technical-architecture)
-8. [BFL (BITS Form Language) Specification](#bfl-bits-form-language-specification)
+8. [The QAF form language specification](#the-qaf-form-language-specification)
 9. [Field Types](#field-types)
 10. [Advanced Features](#advanced-features)
 11. [Entry Views](#entry-views)
@@ -31,7 +31,7 @@
 
 ## Executive Summary
 
-BITS Accessible Forms (BAF) is a revolutionary WordPress form builder plugin that places accessibility at its core, not as an afterthought. Unlike existing solutions that treat accessibility as optional or premium features, BAF ensures every form created is automatically WCAG 2.2 AA compliant while providing all advanced features included without paid add-ons.
+QUILL Accessible Forms (QAF) is a revolutionary WordPress form builder plugin that places accessibility at its core, not as an afterthought. Unlike existing solutions that treat accessibility as optional or premium features, QAF ensures every form created is automatically WCAG 2.2 AA compliant while providing all advanced features included without paid add-ons.
 
 ### Key Statistics
 
@@ -58,7 +58,7 @@ BITS Accessible Forms (BAF) is a revolutionary WordPress form builder plugin tha
 1. **Accessibility First**: Every form automatically meets WCAG 2.2 AA standards
 2. **Feature Complete**: All features included without add-on fatigue
 3. **Multiple Input Methods**: Full keyboard, mouse, touch, and voice support
-4. **Forms as Code**: BFL language for text-based form building and version control
+4. **Forms as Code**: QAF form language for text-based form building and version control
 5. **Structure Mode**: Revolutionary keyboard-first tree navigation
 6. **Universal Design**: Works for all users regardless of ability
 
@@ -89,7 +89,7 @@ BITS Accessible Forms (BAF) is a revolutionary WordPress form builder plugin tha
 - **Role**: Freelance developer
 - **Needs**: Version control for forms, code-based editing
 - **Pain Points**: GUI-only builders don't fit development workflows
-- **Goals**: Use BFL to manage forms in Git, review changes in PRs
+- **Goals**: Use QAF form language to manage forms in Git, review changes in PRs
 
 #### Persona 3: Elena (Small Business Owner)
 
@@ -112,7 +112,7 @@ A keyboard-first tree view for organizing forms:
 - Real-time warnings when changes could break conditional logic
 - Full screen reader support with ARIA live regions
 
-### 2. BFL (BITS Form Language)
+### 2. The QAF form language
 
 Human-readable form definitions stored as text:
 
@@ -219,7 +219,7 @@ Import CSV files to automatically generate forms:
 - [x] Pointer cancellation supported (2.5.2)
 - [x] Label in name (2.5.3)
 - [x] Motion actuation alternatives (2.5.4)
-- [x] Dragging alternatives provided (2.5.7) **CRITICAL FOR BAF**
+- [x] Dragging alternatives provided (2.5.7) **CRITICAL FOR QAF**
 - [x] Target size minimum 24x24px (2.5.8)
 
 ### Principle 3: Understandable
@@ -255,7 +255,7 @@ Import CSV files to automatically generate forms:
 
 ### Accessibility Coach
 
-BAF includes a built-in accessibility coach that analyzes forms in real-time:
+QAF includes a built-in accessibility coach that analyzes forms in real-time:
 
 **Features:**
 - **Accessibility Score** - 0-100 rating based on issue severity
@@ -293,7 +293,7 @@ See the [Accessibility Coach Guide](user-guide/accessibility-coach-guide.md) for
 ┌─────────────────────────────────────────────────────────────────────┐
 │ [Skip to Content] [Skip to Fields] [Skip to Settings]               │
 ├─────────────────────────────────────────────────────────────────────┤
-│ BITS Accessible Forms - Edit: Contact Form                          │
+│ QUILL Accessible Forms - Edit: Contact Form                          │
 ├──────────────────┬──────────────────────────────────────────────────┤
 │                  │                                                  │
 │  FIELD PALETTE   │              FORM CANVAS                         │
@@ -313,7 +313,7 @@ See the [Accessibility Coach Guide](user-guide/accessibility-coach-guide.md) for
 │                  │  └──────────────────────────────────────────┘   │
 │                  │                                                  │
 └──────────────────┴──────────────────────────────────────────────────┘
-│  Mode: [Visual] [Structure] [BFL Code]  │  [Preview] [Save] [Publish]
+│  Mode: [Visual] [Structure] [QAF Form Language]  │  [Preview] [Save] [Publish]
 └─────────────────────────────────────────────────────────────────────┘
 ```
 
@@ -346,11 +346,11 @@ Delete Remove item
 Tab    Next element
 ```
 
-#### BFL Code Mode
+#### QAF Form Language Mode
 
 ```text
 ┌─────────────────────────────────────────────────────────────────────┐
-│ BFL Editor                                          [Sync] [Format] │
+│ the QAF form language Editor                                          [Sync] [Format] │
 ├─────────────────────────────────────────────────────────────────────┤
 │  1  form "Contact Form"                                             │
 │  2    settings                                                      │
@@ -386,13 +386,13 @@ Tab    Next element
 │ 32          maxLength 2000                                          │
 │ 33          counter true                                            │
 └─────────────────────────────────────────────────────────────────────┘
-│  Line 14, Col 8  │  UTF-8  │  BFL v1.0  │  Errors: 0  Warnings: 0  │
+│  Line 14, Col 8  │  UTF-8  │  QAF form language v1.0  │  Errors: 0  Warnings: 0  │
 └─────────────────────────────────────────────────────────────────────┘
 ```
 
 ---
 
-## BFL (BITS Form Language) Specification
+## The QAF form language specification
 
 ### Grammar Definition
 
@@ -425,10 +425,10 @@ BOOLEAN        = "true" | "false"
 IDENTIFIER     = [a-zA-Z_][a-zA-Z0-9_]*
 ```
 
-### Complete BFL Example
+### Complete the QAF form language Example
 
 ```bfl
-# BITS Accessible Forms - BFL Example
+# QUILL Accessible Forms - the QAF form language Example
 # Job Application Form
 
 form "Job Application"
@@ -576,17 +576,17 @@ form "Job Application"
       successMessage "Thank you for your application!"
 ```
 
-### BFL Import/Export
+### the QAF form language Import/Export
 
 ```php
-// Import BFL to form definition
-$form = BAF_BFL_Parser::parse($bfl_string);
+// Import QAF form language to form definition
+$form = QAF_BFL_Parser::parse($bfl_string);
 
-// Export form to BFL
-$bfl = BAF_BFL_Compiler::compile($form);
+// Export form to the QAF form language
+$bfl = QAF_BFL_Compiler::compile($form);
 
-// Validate BFL syntax
-$errors = BAF_BFL_Validator::validate($bfl_string);
+// Validate QAF form language syntax
+$errors = QAF_BFL_Validator::validate($bfl_string);
 ```
 
 ---
@@ -711,7 +711,7 @@ $errors = BAF_BFL_Validator::validate($bfl_string);
 
 `smart_default` populates a field when the user hasn’t entered a value.
 
-- `geo` (via filter `baf_smart_default_geo`)
+- `geo` (via filter `qaf_smart_default_geo`)
 - `today+N`
 - `user:property`
 
@@ -729,7 +729,7 @@ Text-like fields can accept `mask` / `@mask` to guide input formatting (progress
 
 #### Autocomplete Provider Model
 
-BAF uses an extensible provider model for autocomplete functionality:
+QAF uses an extensible provider model for autocomplete functionality:
 
 **Built-in Providers:**
 - `static` - Pre-loaded datasets (countries, states, provinces, timezones, languages, currencies)
@@ -740,9 +740,9 @@ BAF uses an extensible provider model for autocomplete functionality:
 **Graceful Degradation:**
 - If Google Places API key is not configured, address fields automatically fall back to static country/state dropdowns
 - All providers are availability-checked before use
-- Custom providers can be registered via `baf_register_autocomplete_providers` action
+- Custom providers can be registered via `qaf_register_autocomplete_providers` action
 
-**Usage in BFL:**
+**Usage in the QAF form language:**
 ```bfl
 field text "Country" 
   autocomplete "country"          // Static dataset
@@ -761,10 +761,10 @@ See the [Autocomplete Providers Guide](user-guide/autocomplete-providers-guide.m
 
 ```php
 // Populate from various sources
-[baf_field name="user_name" populate="user:display_name"]
-[baf_field name="post_title" populate="post:post_title"]
-[baf_field name="entry_value" populate="entry:15:field_3"]
-[baf_field name="api_data" populate="api:https://api.example.com/data"]
+[qaf_field name="user_name" populate="user:display_name"]
+[qaf_field name="post_title" populate="post:post_title"]
+[qaf_field name="entry_value" populate="entry:15:field_3"]
+[qaf_field name="api_data" populate="api:https://api.example.com/data"]
 ```
 
 #### 2. Live Merge Tags
@@ -788,8 +788,8 @@ field select "State/Province" required
 
 ```php
 // Auto-populate from URL: ?name=John&email=john@example.com
-[baf_field name="name" urlParam="name"]
-[baf_field name="email" urlParam="email"]
+[qaf_field name="name" urlParam="name"]
+[qaf_field name="email" urlParam="email"]
 ```
 
 #### 5. Easy Passthrough
@@ -1034,7 +1034,7 @@ view calendar "Events"
 #### Stripe Integration
 
 ```php
-class BAF_Stripe_Integration {
+class QAF_Stripe_Integration {
     public function process_payment($entry, $form) {
         // PCI-compliant Stripe Elements
         // Accessible card input
@@ -1046,7 +1046,7 @@ class BAF_Stripe_Integration {
 #### PayPal Integration
 
 ```php
-class BAF_PayPal_Integration {
+class QAF_PayPal_Integration {
     public function render_button($form) {
         // PayPal Smart Button with fallback
         // Keyboard-accessible checkout
@@ -1085,14 +1085,14 @@ integration webhook
 
 Endpoints:
 
-- `GET /wp-json/baf/v1/forms` - List forms
-- `GET /wp-json/baf/v1/forms/{id}` - Get form
-- `POST /wp-json/baf/v1/forms` - Create form
-- `PUT /wp-json/baf/v1/forms/{id}` - Update form
-- `DELETE /wp-json/baf/v1/forms/{id}` - Delete form
-- `GET /wp-json/baf/v1/entries` - List entries
-- `POST /wp-json/baf/v1/entries` - Create entry
-- `GET /wp-json/baf/v1/entries/{id}` - Get entry
+- `GET /wp-json/qaf/v1/forms` - List forms
+- `GET /wp-json/qaf/v1/forms/{id}` - Get form
+- `POST /wp-json/qaf/v1/forms` - Create form
+- `PUT /wp-json/qaf/v1/forms/{id}` - Update form
+- `DELETE /wp-json/qaf/v1/forms/{id}` - Delete form
+- `GET /wp-json/qaf/v1/entries` - List entries
+- `POST /wp-json/qaf/v1/entries` - Create entry
+- `GET /wp-json/qaf/v1/entries/{id}` - Get entry
 
 ---
 
@@ -1104,9 +1104,9 @@ Endpoints:
 
 ```php
 // Invisible field for bots
-<div class="baf-hp" aria-hidden="true" style="position:absolute;left:-9999px;">
-    <label for="baf_hp_field">Leave empty</label>
-    <input type="text" id="baf_hp_field" name="baf_hp_field" tabindex="-1" autocomplete="off">
+<div class="qaf-hp" aria-hidden="true" style="position:absolute;left:-9999px;">
+    <label for="qaf_hp_field">Leave empty</label>
+    <input type="text" id="qaf_hp_field" name="qaf_hp_field" tabindex="-1" autocomplete="off">
 </div>
 ```
 
@@ -1114,13 +1114,13 @@ Endpoints:
 
 ```php
 // Nonce verification
-wp_nonce_field('baf_submit_form_' . $form_id, 'baf_nonce');
+wp_nonce_field('qaf_submit_form_' . $form_id, 'qaf_nonce');
 ```
 
 #### 3. Rate Limiting
 
 ```php
-class BAF_Rate_Limiter {
+class QAF_Rate_Limiter {
     public function check($form_id, $ip) {
         // Per-IP rate limiting
         // Per-form rate limiting
@@ -1141,7 +1141,7 @@ class BAF_Rate_Limiter {
 #### 5. File Upload Security
 
 ```php
-class BAF_File_Security {
+class QAF_File_Security {
     private $allowed_types = ['jpg', 'png', 'pdf', 'doc', 'docx'];
     
     public function validate($file) {
@@ -1156,7 +1156,7 @@ class BAF_File_Security {
 #### 6. Input Sanitization
 
 ```php
-class BAF_Sanitizer {
+class QAF_Sanitizer {
     public function sanitize($value, $field_type) {
         // Type-specific sanitization
         // XSS prevention
@@ -1206,22 +1206,22 @@ class BAF_Sanitizer {
 Every drag-drop operation MUST have a button alternative:
 
 ```html
-<div class="baf-field" role="listitem">
-    <span class="baf-field-name">Name Field</span>
-    <div class="baf-field-actions">
-        <button aria-label="Move Name Field up" class="baf-move-up">
+<div class="qaf-field" role="listitem">
+    <span class="qaf-field-name">Name Field</span>
+    <div class="qaf-field-actions">
+        <button aria-label="Move Name Field up" class="qaf-move-up">
             <span aria-hidden="true">↑</span>
         </button>
-        <button aria-label="Move Name Field down" class="baf-move-down">
+        <button aria-label="Move Name Field down" class="qaf-move-down">
             <span aria-hidden="true">↓</span>
         </button>
-        <button aria-label="Edit Name Field" class="baf-edit">
+        <button aria-label="Edit Name Field" class="qaf-edit">
             Edit
         </button>
-        <button aria-label="Duplicate Name Field" class="baf-duplicate">
+        <button aria-label="Duplicate Name Field" class="qaf-duplicate">
             Copy
         </button>
-        <button aria-label="Delete Name Field" class="baf-delete">
+        <button aria-label="Delete Name Field" class="qaf-delete">
             Delete
         </button>
     </div>
@@ -1231,7 +1231,7 @@ Every drag-drop operation MUST have a button alternative:
 ### Focus Management
 
 ```javascript
-class BAFFocusManager {
+class QAFFocusManager {
     // Trap focus in modals
     trapFocus(container) { }
     
@@ -1251,32 +1251,32 @@ class BAFFocusManager {
 ```css
 /* Light mode (default) */
 :root {
-    --baf-bg-primary: #ffffff;
-    --baf-text-primary: #1a1a1a;
-    --baf-accent: #0066cc;
-    --baf-error: #cc0000;
-    --baf-success: #008800;
+    --qaf-bg-primary: #ffffff;
+    --qaf-text-primary: #1a1a1a;
+    --qaf-accent: #0066cc;
+    --qaf-error: #cc0000;
+    --qaf-success: #008800;
 }
 
 /* Dark mode */
 @media (prefers-color-scheme: dark) {
     :root {
-        --baf-bg-primary: #1a1a1a;
-        --baf-text-primary: #ffffff;
-        --baf-accent: #66b3ff;
-        --baf-error: #ff6666;
-        --baf-success: #66ff66;
+        --qaf-bg-primary: #1a1a1a;
+        --qaf-text-primary: #ffffff;
+        --qaf-accent: #66b3ff;
+        --qaf-error: #ff6666;
+        --qaf-success: #66ff66;
     }
 }
 
 /* High contrast mode */
 @media (prefers-contrast: more) {
     :root {
-        --baf-bg-primary: #000000;
-        --baf-text-primary: #ffffff;
-        --baf-accent: #ffff00;
-        --baf-error: #ff0000;
-        --baf-success: #00ff00;
+        --qaf-bg-primary: #000000;
+        --qaf-text-primary: #ffffff;
+        --qaf-accent: #ffff00;
+        --qaf-error: #ff0000;
+        --qaf-success: #00ff00;
     }
 }
 
@@ -1296,8 +1296,8 @@ class BAFFocusManager {
 ### Plugin Structure
 
 ```text
-bits-accessible-forms/
-├── bits-accessible-forms.php          # Main plugin file
+quill-accessible-forms/
+├── quill-accessible-forms.php          # Main plugin file
 ├── README.md
 ├── LICENSE
 ├── composer.json
@@ -1305,69 +1305,69 @@ bits-accessible-forms/
 ├── webpack.config.js
 │
 ├── includes/
-│   ├── class-baf-loader.php           # Dependency loader
-│   ├── class-baf-activator.php        # Activation hooks
-│   ├── class-baf-deactivator.php      # Deactivation hooks
+│   ├── class-qaf-loader.php           # Dependency loader
+│   ├── class-qaf-activator.php        # Activation hooks
+│   ├── class-qaf-deactivator.php      # Deactivation hooks
 │   │
 │   ├── core/
-│   │   ├── class-baf-form.php         # Form model
-│   │   ├── class-baf-field.php        # Field base class
-│   │   ├── class-baf-entry.php        # Entry model
-│   │   ├── class-baf-view.php         # View model
-│   │   └── class-baf-settings.php     # Settings management
+│   │   ├── class-qaf-form.php         # Form model
+│   │   ├── class-qaf-field.php        # Field base class
+│   │   ├── class-qaf-entry.php        # Entry model
+│   │   ├── class-qaf-view.php         # View model
+│   │   └── class-qaf-settings.php     # Settings management
 │   │
 │   ├── fields/
-│   │   ├── class-baf-field-text.php
-│   │   ├── class-baf-field-email.php
-│   │   ├── class-baf-field-textarea.php
+│   │   ├── class-qaf-field-text.php
+│   │   ├── class-qaf-field-email.php
+│   │   ├── class-qaf-field-textarea.php
 │   │   ├── ... (all 63 field types)
-│   │   └── class-baf-field-registry.php
+│   │   └── class-qaf-field-registry.php
 │   │
 │   ├── bfl/
-│   │   ├── class-baf-bfl-lexer.php    # Tokenizer
-│   │   ├── class-baf-bfl-parser.php   # Parser
-│   │   ├── class-baf-bfl-compiler.php # Compiler
-│   │   ├── class-baf-bfl-validator.php
-│   │   └── class-baf-bfl-formatter.php
+│   │   ├── class-qaf-bfl-lexer.php    # Tokenizer
+│   │   ├── class-qaf-bfl-parser.php   # Parser
+│   │   ├── class-qaf-bfl-compiler.php # Compiler
+│   │   ├── class-qaf-bfl-validator.php
+│   │   └── class-qaf-bfl-formatter.php
 │   │
 │   ├── accessibility/
-│   │   ├── class-baf-a11y-validator.php
-│   │   ├── class-baf-aria-generator.php
-│   │   ├── class-baf-focus-manager.php
-│   │   └── class-baf-announcer.php
+│   │   ├── class-qaf-a11y-validator.php
+│   │   ├── class-qaf-aria-generator.php
+│   │   ├── class-qaf-focus-manager.php
+│   │   └── class-qaf-announcer.php
 │   │
 │   ├── security/
-│   │   ├── class-baf-honeypot.php
-│   │   ├── class-baf-rate-limiter.php
-│   │   ├── class-baf-captcha.php
-│   │   └── class-baf-sanitizer.php
+│   │   ├── class-qaf-honeypot.php
+│   │   ├── class-qaf-rate-limiter.php
+│   │   ├── class-qaf-captcha.php
+│   │   └── class-qaf-sanitizer.php
 │   │
 │   ├── integrations/
-│   │   ├── class-baf-stripe.php
-│   │   ├── class-baf-paypal.php
-│   │   ├── class-baf-google-sheets.php
-│   │   ├── class-baf-webhooks.php
-│   │   └── class-baf-gutenberg.php
+│   │   ├── class-qaf-stripe.php
+│   │   ├── class-qaf-paypal.php
+│   │   ├── class-qaf-google-sheets.php
+│   │   ├── class-qaf-webhooks.php
+│   │   └── class-qaf-gutenberg.php
 │   │
 │   ├── views/
-│   │   ├── class-baf-view-table.php
-│   │   ├── class-baf-view-cards.php
-│   │   ├── class-baf-view-list.php
-│   │   ├── class-baf-view-map.php
-│   │   └── class-baf-view-calendar.php
+│   │   ├── class-qaf-view-table.php
+│   │   ├── class-qaf-view-cards.php
+│   │   ├── class-qaf-view-list.php
+│   │   ├── class-qaf-view-map.php
+│   │   └── class-qaf-view-calendar.php
 │   │
 │   ├── import/
-│   │   ├── class-baf-csv-importer.php
-│   │   ├── class-baf-form-importer.php
-│   │   └── class-baf-auto-form-generator.php
+│   │   ├── class-qaf-csv-importer.php
+│   │   ├── class-qaf-form-importer.php
+│   │   └── class-qaf-auto-form-generator.php
 │   │
 │   └── api/
-│       ├── class-baf-rest-forms.php
-│       ├── class-baf-rest-entries.php
-│       └── class-baf-rest-views.php
+│       ├── class-qaf-rest-forms.php
+│       ├── class-qaf-rest-entries.php
+│       └── class-qaf-rest-views.php
 │
 ├── admin/
-│   ├── class-baf-admin.php
+│   ├── class-qaf-admin.php
 │   ├── partials/
 │   │   ├── form-builder.php
 │   │   ├── structure-mode.php
@@ -1375,24 +1375,24 @@ bits-accessible-forms/
 │   │   ├── entry-list.php
 │   │   └── settings-page.php
 │   ├── css/
-│   │   └── baf-admin.css
+│   │   └── qaf-admin.css
 │   └── js/
-│       ├── baf-admin.js
-│       ├── baf-form-builder.js
-│       ├── baf-structure-mode.js
-│       └── baf-bfl-editor.js
+│       ├── qaf-admin.js
+│       ├── qaf-form-builder.js
+│       ├── qaf-structure-mode.js
+│       └── qaf-bfl-editor.js
 │
 ├── public/
-│   ├── class-baf-public.php
+│   ├── class-qaf-public.php
 │   ├── partials/
 │   │   ├── form-render.php
 │   │   └── view-render.php
 │   ├── css/
-│   │   └── baf-public.css
+│   │   └── qaf-public.css
 │   └── js/
-│       ├── baf-public.js
-│       ├── baf-validation.js
-│       └── baf-accessibility.js
+│       ├── qaf-public.js
+│       ├── qaf-validation.js
+│       └── qaf-accessibility.js
 │
 ├── templates/
 │   ├── form/
@@ -1412,7 +1412,7 @@ bits-accessible-forms/
 │   └── fonts/
 │
 ├── languages/
-│   └── bits-accessible-forms.pot
+│   └── quill-accessible-forms.pot
 │
 ├── data/
 │   └── choice-libraries/
@@ -1433,13 +1433,13 @@ bits-accessible-forms/
 
 ```sql
 -- Forms table
-CREATE TABLE {prefix}baf_forms (
+CREATE TABLE {prefix}qaf_forms (
     id BIGINT UNSIGNED NOT NULL AUTO_INCREMENT,
     title VARCHAR(255) NOT NULL,
     slug VARCHAR(255) NOT NULL,
     description TEXT,
     config LONGTEXT NOT NULL, -- JSON
-    bfl_source LONGTEXT, -- BFL code
+    bfl_source LONGTEXT, -- QAF form language code
     status ENUM('draft', 'active', 'inactive') DEFAULT 'draft',
     created_at DATETIME NOT NULL,
     updated_at DATETIME NOT NULL,
@@ -1450,7 +1450,7 @@ CREATE TABLE {prefix}baf_forms (
 );
 
 -- Entries table
-CREATE TABLE {prefix}baf_entries (
+CREATE TABLE {prefix}qaf_entries (
     id BIGINT UNSIGNED NOT NULL AUTO_INCREMENT,
     form_id BIGINT UNSIGNED NOT NULL,
     user_id BIGINT UNSIGNED,
@@ -1469,7 +1469,7 @@ CREATE TABLE {prefix}baf_entries (
 );
 
 -- Entry meta table
-CREATE TABLE {prefix}baf_entry_meta (
+CREATE TABLE {prefix}qaf_entry_meta (
     id BIGINT UNSIGNED NOT NULL AUTO_INCREMENT,
     entry_id BIGINT UNSIGNED NOT NULL,
     field_id VARCHAR(50) NOT NULL,
@@ -1480,7 +1480,7 @@ CREATE TABLE {prefix}baf_entry_meta (
 );
 
 -- Views table
-CREATE TABLE {prefix}baf_views (
+CREATE TABLE {prefix}qaf_views (
     id BIGINT UNSIGNED NOT NULL AUTO_INCREMENT,
     title VARCHAR(255) NOT NULL,
     slug VARCHAR(255) NOT NULL,
@@ -1495,7 +1495,7 @@ CREATE TABLE {prefix}baf_views (
 );
 
 -- Form drafts (Save & Continue)
-CREATE TABLE {prefix}baf_drafts (
+CREATE TABLE {prefix}qaf_drafts (
     id BIGINT UNSIGNED NOT NULL AUTO_INCREMENT,
     form_id BIGINT UNSIGNED NOT NULL,
     resume_token VARCHAR(64) NOT NULL,
@@ -1513,7 +1513,7 @@ CREATE TABLE {prefix}baf_drafts (
 );
 
 -- Rate limiting
-CREATE TABLE {prefix}baf_rate_limits (
+CREATE TABLE {prefix}qaf_rate_limits (
     id BIGINT UNSIGNED NOT NULL AUTO_INCREMENT,
     form_id BIGINT UNSIGNED NOT NULL,
     ip_address VARCHAR(45) NOT NULL,
@@ -1534,7 +1534,7 @@ CREATE TABLE {prefix}baf_rate_limits (
 #### Unit Tests (PHPUnit)
 
 ```php
-class BAF_Field_Text_Test extends WP_UnitTestCase {
+class QAF_Field_Text_Test extends WP_UnitTestCase {
     public function test_render_includes_label() { }
     public function test_render_includes_aria_required() { }
     public function test_validation_respects_min_length() { }
@@ -1545,7 +1545,7 @@ class BAF_Field_Text_Test extends WP_UnitTestCase {
 #### JavaScript Tests (Jest)
 
 ```javascript
-describe('BAF Form Builder', () => {
+describe('QAF Form Builder', () => {
     test('adds field to canvas', () => { });
     test('keyboard navigation works', () => { });
     test('drag-drop has button alternative', () => { });
@@ -1557,7 +1557,7 @@ describe('BAF Form Builder', () => {
 ```javascript
 describe('Accessibility', () => {
     test('form has no axe violations', async () => {
-        const results = await axe(document.querySelector('.baf-form'));
+        const results = await axe(document.querySelector('.qaf-form'));
         expect(results.violations).toHaveLength(0);
     });
 });
@@ -1600,13 +1600,13 @@ describe('Accessibility', () => {
 - Core form builder
 - 30 essential field types
 - Structure Mode
-- BFL basic support
+- QAF form language basic support
 - Basic accessibility features
 
 #### Phase 2: Beta (March 2026)
 
 - All 63 field types
-- Full BFL support
+- Full QAF form language support
 - Entry views (table, list)
 - Payment integrations
 - Advanced accessibility testing
@@ -1630,7 +1630,7 @@ describe('Accessibility', () => {
 
 ### Design Philosophy
 
-BITS Accessible Forms (BAF) treats keyboard navigation as a **first-class citizen**, not an accessibility afterthought. Every feature is designed keyboard-first, with mouse support added as an enhancement. This section documents the technical implementation.
+QUILL Accessible Forms (QAF) treats keyboard navigation as a **first-class citizen**, not an accessibility afterthought. Every feature is designed keyboard-first, with mouse support added as an enhancement. This section documents the technical implementation.
 
 ### Structure Mode Implementation
 
@@ -1642,7 +1642,7 @@ The structure tree implements the WAI-ARIA Treeview pattern with full keyboard s
 
 ```javascript
 // Navigation state management
-const BAFStructureMode = {
+const QAFStructureMode = {
     currentItem: null,
     
     // Roving tabindex - only current item is tabbable
@@ -1710,7 +1710,7 @@ Both Structure Mode and Visual Builder support converting fields between types w
 - File: accept, multiple, max_file_size, capture
 
 **Conditional Logic Safety:**
-When converting a field that is referenced by conditional logic rules, BAF:
+When converting a field that is referenced by conditional logic rules, QAF:
 1. Analyzes all conditional rules for compatibility
 2. Shows warnings for potentially broken rules
 3. Offers auto-repair when possible (e.g., updating operators)
@@ -1778,25 +1778,25 @@ The Visual Builder provides equivalent keyboard functionality:
 Each field card includes visible action buttons that serve as drag-drop alternatives:
 
 ```html
-<div class="baf-field-card" 
+<div class="qaf-field-card" 
      role="listitem" 
      data-field-id="name_1"
      tabindex="0">
-    <span class="baf-field-label">Full Name</span>
-    <span class="baf-field-type">(name)</span>
+    <span class="qaf-field-label">Full Name</span>
+    <span class="qaf-field-type">(name)</span>
     
-    <div class="baf-field-actions" role="toolbar" 
+    <div class="qaf-field-actions" role="toolbar" 
          aria-label="Actions for Full Name">
-        <button class="baf-field-move-up" 
+        <button class="qaf-field-move-up" 
                 aria-label="Move Full Name up (position 3 of 12)"
                 disabled="false">↑</button>
-        <button class="baf-field-move-down" 
+        <button class="qaf-field-move-down" 
                 aria-label="Move Full Name down (position 3 of 12)">↓</button>
-        <button class="baf-field-edit" 
+        <button class="qaf-field-edit" 
                 aria-label="Edit Full Name settings">Edit</button>
-        <button class="baf-field-duplicate" 
+        <button class="qaf-field-duplicate" 
                 aria-label="Duplicate Full Name">Copy</button>
-        <button class="baf-field-delete" 
+        <button class="qaf-field-delete" 
                 aria-label="Delete Full Name">Delete</button>
     </div>
 </div>
@@ -1808,13 +1808,13 @@ Each field card includes visible action buttons that serve as drag-drop alternat
 
 ```javascript
 updateMoveButtonStates: function() {
-    const cards = this.canvas.querySelectorAll('.baf-field-card');
+    const cards = this.canvas.querySelectorAll('.qaf-field-card');
     const total = cards.length;
     
     cards.forEach((card, index) => {
-        const moveUp = card.querySelector('.baf-field-move-up');
-        const moveDown = card.querySelector('.baf-field-move-down');
-        const label = card.querySelector('.baf-field-label').textContent;
+        const moveUp = card.querySelector('.qaf-field-move-up');
+        const moveDown = card.querySelector('.qaf-field-move-down');
+        const label = card.querySelector('.qaf-field-label').textContent;
         
         // Disable at boundaries
         moveUp.disabled = (index === 0);
@@ -1836,7 +1836,7 @@ updateMoveButtonStates: function() {
 When settings panels or dialogs open, focus is trapped inside:
 
 ```javascript
-class BAFFocusManager {
+class QAFFocusManager {
     trapFocus(container) {
         this.previousFocus = document.activeElement;
         
@@ -1908,7 +1908,7 @@ Field labels can be edited inline with F2:
 
 ```javascript
 renameItem: function(item) {
-    const label = item.querySelector('.baf-tree-label');
+    const label = item.querySelector('.qaf-tree-label');
     const original = label.textContent;
     
     // Replace with contenteditable

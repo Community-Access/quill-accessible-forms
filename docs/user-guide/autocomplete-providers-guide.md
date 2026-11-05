@@ -1,10 +1,10 @@
 # Autocomplete Providers Guide
 
-This guide explains BAF's autocomplete provider system, which allows intelligent address completion, static datasets, and graceful fallback when services are unavailable.
+This guide explains QAF's autocomplete provider system, which allows intelligent address completion, static datasets, and graceful fallback when services are unavailable.
 
 ## Overview
 
-BAF uses a provider-based system for autocomplete functionality. This design ensures:
+QAF uses a provider-based system for autocomplete functionality. This design ensures:
 
 - **Graceful degradation** - Forms work without JavaScript or external services
 - **Provider flexibility** - Easily swap between Google Places, static data, or browser autocomplete
@@ -26,7 +26,7 @@ Uses native HTML5 `autocomplete` tokens for browser-managed autofill. Always ava
 | Address | `street-address`, `address-line1`, `address-line2`, `address-level1`, `address-level2`, `postal-code`, `country` |
 | Payment | `cc-name`, `cc-number`, `cc-exp`, `cc-csc`, `cc-type` |
 
-**BFL Example:**
+**the QAF form language Example:**
 ```bfl
 email "Email Address" email
     @autocomplete "email"
@@ -50,7 +50,7 @@ Provides searchable lists of common data like countries, states, timezones, etc.
 - `languages` - Major world languages with ISO codes
 - `currencies` - World currencies with ISO codes and symbols
 
-**BFL Example:**
+**the QAF form language Example:**
 ```bfl
 country "Country" select
     @autocomplete_provider "static"
@@ -72,11 +72,11 @@ Provides intelligent address autocomplete using Google Places API. Requires API 
 - Supports place type filtering (address, establishment, regions)
 
 **Configuration in Settings:**
-1. Go to BAF > Settings
+1. Go to QAF > Settings
 2. Enter your Google Maps API key
 3. Enable "Places Autocomplete"
 
-**BFL Example:**
+**the QAF form language Example:**
 ```bfl
 address_search "Address" text
     @autocomplete_provider "google_places"
@@ -94,7 +94,7 @@ Automatically activated when Google Places is unavailable. Provides country/stat
 - `browser` - Browser autocomplete tokens only
 - `none` - Manual entry only
 
-## Using Autocomplete in BFL
+## Using Autocomplete in the QAF form language
 
 ### Basic Browser Autocomplete
 
@@ -167,7 +167,7 @@ form "Address Form"
 
 ## Provider Availability
 
-BAF automatically handles provider availability:
+QAF automatically handles provider availability:
 
 | Provider | Available When |
 |----------|----------------|
@@ -176,7 +176,7 @@ BAF automatically handles provider availability:
 | `google_places` | API key configured and valid |
 | `fallback` | Always (uses static/browser) |
 
-When a preferred provider is unavailable, BAF falls back gracefully:
+When a preferred provider is unavailable, QAF falls back gracefully:
 
 1. Check preferred provider availability
 2. If unavailable, use specified fallback
@@ -198,16 +198,16 @@ All autocomplete features are fully accessible:
 Developers can register custom autocomplete providers:
 
 ```php
-add_action( 'baf_register_autocomplete_providers', function( $registry ) {
+add_action( 'qaf_register_autocomplete_providers', function( $registry ) {
     require_once 'class-my-custom-provider.php';
     $registry->register( new My_Custom_Provider() );
 });
 ```
 
-Your provider must implement `BAF_Autocomplete_Provider`:
+Your provider must implement `QAF_Autocomplete_Provider`:
 
 ```php
-interface BAF_Autocomplete_Provider {
+interface QAF_Autocomplete_Provider {
     public function get_id();
     public function get_name();
     public function is_available();
@@ -222,7 +222,7 @@ interface BAF_Autocomplete_Provider {
 
 ### Google Places not working
 
-1. Verify API key is entered in BAF Settings
+1. Verify API key is entered in QAF Settings
 2. Check that Places API is enabled in Google Cloud Console
 3. Verify API key has no HTTP referrer restrictions (or add your domain)
 4. Check browser console for JavaScript errors

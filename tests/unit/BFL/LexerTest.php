@@ -2,23 +2,23 @@
 /**
  * BFL Lexer Tests
  *
- * @package BAF
+ * @package QAF
  */
 
-class BAF_BFL_Lexer_Test extends BAF_Unit_Test_Case {
+class QAF_BFL_Lexer_Test extends QAF_Unit_Test_Case {
 
     /**
      * Lexer instance
      *
-     * @var BAF_BFL_Lexer
+     * @var QAF_BFL_Lexer
      */
     private $lexer;
 
     protected function setUp(): void {
         parent::setUp();
         
-        require_once BAF_PLUGIN_DIR . 'includes/bfl/class-baf-bfl-lexer.php';
-        $this->lexer = new BAF_BFL_Lexer();
+        require_once QAF_PLUGIN_DIR . 'includes/bfl/class-qaf-bfl-lexer.php';
+        $this->lexer = new QAF_BFL_Lexer();
     }
 
     public function test_tokenize_empty_string() {

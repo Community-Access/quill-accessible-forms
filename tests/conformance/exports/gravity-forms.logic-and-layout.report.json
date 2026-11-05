@@ -15,7 +15,7 @@
         {
             "level": "dropped",
             "where": "field country (Country)",
-            "message": "Its choices come from BAF's \"countries\" library; add them in the other builder."
+            "message": "Its choices come from QAF's \"countries\" library; add them in the other builder."
         },
         {
             "level": "dropped",
@@ -25,7 +25,7 @@
         {
             "level": "dropped",
             "where": "field children (Children)",
-            "message": "Gravity Forms has no field like BAF's \"repeater\"; it was left out."
+            "message": "Gravity Forms has no field like QAF's \"repeater\"; it was left out."
         },
         {
             "level": "dropped",
@@ -45,7 +45,7 @@
         {
             "level": "dropped",
             "where": "field fee (Fee each)",
-            "message": "Gravity Forms has no field like BAF's \"price\"; it was left out."
+            "message": "Gravity Forms has no field like QAF's \"price\"; it was left out."
         },
         {
             "level": "dropped",

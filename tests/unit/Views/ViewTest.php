@@ -2,10 +2,10 @@
 /**
  * View Base Class Tests
  *
- * @package BAF
+ * @package QAF
  */
 
-class BAF_View_Test extends BAF_Unit_Test_Case {
+class QAF_View_Test extends QAF_Unit_Test_Case {
 
     /**
      * Test view initialization
@@ -19,7 +19,7 @@ class BAF_View_Test extends BAF_Unit_Test_Case {
             'columns' => array( 'name', 'email' ),
         );
 
-        $view = new BAF_View( $config );
+        $view = new QAF_View( $config );
 
         $this->assertEquals( 1, $view->get_id() );
         $this->assertEquals( 'table', $view->get_type() );
@@ -30,7 +30,7 @@ class BAF_View_Test extends BAF_Unit_Test_Case {
      * Test view columns
      */
     public function test_view_columns() {
-        $view = new BAF_View( array(
+        $view = new QAF_View( array(
             'id'      => 1,
             'form_id' => 1,
             'type'    => 'table',
@@ -49,7 +49,7 @@ class BAF_View_Test extends BAF_Unit_Test_Case {
      * Test view filters
      */
     public function test_view_filters() {
-        $view = new BAF_View( array(
+        $view = new QAF_View( array(
             'id'      => 1,
             'form_id' => 1,
             'type'    => 'table',
@@ -67,7 +67,7 @@ class BAF_View_Test extends BAF_Unit_Test_Case {
      * Test view sorting
      */
     public function test_view_sorting() {
-        $view = new BAF_View( array(
+        $view = new QAF_View( array(
             'id'      => 1,
             'form_id' => 1,
             'type'    => 'table',
@@ -86,7 +86,7 @@ class BAF_View_Test extends BAF_Unit_Test_Case {
      * Test view pagination
      */
     public function test_view_pagination() {
-        $view = new BAF_View( array(
+        $view = new QAF_View( array(
             'id'        => 1,
             'form_id'   => 1,
             'type'      => 'table',
@@ -102,7 +102,7 @@ class BAF_View_Test extends BAF_Unit_Test_Case {
      * Test view permissions
      */
     public function test_view_permissions() {
-        $view = new BAF_View( array(
+        $view = new QAF_View( array(
             'id'          => 1,
             'form_id'     => 1,
             'type'        => 'table',
@@ -122,7 +122,7 @@ class BAF_View_Test extends BAF_Unit_Test_Case {
      * Test view search configuration
      */
     public function test_view_search() {
-        $view = new BAF_View( array(
+        $view = new QAF_View( array(
             'id'            => 1,
             'form_id'       => 1,
             'type'          => 'table',
@@ -138,7 +138,7 @@ class BAF_View_Test extends BAF_Unit_Test_Case {
      * Test view export data
      */
     public function test_view_export() {
-        $view = new BAF_View( array(
+        $view = new QAF_View( array(
             'id'      => 1,
             'form_id' => 1,
             'type'    => 'table',
@@ -153,7 +153,7 @@ class BAF_View_Test extends BAF_Unit_Test_Case {
      * Test view JSON serialization
      */
     public function test_view_json_serialization() {
-        $view = new BAF_View( array(
+        $view = new QAF_View( array(
             'id'      => 1,
             'form_id' => 1,
             'type'    => 'table',

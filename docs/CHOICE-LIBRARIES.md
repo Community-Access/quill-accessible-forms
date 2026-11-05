@@ -1,10 +1,10 @@
-# BAF Choice Libraries Reference
+# QAF Choice Libraries Reference
 
 **Version:** 1.0  
 **Last Updated:** January 28, 2026  
 **Total Libraries:** 125+
 
-BITS Accessible Forms includes an extensive collection of predefined choice libraries for dropdown selects, radio buttons, and checkboxes. These libraries provide instant access to commonly-needed option lists with full internationalization support and intelligent cascading.
+QUILL Accessible Forms includes an extensive collection of predefined choice libraries for dropdown selects, radio buttons, and checkboxes. These libraries provide instant access to commonly-needed option lists with full internationalization support and intelligent cascading.
 
 ---
 
@@ -32,7 +32,7 @@ BITS Accessible Forms includes an extensive collection of predefined choice libr
 
 ## Quick Start
 
-### Using a Library in BFL
+### Using a Library in the QAF form language
 
 ```bfl
 select country {
@@ -628,7 +628,7 @@ select state {
 
 ## Cascading Relationships
 
-BAF supports intelligent cascading between related libraries. When a parent field value changes, the child field options automatically update.
+QAF supports intelligent cascading between related libraries. When a parent field value changes, the child field options automatically update.
 
 ### Built-in Cascades
 
@@ -663,7 +663,7 @@ select state {
 
 ### Country-to-State Mapping
 
-When using the `states` library with cascading from `countries`, BAF automatically selects the correct state/province library:
+When using the `states` library with cascading from `countries`, QAF automatically selects the correct state/province library:
 
 | Country Code | Library Used |
 |--------------|--------------|
@@ -699,8 +699,8 @@ When using the `states` library with cascading from `countries`, BAF automatical
 ### Registering a Custom Library
 
 ```php
-add_action( 'baf_register_choice_libraries', function() {
-    BAF_Choice_Libraries::register( 'my_departments', array(
+add_action( 'qaf_register_choice_libraries', function() {
+    QAF_Choice_Libraries::register( 'my_departments', array(
         'label'   => __( 'My Departments', 'my-plugin' ),
         'choices' => array(
             array( 'value' => 'sales', 'label' => __( 'Sales', 'my-plugin' ) ),
@@ -716,8 +716,8 @@ add_action( 'baf_register_choice_libraries', function() {
 For dynamic data:
 
 ```php
-add_action( 'baf_register_choice_libraries', function() {
-    BAF_Choice_Libraries::register( 'user_roles', array(
+add_action( 'qaf_register_choice_libraries', function() {
+    QAF_Choice_Libraries::register( 'user_roles', array(
         'label'    => __( 'User Roles', 'my-plugin' ),
         'callback' => 'my_get_user_roles',
     ));
@@ -736,8 +736,8 @@ function my_get_user_roles() {
 ### Registering a Cascade
 
 ```php
-add_action( 'baf_register_choice_libraries', function() {
-    BAF_Choice_Libraries::register_cascade( 'regions', 'cities', array(
+add_action( 'qaf_register_choice_libraries', function() {
+    QAF_Choice_Libraries::register_cascade( 'regions', 'cities', array(
         'source' => 'callback',
         'callback' => 'my_get_cities_for_region',
     ));
@@ -758,7 +758,7 @@ function my_get_cities_for_region( $region_value ) {
 
 ### PHP Methods
 
-#### `BAF_Choice_Libraries::register( $key, $config )`
+#### `QAF_Choice_Libraries::register( $key, $config )`
 
 Register a new choice library.
 
@@ -769,7 +769,7 @@ Register a new choice library.
   - `choices` (array) - Static array of choices
   - `callback` (callable) - Function returning choices
 
-#### `BAF_Choice_Libraries::get( $key )`
+#### `QAF_Choice_Libraries::get( $key )`
 
 Get choices from a library.
 
@@ -778,13 +778,13 @@ Get choices from a library.
 
 **Returns:** Array of choices
 
-#### `BAF_Choice_Libraries::get_all()`
+#### `QAF_Choice_Libraries::get_all()`
 
 Get all registered libraries.
 
 **Returns:** Array of all library configurations
 
-#### `BAF_Choice_Libraries::register_cascade( $parent, $child, $config )`
+#### `QAF_Choice_Libraries::register_cascade( $parent, $child, $config )`
 
 Register a cascading relationship.
 
@@ -793,7 +793,7 @@ Register a cascading relationship.
 - `$child` (string) - Child library key
 - `$config` (array) - Cascade configuration
 
-#### `BAF_Choice_Libraries::get_cascaded( $parent_key, $parent_value, $child_key )`
+#### `QAF_Choice_Libraries::get_cascaded( $parent_key, $parent_value, $child_key )`
 
 Get cascaded choices based on parent value.
 
@@ -809,7 +809,7 @@ Get cascaded choices based on parent value.
 #### Get Library Choices
 
 ```
-GET /baf/v1/libraries/{library_key}
+GET /qaf/v1/libraries/{library_key}
 ```
 
 **Response:**
@@ -826,7 +826,7 @@ GET /baf/v1/libraries/{library_key}
 #### Get Cascaded Choices
 
 ```
-GET /baf/v1/libraries/{child_key}?parent={parent_key}&value={parent_value}
+GET /qaf/v1/libraries/{child_key}?parent={parent_key}&value={parent_value}
 ```
 
 **Response:**
@@ -843,7 +843,7 @@ GET /baf/v1/libraries/{child_key}?parent={parent_key}&value={parent_value}
 #### List All Libraries
 
 ```
-GET /baf/v1/libraries
+GET /qaf/v1/libraries
 ```
 
 **Response:**

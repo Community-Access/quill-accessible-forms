@@ -1,0 +1,1131 @@
+/**
+ * QUILL Accessible Forms - Public Styles
+ *
+ * WCAG 2.2 AA compliant form styles with:
+ * - High contrast support
+ * - Dark mode support
+ * - Reduced motion support
+ * - Focus visibility
+ * - Minimum touch targets (24x24px)
+ *
+ * @package QAF
+ * @since 1.0.0
+ */
+
+/* ==========================================================================
+   CSS Custom Properties (Variables)
+   ========================================================================== */
+
+:root {
+    /* Colors - Light mode */
+    --qaf-color-primary: #0066cc;
+    --qaf-color-primary-hover: #0055aa;
+    --qaf-color-primary-focus: #004488;
+    --qaf-color-secondary: #6c757d;
+    --qaf-color-success: #008800;
+    --qaf-color-error: #cc0000;
+    --qaf-color-warning: #cc7700;
+    --qaf-color-info: #0066cc;
+    
+    --qaf-color-text: #1a1a1a;
+    --qaf-color-text-muted: #666666;
+    --qaf-color-text-inverse: #ffffff;
+    
+    --qaf-color-bg: #ffffff;
+    --qaf-color-bg-alt: #f8f9fa;
+    --qaf-color-bg-hover: #e9ecef;
+    
+    --qaf-color-border: #cccccc;
+    --qaf-color-border-focus: #0066cc;
+    --qaf-color-border-error: #cc0000;
+    
+    /* Spacing */
+    --qaf-spacing-xs: 0.25rem;
+    --qaf-spacing-sm: 0.5rem;
+    --qaf-spacing-md: 1rem;
+    --qaf-spacing-lg: 1.5rem;
+    --qaf-spacing-xl: 2rem;
+    
+    /* Typography */
+    --qaf-font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Oxygen-Sans, Ubuntu, Cantarell, "Helvetica Neue", sans-serif;
+    --qaf-font-size-base: 1rem;
+    --qaf-font-size-sm: 0.875rem;
+    --qaf-font-size-lg: 1.125rem;
+    --qaf-line-height: 1.5;
+    
+    /* Borders */
+    --qaf-border-radius: 4px;
+    --qaf-border-width: 1px;
+    --qaf-focus-ring-width: 3px;
+    --qaf-focus-ring-offset: 2px;
+    
+    /* Transitions */
+    --qaf-transition-duration: 200ms;
+    --qaf-transition-timing: ease-in-out;
+    
+    /* Minimum touch target size (WCAG 2.5.8) */
+    --qaf-min-touch-target: 24px;
+    --qaf-min-click-target: 44px;
+}
+
+/* Dark mode */
+@media (prefers-color-scheme: dark) {
+    :root {
+        --qaf-color-primary: #66b3ff;
+        --qaf-color-primary-hover: #80c0ff;
+        --qaf-color-primary-focus: #99ccff;
+        --qaf-color-success: #66ff66;
+        --qaf-color-error: #ff6666;
+        --qaf-color-warning: #ffaa33;
+        
+        --qaf-color-text: #ffffff;
+        --qaf-color-text-muted: #aaaaaa;
+        --qaf-color-text-inverse: #1a1a1a;
+        
+        --qaf-color-bg: #1a1a1a;
+        --qaf-color-bg-alt: #2d2d2d;
+        --qaf-color-bg-hover: #3d3d3d;
+        
+        --qaf-color-border: #555555;
+        --qaf-color-border-focus: #66b3ff;
+        --qaf-color-border-error: #ff6666;
+    }
+}
+
+/* High contrast mode */
+@media (prefers-contrast: more) {
+    :root {
+        --qaf-color-primary: #0000ee;
+        --qaf-color-text: #000000;
+        --qaf-color-bg: #ffffff;
+        --qaf-color-border: #000000;
+        --qaf-border-width: 2px;
+    }
+}
+
+/* Reduced motion */
+@media (prefers-reduced-motion: reduce) {
+    :root {
+        --qaf-transition-duration: 0ms;
+    }
+    
+    *,
+    *::before,
+    *::after {
+        animation-duration: 0.01ms !important;
+        animation-iteration-count: 1 !important;
+        transition-duration: 0.01ms !important;
+    }
+}
+
+/* ==========================================================================
+   Base Form Styles
+   ========================================================================== */
+
+.qaf-form-wrapper {
+    font-family: var(--qaf-font-family);
+    font-size: var(--qaf-font-size-base);
+    line-height: var(--qaf-line-height);
+    color: var(--qaf-color-text);
+    max-width: 100%;
+}
+
+.qaf-form-title {
+    font-size: 1.5rem;
+    font-weight: 600;
+    margin: 0 0 var(--qaf-spacing-sm) 0;
+    color: var(--qaf-color-text);
+}
+
+.qaf-form-description {
+    margin-bottom: var(--qaf-spacing-lg);
+    color: var(--qaf-color-text-muted);
+}
+
+.qaf-form {
+    margin: 0;
+    padding: 0;
+}
+
+/* ==========================================================================
+   Field Wrapper
+   ========================================================================== */
+
+.qaf-field {
+    margin-bottom: var(--qaf-spacing-lg);
+}
+
+.qaf-field:last-child {
+    margin-bottom: 0;
+}
+
+/* ==========================================================================
+   Labels
+   ========================================================================== */
+
+.qaf-field-label {
+    display: block;
+    font-weight: 500;
+    margin-bottom: var(--qaf-spacing-xs);
+    color: var(--qaf-color-text);
+}
+
+.qaf-required {
+    color: var(--qaf-color-error);
+    margin-left: 0.25em;
+}
+
+/* Required Indicator Styles */
+.qaf-required-indicator {
+    color: var(--qaf-color-error);
+    margin-left: 0.25em;
+}
+
+.qaf-required-bold {
+    font-weight: 700;
+}
+
+.qaf-required-italic {
+    font-style: italic;
+}
+
+.qaf-required-underline {
+    text-decoration: underline;
+}
+
+.qaf-required-color {
+    /* Color set via inline style */
+}
+
+/* ==========================================================================
+   Description (Help Text)
+   ========================================================================== */
+
+.qaf-field-description {
+    font-size: var(--qaf-font-size-sm);
+    color: var(--qaf-color-text-muted);
+    margin-bottom: var(--qaf-spacing-sm);
+}
+
+/* ==========================================================================
+   Input Fields - Base Styles
+   ========================================================================== */
+
+.qaf-input,
+.qaf-form input[type="text"],
+.qaf-form input[type="email"],
+.qaf-form input[type="tel"],
+.qaf-form input[type="url"],
+.qaf-form input[type="password"],
+.qaf-form input[type="number"],
+.qaf-form input[type="date"],
+.qaf-form input[type="time"],
+.qaf-form input[type="datetime-local"],
+.qaf-form select,
+.qaf-form textarea {
+    display: block;
+    width: 100%;
+    padding: var(--qaf-spacing-sm) var(--qaf-spacing-md);
+    font-family: inherit;
+    font-size: var(--qaf-font-size-base);
+    line-height: var(--qaf-line-height);
+    color: var(--qaf-color-text);
+    background-color: var(--qaf-color-bg);
+    border: var(--qaf-border-width) solid var(--qaf-color-border);
+    border-radius: var(--qaf-border-radius);
+    transition: border-color var(--qaf-transition-duration) var(--qaf-transition-timing),
+                box-shadow var(--qaf-transition-duration) var(--qaf-transition-timing);
+    min-height: var(--qaf-min-click-target);
+    box-sizing: border-box;
+}
+
+/* Focus state - highly visible (WCAG 2.4.7) */
+.qaf-form input:focus,
+.qaf-form select:focus,
+.qaf-form textarea:focus {
+    outline: none;
+    border-color: var(--qaf-color-border-focus);
+    box-shadow: 0 0 0 var(--qaf-focus-ring-width) rgba(0, 102, 204, 0.25);
+}
+
+/* High contrast focus */
+@media (prefers-contrast: more) {
+    .qaf-form input:focus,
+    .qaf-form select:focus,
+    .qaf-form textarea:focus {
+        outline: 3px solid var(--qaf-color-primary);
+        outline-offset: 2px;
+        box-shadow: none;
+    }
+}
+
+/* Hover state */
+.qaf-form input:hover,
+.qaf-form select:hover,
+.qaf-form textarea:hover {
+    border-color: var(--qaf-color-text-muted);
+}
+
+/* Disabled state */
+.qaf-form input:disabled,
+.qaf-form select:disabled,
+.qaf-form textarea:disabled {
+    background-color: var(--qaf-color-bg-alt);
+    color: var(--qaf-color-text-muted);
+    cursor: not-allowed;
+    opacity: 0.6;
+}
+
+/* Error state */
+.qaf-field-has-error input,
+.qaf-field-has-error select,
+.qaf-field-has-error textarea {
+    border-color: var(--qaf-color-error);
+}
+
+.qaf-field-has-error input:focus,
+.qaf-field-has-error select:focus,
+.qaf-field-has-error textarea:focus {
+    box-shadow: 0 0 0 var(--qaf-focus-ring-width) rgba(204, 0, 0, 0.25);
+}
+
+/* Placeholder */
+.qaf-form input::placeholder,
+.qaf-form textarea::placeholder {
+    color: var(--qaf-color-text-muted);
+    opacity: 1;
+}
+
+/* ==========================================================================
+   Textarea
+   ========================================================================== */
+
+.qaf-form textarea {
+    resize: vertical;
+    min-height: 120px;
+}
+
+/* ==========================================================================
+   Select
+   ========================================================================== */
+
+.qaf-form select {
+    appearance: none;
+    background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='12' height='12' fill='%23666' viewBox='0 0 16 16'%3E%3Cpath d='M8 11L3 6h10z'/%3E%3C/svg%3E");
+    background-repeat: no-repeat;
+    background-position: right var(--qaf-spacing-md) center;
+    padding-right: calc(var(--qaf-spacing-md) * 2 + 12px);
+    cursor: pointer;
+}
+
+.qaf-form select::-ms-expand {
+    display: none;
+}
+
+/* Multi-select */
+.qaf-form select[multiple] {
+    background-image: none;
+    padding-right: var(--qaf-spacing-md);
+    min-height: 120px;
+}
+
+/* ==========================================================================
+   Cascading Dropdowns
+   ========================================================================== */
+
+.qaf-select-wrapper {
+    position: relative;
+}
+
+.qaf-select-cascade[disabled] {
+    opacity: 0.6;
+    cursor: not-allowed;
+    background-color: var(--qaf-color-bg-muted, #f5f5f5);
+}
+
+.qaf-cascade-loading {
+    position: absolute;
+    right: 40px;
+    top: 50%;
+    transform: translateY(-50%);
+    display: flex;
+    align-items: center;
+    gap: var(--qaf-spacing-xs);
+    font-size: var(--qaf-font-size-sm);
+    color: var(--qaf-color-text-muted);
+}
+
+.qaf-cascade-loading[hidden] {
+    display: none;
+}
+
+.qaf-cascade-spinner {
+    width: 16px;
+    height: 16px;
+    border: 2px solid var(--qaf-color-border);
+    border-top-color: var(--qaf-color-primary);
+    border-radius: 50%;
+    animation: qaf-spin 0.8s linear infinite;
+}
+
+@keyframes qaf-spin {
+    to {
+        transform: rotate(360deg);
+    }
+}
+
+@media (prefers-reduced-motion: reduce) {
+    .qaf-cascade-spinner {
+        animation: none;
+        border-top-color: var(--qaf-color-border);
+        background: repeating-conic-gradient(
+            var(--qaf-color-primary) 0deg 90deg,
+            transparent 90deg 180deg
+        );
+    }
+}
+
+/* ==========================================================================
+   Checkboxes and Radio Buttons
+   ========================================================================== */
+
+.qaf-field-checkbox .qaf-field-input,
+.qaf-field-radio .qaf-field-input {
+    display: flex;
+    flex-direction: column;
+    gap: var(--qaf-spacing-sm);
+}
+
+.qaf-checkbox-option,
+.qaf-radio-option {
+    display: flex;
+    align-items: flex-start;
+    gap: var(--qaf-spacing-sm);
+    min-height: var(--qaf-min-touch-target);
+    padding: var(--qaf-spacing-xs) 0;
+}
+
+.qaf-form input[type="checkbox"],
+.qaf-form input[type="radio"] {
+    width: 20px;
+    height: 20px;
+    min-width: 20px;
+    margin: 2px 0 0 0;
+    cursor: pointer;
+    accent-color: var(--qaf-color-primary);
+}
+
+.qaf-checkbox-label,
+.qaf-radio-label {
+    cursor: pointer;
+    font-weight: normal;
+}
+
+/* Focus styles for checkbox/radio */
+.qaf-form input[type="checkbox"]:focus,
+.qaf-form input[type="radio"]:focus {
+    outline: var(--qaf-focus-ring-width) solid var(--qaf-color-border-focus);
+    outline-offset: var(--qaf-focus-ring-offset);
+}
+
+/* Fieldset grouping for radio/checkbox groups */
+.qaf-fieldset {
+    border: none;
+    padding: 0;
+    margin: 0;
+}
+
+.qaf-legend {
+    font-weight: 500;
+    margin-bottom: var(--qaf-spacing-sm);
+    padding: 0;
+}
+
+/* ==========================================================================
+   File Upload
+   ========================================================================== */
+
+.qaf-file-upload {
+    position: relative;
+}
+
+.qaf-file-input {
+    position: absolute;
+    left: -9999px;
+    opacity: 0;
+}
+
+.qaf-file-button {
+    display: inline-flex;
+    align-items: center;
+    gap: var(--qaf-spacing-sm);
+    padding: var(--qaf-spacing-sm) var(--qaf-spacing-md);
+    background-color: var(--qaf-color-bg-alt);
+    border: var(--qaf-border-width) dashed var(--qaf-color-border);
+    border-radius: var(--qaf-border-radius);
+    cursor: pointer;
+    min-height: var(--qaf-min-click-target);
+    transition: border-color var(--qaf-transition-duration) var(--qaf-transition-timing),
+                background-color var(--qaf-transition-duration) var(--qaf-transition-timing);
+}
+
+.qaf-file-button:hover {
+    background-color: var(--qaf-color-bg-hover);
+    border-color: var(--qaf-color-primary);
+}
+
+.qaf-file-input:focus + .qaf-file-button {
+    outline: var(--qaf-focus-ring-width) solid var(--qaf-color-border-focus);
+    outline-offset: var(--qaf-focus-ring-offset);
+}
+
+.qaf-file-list {
+    margin-top: var(--qaf-spacing-sm);
+    list-style: none;
+    padding: 0;
+}
+
+.qaf-file-item {
+    display: flex;
+    align-items: center;
+    gap: var(--qaf-spacing-sm);
+    padding: var(--qaf-spacing-xs) var(--qaf-spacing-sm);
+    background-color: var(--qaf-color-bg-alt);
+    border-radius: var(--qaf-border-radius);
+    margin-bottom: var(--qaf-spacing-xs);
+}
+
+.qaf-file-remove {
+    margin-left: auto;
+    background: none;
+    border: none;
+    color: var(--qaf-color-error);
+    cursor: pointer;
+    padding: var(--qaf-spacing-xs);
+    min-width: var(--qaf-min-touch-target);
+    min-height: var(--qaf-min-touch-target);
+}
+
+/* ==========================================================================
+   Error Messages
+   ========================================================================== */
+
+.qaf-field-error {
+    font-size: var(--qaf-font-size-sm);
+    color: var(--qaf-color-error);
+    margin-top: var(--qaf-spacing-xs);
+}
+
+.qaf-field-error:empty {
+    display: none;
+}
+
+/* Error icon for better visibility */
+.qaf-field-error::before {
+    content: "⚠ ";
+}
+
+/* ==========================================================================
+   Success Messages
+   ========================================================================== */
+
+.qaf-success-message {
+    padding: var(--qaf-spacing-md);
+    background-color: rgba(0, 136, 0, 0.1);
+    border: var(--qaf-border-width) solid var(--qaf-color-success);
+    border-radius: var(--qaf-border-radius);
+    color: var(--qaf-color-success);
+    margin-bottom: var(--qaf-spacing-lg);
+}
+
+/* ==========================================================================
+   Buttons
+   ========================================================================== */
+
+.qaf-button,
+.qaf-submit-button,
+.qaf-nav-prev,
+.qaf-nav-next {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    gap: var(--qaf-spacing-sm);
+    padding: var(--qaf-spacing-sm) var(--qaf-spacing-lg);
+    font-family: inherit;
+    font-size: var(--qaf-font-size-base);
+    font-weight: 500;
+    line-height: var(--qaf-line-height);
+    color: var(--qaf-color-text-inverse);
+    background-color: var(--qaf-color-primary);
+    border: var(--qaf-border-width) solid var(--qaf-color-primary);
+    border-radius: var(--qaf-border-radius);
+    cursor: pointer;
+    min-height: var(--qaf-min-click-target);
+    text-decoration: none;
+    transition: background-color var(--qaf-transition-duration) var(--qaf-transition-timing),
+                border-color var(--qaf-transition-duration) var(--qaf-transition-timing);
+}
+
+.qaf-button:hover,
+.qaf-submit-button:hover,
+.qaf-nav-next:hover {
+    background-color: var(--qaf-color-primary-hover);
+    border-color: var(--qaf-color-primary-hover);
+}
+
+.qaf-button:focus,
+.qaf-submit-button:focus,
+.qaf-nav-prev:focus,
+.qaf-nav-next:focus {
+    outline: var(--qaf-focus-ring-width) solid var(--qaf-color-border-focus);
+    outline-offset: var(--qaf-focus-ring-offset);
+}
+
+.qaf-button:disabled,
+.qaf-submit-button:disabled {
+    opacity: 0.6;
+    cursor: not-allowed;
+}
+
+/* Secondary button style */
+.qaf-nav-prev {
+    background-color: var(--qaf-color-bg);
+    color: var(--qaf-color-text);
+    border-color: var(--qaf-color-border);
+}
+
+.qaf-nav-prev:hover {
+    background-color: var(--qaf-color-bg-hover);
+    border-color: var(--qaf-color-text-muted);
+}
+
+/* ==========================================================================
+   Submit Button Loading State
+   ========================================================================== */
+
+.qaf-submit-loading {
+    display: none;
+}
+
+.qaf-form-submitting .qaf-submit-text {
+    display: none;
+}
+
+.qaf-form-submitting .qaf-submit-loading {
+    display: inline-flex;
+    align-items: center;
+    gap: var(--qaf-spacing-sm);
+}
+
+.qaf-spinner {
+    display: inline-block;
+    width: 18px;
+    height: 18px;
+    border: 2px solid currentColor;
+    border-right-color: transparent;
+    border-radius: 50%;
+    animation: qaf-spin 0.75s linear infinite;
+}
+
+@keyframes qaf-spin {
+    to {
+        transform: rotate(360deg);
+    }
+}
+
+@media (prefers-reduced-motion: reduce) {
+    .qaf-spinner {
+        animation: none;
+        border-right-color: currentColor;
+        opacity: 0.5;
+    }
+}
+
+/* ==========================================================================
+   Multi-Page Forms
+   ========================================================================== */
+
+.qaf-page {
+    display: block;
+}
+
+.qaf-page-hidden {
+    display: none;
+}
+
+.qaf-page-title {
+    font-size: 1.25rem;
+    font-weight: 600;
+    margin: 0 0 var(--qaf-spacing-sm) 0;
+}
+
+.qaf-page-description {
+    margin-bottom: var(--qaf-spacing-md);
+    color: var(--qaf-color-text-muted);
+}
+
+.qaf-page-nav {
+    display: flex;
+    justify-content: space-between;
+    gap: var(--qaf-spacing-md);
+    margin-top: var(--qaf-spacing-lg);
+    padding-top: var(--qaf-spacing-lg);
+    border-top: var(--qaf-border-width) solid var(--qaf-color-border);
+}
+
+/* ==========================================================================
+   Progress Indicator
+   ========================================================================== */
+
+.qaf-progress {
+    margin-bottom: var(--qaf-spacing-xl);
+}
+
+.qaf-progress-bar {
+    height: 8px;
+    background-color: var(--qaf-color-bg-alt);
+    border-radius: 4px;
+    overflow: hidden;
+    margin-bottom: var(--qaf-spacing-md);
+}
+
+.qaf-progress-fill {
+    height: 100%;
+    background-color: var(--qaf-color-primary);
+    transition: width var(--qaf-transition-duration) var(--qaf-transition-timing);
+}
+
+.qaf-progress-steps {
+    display: flex;
+    justify-content: space-between;
+    list-style: none;
+    padding: 0;
+    margin: 0;
+    counter-reset: step;
+}
+
+.qaf-progress-step {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    flex: 1;
+    position: relative;
+}
+
+.qaf-step-number {
+    width: 32px;
+    height: 32px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    background-color: var(--qaf-color-bg-alt);
+    border: 2px solid var(--qaf-color-border);
+    border-radius: 50%;
+    font-weight: 600;
+    margin-bottom: var(--qaf-spacing-xs);
+}
+
+.qaf-step-current .qaf-step-number {
+    background-color: var(--qaf-color-primary);
+    border-color: var(--qaf-color-primary);
+    color: var(--qaf-color-text-inverse);
+}
+
+.qaf-step-completed .qaf-step-number {
+    background-color: var(--qaf-color-success);
+    border-color: var(--qaf-color-success);
+    color: var(--qaf-color-text-inverse);
+}
+
+.qaf-step-title {
+    font-size: var(--qaf-font-size-sm);
+    text-align: center;
+}
+
+/* ==========================================================================
+   Sections (Fieldsets)
+   ========================================================================== */
+
+.qaf-section {
+    border: var(--qaf-border-width) solid var(--qaf-color-border);
+    border-radius: var(--qaf-border-radius);
+    padding: var(--qaf-spacing-lg);
+    margin-bottom: var(--qaf-spacing-lg);
+    background-color: var(--qaf-color-bg);
+}
+
+.qaf-section-title {
+    font-size: var(--qaf-font-size-lg);
+    font-weight: 600;
+    padding: 0 var(--qaf-spacing-sm);
+    margin-left: calc(var(--qaf-spacing-sm) * -1);
+}
+
+.qaf-section-description {
+    margin-bottom: var(--qaf-spacing-md);
+    color: var(--qaf-color-text-muted);
+}
+
+/* Collapsible Sections */
+.qaf-section-collapsible {
+    border: var(--qaf-border-width) solid var(--qaf-color-border);
+    border-radius: var(--qaf-border-radius);
+    margin-bottom: var(--qaf-spacing-lg);
+    background-color: var(--qaf-color-bg);
+    overflow: hidden;
+}
+
+.qaf-section-heading {
+    margin: 0;
+}
+
+.qaf-section-toggle {
+    display: flex;
+    align-items: center;
+    width: 100%;
+    padding: var(--qaf-spacing-md) var(--qaf-spacing-lg);
+    background: none;
+    border: none;
+    cursor: pointer;
+    font-size: var(--qaf-font-size-lg);
+    font-weight: 600;
+    text-align: left;
+    color: var(--qaf-color-text);
+    min-height: var(--qaf-min-touch-target);
+    transition: background-color var(--qaf-transition-duration) var(--qaf-transition-timing);
+}
+
+.qaf-section-toggle:hover {
+    background-color: var(--qaf-color-input-bg);
+}
+
+.qaf-section-toggle:focus {
+    outline: var(--qaf-focus-ring-width) solid var(--qaf-color-border-focus);
+    outline-offset: calc(var(--qaf-focus-ring-offset) * -1);
+}
+
+.qaf-section-toggle:focus-visible {
+    outline: var(--qaf-focus-ring-width) solid var(--qaf-color-border-focus);
+    outline-offset: calc(var(--qaf-focus-ring-offset) * -1);
+}
+
+.qaf-section-icon {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    width: 1.5em;
+    margin-right: var(--qaf-spacing-sm);
+    transition: transform var(--qaf-transition-duration) var(--qaf-transition-timing);
+}
+
+.qaf-section-toggle[aria-expanded="true"] .qaf-icon-chevron,
+.qaf-section-toggle[aria-expanded="true"] .qaf-icon-caret,
+.qaf-section-toggle[aria-expanded="true"] .qaf-icon-arrow {
+    transform: rotate(90deg);
+}
+
+.qaf-section-content {
+    padding: 0 var(--qaf-spacing-lg) var(--qaf-spacing-lg);
+}
+
+/* Animation: Smooth */
+.qaf-animation-smooth .qaf-section-content {
+    overflow: hidden;
+    transition: max-height 0.3s ease-in-out, padding 0.3s ease-in-out, opacity 0.3s ease-in-out;
+}
+
+.qaf-animation-smooth .qaf-section-content[hidden] {
+    max-height: 0;
+    padding-top: 0;
+    padding-bottom: 0;
+    opacity: 0;
+}
+
+/* Animation: Fade */
+.qaf-animation-fade .qaf-section-content {
+    transition: opacity 0.2s ease-in-out;
+}
+
+.qaf-animation-fade .qaf-section-content[hidden] {
+    opacity: 0;
+}
+
+/* Animation: Instant (no animation) */
+.qaf-animation-instant .qaf-section-content {
+    transition: none;
+}
+
+/* Respect reduced motion preference */
+@media (prefers-reduced-motion: reduce) {
+    .qaf-section-icon,
+    .qaf-section-content {
+        transition: none;
+    }
+}
+
+/* Section Break (non-collapsible) */
+.qaf-section-break {
+    margin: var(--qaf-spacing-xl) 0;
+}
+
+.qaf-section-break.qaf-section-divider {
+    border-top: var(--qaf-border-width) solid var(--qaf-color-border);
+    padding-top: var(--qaf-spacing-lg);
+}
+
+/* ==========================================================================
+   Composite Fields (Name, Address)
+   ========================================================================== */
+
+.qaf-composite-fields {
+    display: grid;
+    gap: var(--qaf-spacing-md);
+}
+
+.qaf-composite-row {
+    display: grid;
+    gap: var(--qaf-spacing-md);
+    grid-template-columns: repeat(auto-fit, minmax(150px, 1fr));
+}
+
+.qaf-subfield {
+    display: flex;
+    flex-direction: column;
+}
+
+.qaf-subfield-label {
+    font-size: var(--qaf-font-size-sm);
+    margin-bottom: var(--qaf-spacing-xs);
+}
+
+/* ==========================================================================
+   Rating Field
+   ========================================================================== */
+
+.qaf-rating {
+    display: flex;
+    gap: var(--qaf-spacing-xs);
+}
+
+.qaf-rating-star {
+    background: none;
+    border: none;
+    cursor: pointer;
+    font-size: 1.5rem;
+    padding: var(--qaf-spacing-xs);
+    color: var(--qaf-color-border);
+    transition: color var(--qaf-transition-duration) var(--qaf-transition-timing);
+    min-width: var(--qaf-min-touch-target);
+    min-height: var(--qaf-min-touch-target);
+}
+
+.qaf-rating-star:hover,
+.qaf-rating-star.qaf-rating-hover,
+.qaf-rating-star.qaf-rating-selected {
+    color: #f5c518;
+}
+
+.qaf-rating-star:focus {
+    outline: var(--qaf-focus-ring-width) solid var(--qaf-color-border-focus);
+    outline-offset: var(--qaf-focus-ring-offset);
+}
+
+/* ==========================================================================
+   Likert Scale
+   ========================================================================== */
+
+.qaf-likert {
+    width: 100%;
+    overflow-x: auto;
+}
+
+.qaf-likert-table {
+    width: 100%;
+    border-collapse: collapse;
+}
+
+.qaf-likert-table th,
+.qaf-likert-table td {
+    padding: var(--qaf-spacing-sm);
+    text-align: center;
+    border: var(--qaf-border-width) solid var(--qaf-color-border);
+}
+
+.qaf-likert-table th {
+    background-color: var(--qaf-color-bg-alt);
+    font-weight: 500;
+}
+
+.qaf-likert-row-label {
+    text-align: left !important;
+    font-weight: normal;
+}
+
+/* ==========================================================================
+   CAPTCHA
+   ========================================================================== */
+
+.qaf-captcha-wrapper {
+    margin-top: var(--qaf-spacing-lg);
+    margin-bottom: var(--qaf-spacing-lg);
+}
+
+/* ==========================================================================
+   Honeypot (Hidden from humans)
+   ========================================================================== */
+
+.qaf-hp {
+    position: absolute !important;
+    left: -9999px !important;
+    top: -9999px !important;
+    opacity: 0 !important;
+    pointer-events: none !important;
+}
+
+/* ==========================================================================
+   Announcer (Screen Reader Only)
+   ========================================================================== */
+
+.qaf-announcer {
+    position: absolute;
+    left: -9999px;
+    width: 1px;
+    height: 1px;
+    overflow: hidden;
+}
+
+/* ==========================================================================
+   Screen Reader Only Utility
+   ========================================================================== */
+
+.screen-reader-text {
+    position: absolute !important;
+    width: 1px !important;
+    height: 1px !important;
+    padding: 0 !important;
+    margin: -1px !important;
+    overflow: hidden !important;
+    clip: rect(0, 0, 0, 0) !important;
+    white-space: nowrap !important;
+    border: 0 !important;
+}
+
+/* ==========================================================================
+   Messages Container
+   ========================================================================== */
+
+.qaf-messages {
+    margin-top: var(--qaf-spacing-lg);
+}
+
+.qaf-messages:empty {
+    display: none;
+}
+
+.qaf-message {
+    padding: var(--qaf-spacing-md);
+    border-radius: var(--qaf-border-radius);
+    margin-bottom: var(--qaf-spacing-md);
+}
+
+.qaf-message-success {
+    background-color: rgba(0, 136, 0, 0.1);
+    border: var(--qaf-border-width) solid var(--qaf-color-success);
+    color: var(--qaf-color-success);
+}
+
+.qaf-message-error {
+    background-color: rgba(204, 0, 0, 0.1);
+    border: var(--qaf-border-width) solid var(--qaf-color-error);
+    color: var(--qaf-color-error);
+}
+
+/* ==========================================================================
+   Stripe Payment Field
+   ========================================================================== */
+
+.qaf-stripe-field {
+    padding: var(--qaf-spacing-md);
+    border: var(--qaf-border-width) solid var(--qaf-color-border);
+    border-radius: var(--qaf-border-radius);
+    background-color: var(--qaf-color-bg);
+}
+
+#qaf-stripe-card-element {
+    padding: var(--qaf-spacing-sm) 0;
+}
+
+#qaf-stripe-card-errors {
+    color: var(--qaf-color-error);
+    font-size: var(--qaf-font-size-sm);
+    margin-top: var(--qaf-spacing-sm);
+}
+
+#qaf-stripe-card-errors:empty {
+    display: none;
+}
+
+/* ==========================================================================
+   Responsive Adjustments
+   ========================================================================== */
+
+@media (max-width: 600px) {
+    .qaf-progress-steps {
+        flex-direction: column;
+        gap: var(--qaf-spacing-sm);
+    }
+    
+    .qaf-progress-step {
+        flex-direction: row;
+        justify-content: flex-start;
+        gap: var(--qaf-spacing-sm);
+    }
+    
+    .qaf-step-number {
+        margin-bottom: 0;
+    }
+    
+    .qaf-page-nav {
+        flex-direction: column;
+    }
+    
+    .qaf-page-nav button {
+        width: 100%;
+    }
+    
+    .qaf-composite-row {
+        grid-template-columns: 1fr;
+    }
+    
+    .qaf-likert-table {
+        font-size: var(--qaf-font-size-sm);
+    }
+    
+    .qaf-likert-table th,
+    .qaf-likert-table td {
+        padding: var(--qaf-spacing-xs);
+    }
+}
+
+/* ==========================================================================
+   Print Styles
+   ========================================================================== */
+
+@media print {
+    .qaf-form-wrapper {
+        color: #000;
+        background: #fff;
+    }
+    
+    .qaf-submit-wrapper,
+    .qaf-page-nav,
+    .qaf-captcha-wrapper {
+        display: none;
+    }
+    
+    .qaf-form input,
+    .qaf-form select,
+    .qaf-form textarea {
+        border: 1px solid #000;
+    }
+}

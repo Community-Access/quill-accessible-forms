@@ -2,23 +2,23 @@
 /**
  * Select Field Tests
  *
- * @package BAF
+ * @package QAF
  */
 
-class BAF_Field_Select_Test extends BAF_Unit_Test_Case {
+class QAF_Field_Select_Test extends QAF_Unit_Test_Case {
 
     /**
-     * @var BAF_Field_Select
+     * @var QAF_Field_Select
      */
     private $field;
 
     protected function setUp(): void {
         parent::setUp();
         
-        require_once BAF_PLUGIN_DIR . 'includes/core/class-baf-field.php';
-        require_once BAF_PLUGIN_DIR . 'includes/fields/class-baf-field-select.php';
+        require_once QAF_PLUGIN_DIR . 'includes/core/class-qaf-field.php';
+        require_once QAF_PLUGIN_DIR . 'includes/fields/class-qaf-field-select.php';
         
-        $this->field = new BAF_Field_Select( array(
+        $this->field = new QAF_Field_Select( array(
             'name'    => 'country',
             'label'   => 'Country',
             'options' => array(
@@ -49,7 +49,7 @@ class BAF_Field_Select_Test extends BAF_Unit_Test_Case {
     }
 
     public function test_empty_selection_required() {
-        $field = new BAF_Field_Select( array(
+        $field = new QAF_Field_Select( array(
             'name'     => 'country',
             'required' => true,
             'options'  => array(
@@ -67,7 +67,7 @@ class BAF_Field_Select_Test extends BAF_Unit_Test_Case {
     }
 
     public function test_placeholder_option() {
-        $field = new BAF_Field_Select( array(
+        $field = new QAF_Field_Select( array(
             'name'        => 'country',
             'placeholder' => 'Select a country...',
             'options'     => array(
@@ -81,7 +81,7 @@ class BAF_Field_Select_Test extends BAF_Unit_Test_Case {
     }
 
     public function test_optgroups() {
-        $field = new BAF_Field_Select( array(
+        $field = new QAF_Field_Select( array(
             'name'    => 'country',
             'options' => array(
                 array(
@@ -109,7 +109,7 @@ class BAF_Field_Select_Test extends BAF_Unit_Test_Case {
     }
 
     public function test_multiple_selection() {
-        $field = new BAF_Field_Select( array(
+        $field = new QAF_Field_Select( array(
             'name'     => 'countries',
             'multiple' => true,
             'options'  => array(
@@ -125,7 +125,7 @@ class BAF_Field_Select_Test extends BAF_Unit_Test_Case {
     }
 
     public function test_min_selections() {
-        $field = new BAF_Field_Select( array(
+        $field = new QAF_Field_Select( array(
             'name'          => 'countries',
             'multiple'      => true,
             'minSelections' => 2,
@@ -144,7 +144,7 @@ class BAF_Field_Select_Test extends BAF_Unit_Test_Case {
     }
 
     public function test_max_selections() {
-        $field = new BAF_Field_Select( array(
+        $field = new QAF_Field_Select( array(
             'name'          => 'countries',
             'multiple'      => true,
             'maxSelections' => 2,
@@ -160,7 +160,7 @@ class BAF_Field_Select_Test extends BAF_Unit_Test_Case {
     }
 
     public function test_searchable_attribute() {
-        $field = new BAF_Field_Select( array(
+        $field = new QAF_Field_Select( array(
             'name'       => 'country',
             'searchable' => true,
             'options'    => array(),
@@ -170,17 +170,17 @@ class BAF_Field_Select_Test extends BAF_Unit_Test_Case {
     }
 
     public function test_dynamic_options() {
-        $field = new BAF_Field_Select( array(
+        $field = new QAF_Field_Select( array(
             'name'           => 'user',
             'optionsSource'  => 'users',
-            'optionsEndpoint' => '/wp-json/baf/v1/options/users',
+            'optionsEndpoint' => '/wp-json/qaf/v1/options/users',
         ) );
         
         $this->assertTrue( $field->has_dynamic_options() );
     }
 
     public function test_default_value() {
-        $field = new BAF_Field_Select( array(
+        $field = new QAF_Field_Select( array(
             'name'    => 'country',
             'default' => 'us',
             'options' => array(

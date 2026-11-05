@@ -1,17 +1,17 @@
-# The BAF expression language
+# The QAF expression language
 
-One small language does four jobs in a BAF form:
+One small language does four jobs in a QAF form:
 
 - **conditions**: when a field, section, page, rule, confirmation or quiz outcome applies;
 - **calculations**: the value of a calculation, total or price field;
 - **quiz scoring**: outcomes such as `score >= 8`;
 - **smart defaults**: starting values such as `today() + 30` or `user("display_name")`.
 
-The form model stores every expression as **canonical text** (below). BFL writes
-the same text, and BAF and QUILL show it as a sentence: `#type is "business" or
+The form model stores every expression as **canonical text** (below). QAF form language writes
+the same text, and QAF and QUILL show it as a sentence: `#type is "business" or
 #type is "charity"` reads as "Type is Business or Type is Charity".
 
-The PHP implementation is `includes/model/class-baf-expression.php`. The cases
+The PHP implementation is `includes/model/class-qaf-expression.php`. The cases
 every implementation must agree on are in `tests/conformance/expressions/cases.json`.
 
 ## Values
@@ -26,7 +26,7 @@ every implementation must agree on are in `tests/conformance/expressions/cases.j
 | `["a", "b"]` | a list |
 | `score` | the quiz score: the total points of every scored field |
 | `today` | the same as `today()` |
-| a bare word such as `Email` | text. Older BFL allowed `if #pay is Email`; canonical text always quotes it |
+| a bare word such as `Email` | text. Older QAF form language allowed `if #pay is Email`; canonical text always quotes it |
 
 These words are reserved and are never read as bare text: and, or, not, is,
 contains, does, contain, starts, ends, with, empty, filled, before, after,
@@ -88,7 +88,7 @@ Any other name followed by `(` is an error.
 
 ## Canonical text
 
-The model stores the canonical spelling; BAF and QUILL both write it, so a form
+The model stores the canonical spelling; QAF and QUILL both write it, so a form
 written by one is byte for byte what the other writes.
 
 - Field references are `#id`. Text is in double quotes, JSON-escaped, with
@@ -171,8 +171,8 @@ An unanswered field is nothing (null).
 
 ## Other implementations
 
-BAF evaluates expressions in PHP (`includes/model/class-baf-expression.php`)
-and, on a published form, in JavaScript (`public/js/baf-expression.js`).
+QAF evaluates expressions in PHP (`includes/model/class-qaf-expression.php`)
+and, on a published form, in JavaScript (`public/js/qaf-expression.js`).
 QUILL evaluates them in Python. All three run the cases in
 `tests/conformance/expressions/`; `php-edges.json` holds the cases where
 another language's defaults differ from PHP's (text folding and ordering,

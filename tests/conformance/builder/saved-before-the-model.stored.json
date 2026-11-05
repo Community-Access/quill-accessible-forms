@@ -1,5 +1,5 @@
 {
-  "about": "A form as BAF's visual builder saved it before the form model: the baf_forms columns, with the builder's defaults, numbers as text, flat sections and rule-list conditions.",
+  "about": "A form as QAF's visual builder saved it before the form model: the qaf_forms columns, with the builder's defaults, numbers as text, flat sections and rule-list conditions.",
   "title": "Volunteer sign-up",
   "description": "",
   "config": {

@@ -2,23 +2,23 @@
 /**
  * Table View Tests
  *
- * @package BAF
+ * @package QAF
  */
 
-class BAF_View_Table_Test extends BAF_Unit_Test_Case {
+class QAF_View_Table_Test extends QAF_Unit_Test_Case {
 
     /**
-     * @var BAF_View_Table
+     * @var QAF_View_Table
      */
     private $view;
 
     protected function setUp(): void {
         parent::setUp();
         
-        require_once BAF_PLUGIN_DIR . 'includes/core/class-baf-view.php';
-        require_once BAF_PLUGIN_DIR . 'includes/views/class-baf-view-table.php';
+        require_once QAF_PLUGIN_DIR . 'includes/core/class-qaf-view.php';
+        require_once QAF_PLUGIN_DIR . 'includes/views/class-qaf-view-table.php';
         
-        $this->view = new BAF_View_Table( array(
+        $this->view = new QAF_View_Table( array(
             'id'      => 1,
             'form_id' => 1,
             'title'   => 'Entries Table',
@@ -42,7 +42,7 @@ class BAF_View_Table_Test extends BAF_Unit_Test_Case {
     }
 
     public function test_sortable_columns() {
-        $view = new BAF_View_Table( array(
+        $view = new QAF_View_Table( array(
             'id'      => 1,
             'form_id' => 1,
             'columns' => array(
@@ -57,7 +57,7 @@ class BAF_View_Table_Test extends BAF_Unit_Test_Case {
     }
 
     public function test_bulk_actions() {
-        $view = new BAF_View_Table( array(
+        $view = new QAF_View_Table( array(
             'id'           => 1,
             'form_id'      => 1,
             'bulk_actions' => array(
@@ -72,7 +72,7 @@ class BAF_View_Table_Test extends BAF_Unit_Test_Case {
     }
 
     public function test_row_actions() {
-        $view = new BAF_View_Table( array(
+        $view = new QAF_View_Table( array(
             'id'          => 1,
             'form_id'     => 1,
             'row_actions' => array(
@@ -86,7 +86,7 @@ class BAF_View_Table_Test extends BAF_Unit_Test_Case {
     }
 
     public function test_column_width() {
-        $view = new BAF_View_Table( array(
+        $view = new QAF_View_Table( array(
             'id'      => 1,
             'form_id' => 1,
             'columns' => array(
@@ -100,7 +100,7 @@ class BAF_View_Table_Test extends BAF_Unit_Test_Case {
     }
 
     public function test_sticky_header() {
-        $view = new BAF_View_Table( array(
+        $view = new QAF_View_Table( array(
             'id'            => 1,
             'form_id'       => 1,
             'sticky_header' => true,
@@ -110,7 +110,7 @@ class BAF_View_Table_Test extends BAF_Unit_Test_Case {
     }
 
     public function test_zebra_striping() {
-        $view = new BAF_View_Table( array(
+        $view = new QAF_View_Table( array(
             'id'      => 1,
             'form_id' => 1,
             'zebra'   => true,
@@ -120,7 +120,7 @@ class BAF_View_Table_Test extends BAF_Unit_Test_Case {
     }
 
     public function test_responsive_mode() {
-        $view = new BAF_View_Table( array(
+        $view = new QAF_View_Table( array(
             'id'         => 1,
             'form_id'    => 1,
             'responsive' => 'scroll',
@@ -130,7 +130,7 @@ class BAF_View_Table_Test extends BAF_Unit_Test_Case {
     }
 
     public function test_column_visibility() {
-        $view = new BAF_View_Table( array(
+        $view = new QAF_View_Table( array(
             'id'      => 1,
             'form_id' => 1,
             'columns' => array(
@@ -153,7 +153,7 @@ class BAF_View_Table_Test extends BAF_Unit_Test_Case {
     }
 
     public function test_caption() {
-        $view = new BAF_View_Table( array(
+        $view = new QAF_View_Table( array(
             'id'      => 1,
             'form_id' => 1,
             'caption' => 'Form entries table showing submitted data',
@@ -163,7 +163,7 @@ class BAF_View_Table_Test extends BAF_Unit_Test_Case {
     }
 
     public function test_column_alignment() {
-        $view = new BAF_View_Table( array(
+        $view = new QAF_View_Table( array(
             'id'      => 1,
             'form_id' => 1,
             'columns' => array(
@@ -178,7 +178,7 @@ class BAF_View_Table_Test extends BAF_Unit_Test_Case {
     }
 
     public function test_empty_state() {
-        $view = new BAF_View_Table( array(
+        $view = new QAF_View_Table( array(
             'id'            => 1,
             'form_id'       => 1,
             'empty_message' => 'No entries found.',
@@ -189,7 +189,7 @@ class BAF_View_Table_Test extends BAF_Unit_Test_Case {
     }
 
     public function test_loading_state() {
-        $view = new BAF_View_Table( array(
+        $view = new QAF_View_Table( array(
             'id'              => 1,
             'form_id'         => 1,
             'loading_message' => 'Loading entries...',
@@ -199,7 +199,7 @@ class BAF_View_Table_Test extends BAF_Unit_Test_Case {
     }
 
     public function test_inline_editing() {
-        $view = new BAF_View_Table( array(
+        $view = new QAF_View_Table( array(
             'id'             => 1,
             'form_id'        => 1,
             'inline_editing' => true,

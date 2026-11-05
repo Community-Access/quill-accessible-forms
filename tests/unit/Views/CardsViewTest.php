@@ -2,23 +2,23 @@
 /**
  * Cards View Tests
  *
- * @package BAF
+ * @package QAF
  */
 
-class BAF_View_Cards_Test extends BAF_Unit_Test_Case {
+class QAF_View_Cards_Test extends QAF_Unit_Test_Case {
 
     /**
-     * @var BAF_View_Cards
+     * @var QAF_View_Cards
      */
     private $view;
 
     protected function setUp(): void {
         parent::setUp();
         
-        require_once BAF_PLUGIN_DIR . 'includes/core/class-baf-view.php';
-        require_once BAF_PLUGIN_DIR . 'includes/views/class-baf-view-cards.php';
+        require_once QAF_PLUGIN_DIR . 'includes/core/class-qaf-view.php';
+        require_once QAF_PLUGIN_DIR . 'includes/views/class-qaf-view-cards.php';
         
-        $this->view = new BAF_View_Cards( array(
+        $this->view = new QAF_View_Cards( array(
             'id'      => 1,
             'form_id' => 1,
             'title'   => 'Entries Cards',
@@ -43,7 +43,7 @@ class BAF_View_Cards_Test extends BAF_Unit_Test_Case {
     }
 
     public function test_columns_per_row() {
-        $view = new BAF_View_Cards( array(
+        $view = new QAF_View_Cards( array(
             'id'              => 1,
             'form_id'         => 1,
             'columns_per_row' => 3,
@@ -53,7 +53,7 @@ class BAF_View_Cards_Test extends BAF_Unit_Test_Case {
     }
 
     public function test_card_size() {
-        $view = new BAF_View_Cards( array(
+        $view = new QAF_View_Cards( array(
             'id'        => 1,
             'form_id'   => 1,
             'card_size' => 'large',
@@ -63,7 +63,7 @@ class BAF_View_Cards_Test extends BAF_Unit_Test_Case {
     }
 
     public function test_image_aspect_ratio() {
-        $view = new BAF_View_Cards( array(
+        $view = new QAF_View_Cards( array(
             'id'          => 1,
             'form_id'     => 1,
             'image_ratio' => '16:9',
@@ -73,7 +73,7 @@ class BAF_View_Cards_Test extends BAF_Unit_Test_Case {
     }
 
     public function test_hover_effect() {
-        $view = new BAF_View_Cards( array(
+        $view = new QAF_View_Cards( array(
             'id'           => 1,
             'form_id'      => 1,
             'hover_effect' => 'lift',
@@ -83,7 +83,7 @@ class BAF_View_Cards_Test extends BAF_Unit_Test_Case {
     }
 
     public function test_card_actions() {
-        $view = new BAF_View_Cards( array(
+        $view = new QAF_View_Cards( array(
             'id'           => 1,
             'form_id'      => 1,
             'card_actions' => array(
@@ -97,7 +97,7 @@ class BAF_View_Cards_Test extends BAF_Unit_Test_Case {
     }
 
     public function test_show_badges() {
-        $view = new BAF_View_Cards( array(
+        $view = new QAF_View_Cards( array(
             'id'          => 1,
             'form_id'     => 1,
             'badge_field' => 'status',
@@ -114,7 +114,7 @@ class BAF_View_Cards_Test extends BAF_Unit_Test_Case {
     }
 
     public function test_masonry_layout() {
-        $view = new BAF_View_Cards( array(
+        $view = new QAF_View_Cards( array(
             'id'       => 1,
             'form_id'  => 1,
             'masonry'  => true,
@@ -124,7 +124,7 @@ class BAF_View_Cards_Test extends BAF_Unit_Test_Case {
     }
 
     public function test_card_click_action() {
-        $view = new BAF_View_Cards( array(
+        $view = new QAF_View_Cards( array(
             'id'          => 1,
             'form_id'     => 1,
             'click_action' => 'modal',
@@ -134,7 +134,7 @@ class BAF_View_Cards_Test extends BAF_Unit_Test_Case {
     }
 
     public function test_truncate_content() {
-        $view = new BAF_View_Cards( array(
+        $view = new QAF_View_Cards( array(
             'id'               => 1,
             'form_id'          => 1,
             'content_truncate' => 150,
@@ -144,7 +144,7 @@ class BAF_View_Cards_Test extends BAF_Unit_Test_Case {
     }
 
     public function test_responsive_columns() {
-        $view = new BAF_View_Cards( array(
+        $view = new QAF_View_Cards( array(
             'id'       => 1,
             'form_id'  => 1,
             'columns'  => array(
@@ -161,7 +161,7 @@ class BAF_View_Cards_Test extends BAF_Unit_Test_Case {
     }
 
     public function test_gap_size() {
-        $view = new BAF_View_Cards( array(
+        $view = new QAF_View_Cards( array(
             'id'      => 1,
             'form_id' => 1,
             'gap'     => '20px',
@@ -171,7 +171,7 @@ class BAF_View_Cards_Test extends BAF_Unit_Test_Case {
     }
 
     public function test_card_border_radius() {
-        $view = new BAF_View_Cards( array(
+        $view = new QAF_View_Cards( array(
             'id'            => 1,
             'form_id'       => 1,
             'border_radius' => '8px',
@@ -188,7 +188,7 @@ class BAF_View_Cards_Test extends BAF_Unit_Test_Case {
     }
 
     public function test_animation() {
-        $view = new BAF_View_Cards( array(
+        $view = new QAF_View_Cards( array(
             'id'                => 1,
             'form_id'           => 1,
             'animation'         => 'fade-up',
@@ -201,7 +201,7 @@ class BAF_View_Cards_Test extends BAF_Unit_Test_Case {
     }
 
     public function test_lazy_load_images() {
-        $view = new BAF_View_Cards( array(
+        $view = new QAF_View_Cards( array(
             'id'        => 1,
             'form_id'   => 1,
             'lazy_load' => true,
@@ -211,7 +211,7 @@ class BAF_View_Cards_Test extends BAF_Unit_Test_Case {
     }
 
     public function test_no_image_fallback() {
-        $view = new BAF_View_Cards( array(
+        $view = new QAF_View_Cards( array(
             'id'              => 1,
             'form_id'         => 1,
             'fallback_image'  => '/placeholder.png',

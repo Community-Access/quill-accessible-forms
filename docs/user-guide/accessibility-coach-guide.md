@@ -1,6 +1,6 @@
 # Accessibility Coach Guide
 
-The BAF Accessibility Coach provides real-time guidance to help you create forms that work for everyone, including users with disabilities.
+The QAF Accessibility Coach provides real-time guidance to help you create forms that work for everyone, including users with disabilities.
 
 ## Overview
 

@@ -1,19 +1,19 @@
-# BITS Accessible Forms (BAF) User Guide
+# QUILL Accessible Forms (QAF) User Guide
 
-Welcome to the BITS Accessible Forms (BAF) user documentation! BAF is an accessible WordPress form builder, built from the ground up for WCAG 2.2 AA compliance.
+Welcome to the QUILL Accessible Forms (QAF) user documentation! QAF is an accessible WordPress form builder, built from the ground up for WCAG 2.2 AA compliance.
 
 ## Complete User Guide
 
-**[Complete User Guide](complete-guide.md)** - The comprehensive, single-source documentation for BAF.
+**[Complete User Guide](complete-guide.md)** - The comprehensive, single-source documentation for QAF.
 
 This guide covers everything from installation to advanced features:
 
 - Getting Started & Installation
-- The Three Ways to Build Forms (Visual Builder, Structure Mode, BFL Code)
+- The Three Ways to Build Forms (Visual Builder, Structure Mode, QAF Form Language)
 - **Keyboard Navigation & Accessibility** - Complete keyboard shortcut reference
 - Field Types Reference + Field-by-field guide
 - **Predefined Choice Libraries (125+)** - Countries, states/provinces for 25+ countries, currencies, languages, demographics, and much more
-- BFL Language Guide (Beginner)
+- QAF Form Language Guide (Beginner)
 - Conditional Logic
 - Calculations & Formulas
 - Merge Tags
@@ -37,7 +37,7 @@ This guide covers everything from installation to advanced features:
 | [Field Type Conversion](field-type-conversion-guide.md) | Converting fields while preserving properties and conditional logic |
 | [Accessibility Coach](accessibility-coach-guide.md) | Real-time accessibility scoring and guidance |
 | [CSV Import](csv-import-guide.md) | Generate forms from CSV files with intelligent type detection |
-| [BFL Language Guide](bfl-language-guide.md) | Beginner-first BFL tutorial with recipes |
+| [QAF Form Language Guide](qaf-form-language-guide.md) | Beginner-first QAF form language tutorial with recipes |
 | [Field Types Guide](field-types-guide.md) | Field-by-field beginner walkthrough |
 
 ## Choice Libraries Reference
@@ -58,7 +58,7 @@ Includes:
 
 ## Accessibility First
 
-BAF treats keyboard navigation as a **first-class citizen**:
+QAF treats keyboard navigation as a **first-class citizen**:
 
 - **Structure Mode**: Industry-first keyboard-native tree view for form organization
 - **Complete keyboard shortcuts**: Every action has a keyboard equivalent
@@ -77,7 +77,7 @@ BAF treats keyboard navigation as a **first-class citizen**:
 | [Keyboard Shortcuts](complete-guide.md#keyboard-navigation--accessibility) | All keyboard shortcuts |
 | [Field Types](complete-guide.md#field-types-reference) | Overview + examples |
 | [Field Types Guide](field-types-guide.md) | Field-by-field beginner walkthrough (from real settings) |
-| [BFL Language Guide](bfl-language-guide.md) | Beginner-first BFL tutorial |
+| [QAF Form Language Guide](qaf-form-language-guide.md) | Beginner-first QAF form language tutorial |
 | [Calculations](complete-guide.md#calculations--formulas) | Formulas and pricing |
 | [REST API](complete-guide.md#rest-api) | API endpoints |
 
@@ -90,6 +90,6 @@ BAF treats keyboard navigation as a **first-class citizen**:
 
 ## Credits
 
-BAF is developed by BITS - Blind Information Technology Solutions.
+QUILL Accessible Forms is developed by Jeff Bishop.
 
 Licensed under the MIT License.

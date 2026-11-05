@@ -1,0 +1,555 @@
+/**
+ * QAF Field Type Converter Styles
+ *
+ * @package QAF
+ * @since 1.1.0
+ */
+
+/* ==========================================================================
+   Modal Styles
+   ========================================================================== */
+
+.qaf-modal {
+    position: fixed;
+    top: 0;
+    left: 0;
+    right: 0;
+    bottom: 0;
+    z-index: 100000;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    padding: 20px;
+}
+
+.qaf-modal[hidden] {
+    display: none;
+}
+
+.qaf-modal-overlay {
+    position: absolute;
+    top: 0;
+    left: 0;
+    right: 0;
+    bottom: 0;
+    background: rgba(0, 0, 0, 0.6);
+}
+
+.qaf-modal-content {
+    position: relative;
+    background: #fff;
+    border-radius: 8px;
+    box-shadow: 0 10px 40px rgba(0, 0, 0, 0.3);
+    max-width: 800px;
+    width: 100%;
+    max-height: 90vh;
+    display: flex;
+    flex-direction: column;
+    overflow: hidden;
+}
+
+.qaf-modal-header {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    padding: 16px 20px;
+    border-bottom: 1px solid #ddd;
+    background: #f6f7f7;
+}
+
+.qaf-modal-header h2 {
+    margin: 0;
+    font-size: 18px;
+    font-weight: 600;
+}
+
+.qaf-modal-close {
+    background: none;
+    border: none;
+    font-size: 24px;
+    cursor: pointer;
+    padding: 4px 8px;
+    color: #666;
+    border-radius: 4px;
+    transition: background 0.2s, color 0.2s;
+}
+
+.qaf-modal-close:hover,
+.qaf-modal-close:focus {
+    background: #e0e0e0;
+    color: #333;
+}
+
+.qaf-modal-body {
+    padding: 20px;
+    overflow-y: auto;
+    flex: 1;
+}
+
+.qaf-modal-footer {
+    display: flex;
+    justify-content: flex-end;
+    gap: 10px;
+    padding: 16px 20px;
+    border-top: 1px solid #ddd;
+    background: #f6f7f7;
+}
+
+/* ==========================================================================
+   Conversion Info
+   ========================================================================== */
+
+.qaf-conversion-info {
+    margin-bottom: 20px;
+    padding: 12px 16px;
+    background: #f0f6fc;
+    border-radius: 4px;
+    border-left: 4px solid #2271b1;
+}
+
+.qaf-conversion-current {
+    margin: 0;
+    font-size: 14px;
+}
+
+.qaf-conversion-current strong {
+    color: #2271b1;
+}
+
+/* ==========================================================================
+   Field Type Grid
+   ========================================================================== */
+
+.qaf-conversion-form fieldset {
+    border: none;
+    margin: 0;
+    padding: 0;
+}
+
+.qaf-conversion-form legend {
+    font-size: 14px;
+    font-weight: 600;
+    margin-bottom: 16px;
+    padding: 0;
+}
+
+.qaf-field-type-grid {
+    display: flex;
+    flex-direction: column;
+    gap: 20px;
+}
+
+.qaf-type-group {
+    border: 1px solid #ddd;
+    border-radius: 6px;
+    overflow: hidden;
+}
+
+.qaf-type-group-title {
+    margin: 0;
+    padding: 10px 14px;
+    font-size: 13px;
+    font-weight: 600;
+    background: #f6f7f7;
+    border-bottom: 1px solid #ddd;
+    color: #50575e;
+}
+
+.qaf-type-options {
+    display: grid;
+    grid-template-columns: repeat(auto-fill, minmax(140px, 1fr));
+    gap: 8px;
+    padding: 12px;
+}
+
+/* ==========================================================================
+   Type Option
+   ========================================================================== */
+
+.qaf-type-option {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    padding: 12px 8px;
+    border: 2px solid #ddd;
+    border-radius: 6px;
+    cursor: pointer;
+    transition: all 0.2s;
+    text-align: center;
+    position: relative;
+}
+
+.qaf-type-option:hover {
+    border-color: #2271b1;
+    background: #f0f6fc;
+}
+
+.qaf-type-option:focus-within {
+    outline: 2px solid #2271b1;
+    outline-offset: 2px;
+}
+
+.qaf-type-option.selected {
+    border-color: #2271b1;
+    background: #e7f3ff;
+}
+
+.qaf-type-option.disabled {
+    opacity: 0.5;
+    cursor: not-allowed;
+}
+
+.qaf-type-option.disabled:hover {
+    border-color: #ddd;
+    background: transparent;
+}
+
+/* Compatibility indicators */
+.qaf-type-option.compat-lossless .qaf-type-compat {
+    color: #00a32a;
+}
+
+.qaf-type-option.compat-lossy .qaf-type-compat {
+    color: #dba617;
+}
+
+.qaf-type-option.compat-incompatible .qaf-type-compat {
+    color: #d63638;
+}
+
+.qaf-type-icon {
+    font-size: 24px;
+    margin-bottom: 6px;
+}
+
+.qaf-type-name {
+    font-size: 12px;
+    font-weight: 500;
+    color: #3c434a;
+}
+
+.qaf-type-compat {
+    font-size: 11px;
+    margin-top: 4px;
+    min-height: 16px;
+}
+
+.qaf-type-compat .compat-icon {
+    font-size: 14px;
+}
+
+/* ==========================================================================
+   Compatibility Info Section
+   ========================================================================== */
+
+.qaf-conversion-compat-info {
+    margin-top: 20px;
+    padding: 16px;
+    background: #f6f7f7;
+    border-radius: 6px;
+    border: 1px solid #ddd;
+}
+
+.qaf-conversion-compat-info h4 {
+    margin: 0 0 12px;
+    font-size: 14px;
+    font-weight: 600;
+}
+
+.qaf-compat-details {
+    display: flex;
+    flex-direction: column;
+    gap: 12px;
+}
+
+.qaf-compat-status {
+    font-size: 13px;
+}
+
+.qaf-badge {
+    display: inline-block;
+    padding: 4px 10px;
+    border-radius: 4px;
+    font-size: 12px;
+    font-weight: 500;
+}
+
+.qaf-badge-success {
+    background: #e6f4ea;
+    color: #0f5132;
+}
+
+.qaf-badge-warning {
+    background: #fff3cd;
+    color: #856404;
+}
+
+.qaf-badge-error {
+    background: #f8d7da;
+    color: #721c24;
+}
+
+.qaf-compat-warnings .qaf-warning-list {
+    margin: 0;
+    padding-left: 20px;
+    font-size: 13px;
+    color: #856404;
+}
+
+/* ==========================================================================
+   Conversion Preview
+   ========================================================================== */
+
+.qaf-conversion-preview {
+    margin-top: 20px;
+    border: 1px solid #ddd;
+    border-radius: 6px;
+    overflow: hidden;
+}
+
+.qaf-conversion-preview h4 {
+    margin: 0;
+    padding: 10px 14px;
+    font-size: 13px;
+    font-weight: 600;
+    background: #f6f7f7;
+    border-bottom: 1px solid #ddd;
+}
+
+.qaf-preview-changes {
+    display: grid;
+    grid-template-columns: repeat(3, 1fr);
+    gap: 0;
+}
+
+.qaf-preview-preserved,
+.qaf-preview-lost,
+.qaf-preview-added {
+    padding: 12px;
+    border-right: 1px solid #ddd;
+}
+
+.qaf-preview-added {
+    border-right: none;
+}
+
+.qaf-preview-preserved h5,
+.qaf-preview-lost h5,
+.qaf-preview-added h5 {
+    margin: 0 0 8px;
+    font-size: 12px;
+    font-weight: 600;
+    color: #50575e;
+}
+
+.qaf-preview-preserved h5 {
+    color: #00a32a;
+}
+
+.qaf-preview-lost h5 {
+    color: #d63638;
+}
+
+.qaf-preview-added h5 {
+    color: #2271b1;
+}
+
+.qaf-preview-preserved ul,
+.qaf-preview-lost ul,
+.qaf-preview-added ul {
+    margin: 0;
+    padding: 0;
+    list-style: none;
+    font-size: 12px;
+}
+
+.qaf-preview-preserved li,
+.qaf-preview-lost li,
+.qaf-preview-added li {
+    padding: 2px 0;
+    color: #3c434a;
+}
+
+/* ==========================================================================
+   Conditional Logic Warnings
+   ========================================================================== */
+
+.qaf-conditional-warnings {
+    margin-top: 20px;
+    padding: 16px;
+    background: #fff3cd;
+    border-radius: 6px;
+    border: 1px solid #ffc107;
+}
+
+.qaf-conditional-warnings h4 {
+    margin: 0 0 12px;
+    font-size: 14px;
+    font-weight: 600;
+    color: #856404;
+}
+
+.qaf-conditional-message {
+    margin: 0 0 12px;
+    font-size: 13px;
+    color: #856404;
+}
+
+.qaf-conditional-affected {
+    margin: 0 0 12px;
+    padding-left: 20px;
+    font-size: 13px;
+}
+
+.qaf-conditional-affected li {
+    margin-bottom: 6px;
+}
+
+.qaf-auto-fixable {
+    display: inline-block;
+    padding: 2px 6px;
+    font-size: 10px;
+    background: #00a32a;
+    color: #fff;
+    border-radius: 3px;
+    vertical-align: middle;
+}
+
+.qaf-conditional-options {
+    padding-top: 12px;
+    border-top: 1px solid #ffc107;
+}
+
+.qaf-conditional-options label {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    font-size: 13px;
+    cursor: pointer;
+}
+
+/* ==========================================================================
+   Convert Button in Tree
+   ========================================================================== */
+
+.qaf-tree-action.qaf-tree-convert {
+    color: #2271b1;
+}
+
+.qaf-tree-action.qaf-tree-convert:hover,
+.qaf-tree-action.qaf-tree-convert:focus {
+    background: #e7f3ff;
+}
+
+/* ==========================================================================
+   Notices
+   ========================================================================== */
+
+.qaf-notice {
+    position: fixed;
+    bottom: 20px;
+    right: 20px;
+    max-width: 400px;
+    padding: 12px 40px 12px 16px;
+    border-radius: 6px;
+    box-shadow: 0 4px 12px rgba(0, 0, 0, 0.2);
+    z-index: 100001;
+    animation: qaf-slide-in 0.3s ease-out;
+}
+
+@keyframes qaf-slide-in {
+    from {
+        transform: translateX(100%);
+        opacity: 0;
+    }
+    to {
+        transform: translateX(0);
+        opacity: 1;
+    }
+}
+
+.qaf-notice p {
+    margin: 0;
+    font-size: 14px;
+}
+
+.qaf-notice-success {
+    background: #e6f4ea;
+    border: 1px solid #00a32a;
+    color: #0f5132;
+}
+
+.qaf-notice-error {
+    background: #f8d7da;
+    border: 1px solid #d63638;
+    color: #721c24;
+}
+
+.qaf-notice-dismiss {
+    position: absolute;
+    top: 8px;
+    right: 8px;
+    background: none;
+    border: none;
+    font-size: 18px;
+    cursor: pointer;
+    color: inherit;
+    opacity: 0.7;
+}
+
+.qaf-notice-dismiss:hover {
+    opacity: 1;
+}
+
+/* ==========================================================================
+   Screen Reader Only
+   ========================================================================== */
+
+.sr-only,
+.qaf-sr-only {
+    position: absolute;
+    width: 1px;
+    height: 1px;
+    padding: 0;
+    margin: -1px;
+    overflow: hidden;
+    clip: rect(0, 0, 0, 0);
+    white-space: nowrap;
+    border: 0;
+}
+
+/* ==========================================================================
+   Responsive
+   ========================================================================== */
+
+@media (max-width: 768px) {
+    .qaf-modal-content {
+        max-height: 95vh;
+        margin: 10px;
+    }
+
+    .qaf-type-options {
+        grid-template-columns: repeat(2, 1fr);
+    }
+
+    .qaf-preview-changes {
+        grid-template-columns: 1fr;
+    }
+
+    .qaf-preview-preserved,
+    .qaf-preview-lost,
+    .qaf-preview-added {
+        border-right: none;
+        border-bottom: 1px solid #ddd;
+    }
+
+    .qaf-preview-added {
+        border-bottom: none;
+    }
+}
+
+@media (max-width: 480px) {
+    .qaf-type-options {
+        grid-template-columns: 1fr;
+    }
+}

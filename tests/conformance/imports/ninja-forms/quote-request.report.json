@@ -5,12 +5,12 @@
         {
             "level": "dropped",
             "where": "field pin (Map pin)",
-            "message": "BAF has no field like Ninja Forms' \"unknown_addon_field\"."
+            "message": "QAF has no field like Ninja Forms' \"unknown_addon_field\"."
         },
         {
             "level": "changed",
             "where": "calculation estimate",
-            "message": "Ninja Forms calculations are calculation fields in BAF."
+            "message": "Ninja Forms calculations are calculation fields in QAF."
         },
         {
             "level": "dropped",
@@ -20,12 +20,12 @@
         {
             "level": "dropped",
             "where": "conditional logic",
-            "message": "Ninja Forms' Conditional Logic add-on stores its conditions in its own format, which this import does not read; add the conditions in BAF."
+            "message": "Ninja Forms' Conditional Logic add-on stores its conditions in its own format, which this import does not read; add the conditions in QAF."
         },
         {
             "level": "dropped",
             "where": "action Mailchimp",
-            "message": "BAF has no action like Ninja Forms' \"mailchimp\"."
+            "message": "QAF has no action like Ninja Forms' \"mailchimp\"."
         }
     ]
 }

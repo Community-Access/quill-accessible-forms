@@ -1,6 +1,6 @@
-# BITS Accessible Forms (BAF)
+# QUILL Accessible Forms (QAF)
 
-A fully accessible WordPress form builder plugin with WCAG 2.2 AA compliance, custom form language (BFL), and advanced entry views.
+A fully accessible WordPress form builder plugin with WCAG 2.2 AA compliance, custom form language (the QAF form language), and advanced entry views.
 
 ![WordPress Version](https://img.shields.io/badge/WordPress-6.0%2B-blue)
 ![PHP Version](https://img.shields.io/badge/PHP-8.0%2B-purple)
@@ -20,7 +20,7 @@ A fully accessible WordPress form builder plugin with WCAG 2.2 AA compliance, cu
 ### Visual Form Builder
 
 - **Drag & Drop Interface** - Build forms visually with 30+ field types
-- **Structure Mode** - Code-first approach using BITS Form Language (BFL)
+- **Structure Mode** - Code-first approach using the QAF form language
 - **Real-time Preview** - See changes as you make them
 - **Conditional Logic** - Show/hide fields based on user input
 - **Multi-page Forms** - Create wizard-style multi-step forms
@@ -47,7 +47,7 @@ A fully accessible WordPress form builder plugin with WCAG 2.2 AA compliance, cu
 | Color | Section | |
 | Range | Page Break | |
 
-### BITS Form Language (BFL)
+### The QAF form language
 
 Define forms as code with our custom domain-specific language.
 
@@ -100,12 +100,12 @@ email "Email"
 @unique_message "This email is already registered"
 ```
 
-Address autocomplete requires a Google Maps API key configured under **BAF Forms → Settings → Integrations**.
+Address autocomplete requires a Google Maps API key configured under **QAF Forms → Settings → Integrations**.
 
 
 ### Choice Libraries
 
-Use predefined choice lists instead of typing options manually. BAF includes **125+ built-in libraries** with full cascading support:
+Use predefined choice lists instead of typing options manually. QAF includes **125+ built-in libraries** with full cascading support:
 
 ```bfl
 select country {
@@ -285,8 +285,8 @@ Libraries automatically cascade when related:
 **Register Custom Libraries:**
 
 ```php
-add_action('baf_register_choice_libraries', function() {
-    BAF_Choice_Libraries::register('departments', array(
+add_action('qaf_register_choice_libraries', function() {
+    QAF_Choice_Libraries::register('departments', array(
         'label' => 'Departments',
         'choices' => array(
             array('value' => 'sales', 'label' => 'Sales'),
@@ -330,7 +330,7 @@ Display form submissions in multiple layouts:
 ### From WordPress Admin
 
 1. Go to **Plugins → Add New**
-2. Search for "BITS Accessible Forms"
+2. Search for "QUILL Accessible Forms"
 3. Click **Install Now** and then **Activate**
 
 ### Manual Installation
@@ -356,7 +356,7 @@ composer require bits/accessible-forms
 
 ### Create Your First Form
 
-1. Go to **BAF Forms → Add New**
+1. Go to **QAF Forms → Add New**
 2. Enter a form title
 3. Drag fields from the sidebar to build your form
 4. Configure field settings in the right panel
@@ -367,18 +367,18 @@ composer require bits/accessible-forms
 Use the shortcode:
 
 ```text
-[baf_form id="1"]
+[qaf_form id="1"]
 ```
 
 Or the Gutenberg block:
 
 1. Add a new block
-2. Search for "BAF Form"
+2. Search for "QAF Form"
 3. Select your form from the dropdown
 
 ### View Entries
 
-1. Go to **BAF Forms → Entries**
+1. Go to **QAF Forms → Entries**
 2. Select a form to view its submissions
 3. Use filters and search to find specific entries
 4. Export data as CSV, Excel, or PDF
@@ -387,7 +387,7 @@ Or the Gutenberg block:
 
 ### Global Settings
 
-Navigate to **BAF Forms → Settings** to configure:
+Navigate to **QAF Forms → Settings** to configure:
 
 - Default form styles
 - Email notifications
@@ -412,16 +412,16 @@ Each form has its own settings panel:
 
 | Endpoint | Method | Description |
 | -------- | ------ | ----------- |
-| `/baf/v1/forms` | GET | List all forms |
-| `/baf/v1/forms/{id}` | GET | Get single form |
-| `/baf/v1/forms` | POST | Create form |
-| `/baf/v1/forms/{id}` | PUT | Update form |
-| `/baf/v1/forms/{id}` | DELETE | Delete form |
-| `/baf/v1/entries` | GET | List entries |
-| `/baf/v1/entries/{id}` | GET | Get single entry |
-| `/baf/v1/entries` | POST | Create entry |
-| `/baf/v1/bfl/parse` | POST | Parse BFL code |
-| `/baf/v1/bfl/validate` | POST | Validate BFL code |
+| `/qaf/v1/forms` | GET | List all forms |
+| `/qaf/v1/forms/{id}` | GET | Get single form |
+| `/qaf/v1/forms` | POST | Create form |
+| `/qaf/v1/forms/{id}` | PUT | Update form |
+| `/qaf/v1/forms/{id}` | DELETE | Delete form |
+| `/qaf/v1/entries` | GET | List entries |
+| `/qaf/v1/entries/{id}` | GET | Get single entry |
+| `/qaf/v1/entries` | POST | Create entry |
+| `/qaf/v1/bfl/parse` | POST | Parse QAF form language code |
+| `/qaf/v1/bfl/validate` | POST | Validate QAF form language code |
 
 ### PHP Hooks
 
@@ -429,38 +429,38 @@ Each form has its own settings panel:
 
 ```php
 // Before form renders
-do_action( 'baf_before_form_render', $form_id, $form );
+do_action( 'qaf_before_form_render', $form_id, $form );
 
 // After successful submission
-do_action( 'baf_after_submission', $entry_id, $form_id, $data );
+do_action( 'qaf_after_submission', $entry_id, $form_id, $data );
 
 // Before entry is saved
-do_action( 'baf_before_entry_save', $data, $form_id );
+do_action( 'qaf_before_entry_save', $data, $form_id );
 
 // After payment processed
-do_action( 'baf_payment_completed', $entry_id, $payment_data );
+do_action( 'qaf_payment_completed', $entry_id, $payment_data );
 ```
 
 #### Filters
 
 ```php
 // Modify form HTML
-add_filter( 'baf_form_html', function( $html, $form_id ) {
+add_filter( 'qaf_form_html', function( $html, $form_id ) {
     return $html;
 }, 10, 2 );
 
 // Validate submission data
-add_filter( 'baf_validate_submission', function( $errors, $data, $form_id ) {
+add_filter( 'qaf_validate_submission', function( $errors, $data, $form_id ) {
     return $errors;
 }, 10, 3 );
 
 // Modify field options dynamically
-add_filter( 'baf_field_options', function( $options, $field, $form_id ) {
+add_filter( 'qaf_field_options', function( $options, $field, $form_id ) {
     return $options;
 }, 10, 3 );
 
 // Customize email content
-add_filter( 'baf_notification_email', function( $email, $entry, $form ) {
+add_filter( 'qaf_notification_email', function( $email, $entry, $form ) {
     return $email;
 }, 10, 3 );
 ```
@@ -469,7 +469,7 @@ add_filter( 'baf_notification_email', function( $email, $entry, $form ) {
 
 ```javascript
 // Get form instance
-const form = BAF.getForm('form-id');
+const form = QAF.getForm('form-id');
 
 // Submit programmatically
 form.submit();
@@ -540,11 +540,11 @@ WordPress.org and used alongside GPL themes and plugins.
 
 - **Documentation**: [docs.bitsforms.com](https://docs.bitsforms.com)
 - **GitHub Issues**: [Report bugs](https://github.com/bits/accessible-forms/issues)
-- **Community Forum**: [WordPress.org Support](https://wordpress.org/support/plugin/bits-accessible-forms)
+- **Community Forum**: [WordPress.org Support](https://wordpress.org/support/plugin/quill-accessible-forms)
 
 ## Credits
 
-Built with ❤️ by the BITS team.
+Built by Jeff Bishop.
 
 Special thanks to:
 

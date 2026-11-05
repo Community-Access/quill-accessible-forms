@@ -30,12 +30,12 @@
         {
             "level": "dropped",
             "where": "[recaptcha]",
-            "message": "BAF has no field like Contact Form 7's [recaptcha]."
+            "message": "QAF has no field like Contact Form 7's [recaptcha]."
         },
         {
             "level": "dropped",
             "where": "message mail_sent_ng",
-            "message": "BAF writes its own messages; \"There was an error trying to send your message.\" was not kept."
+            "message": "QAF writes its own messages; \"There was an error trying to send your message.\" was not kept."
         },
         {
             "level": "note",

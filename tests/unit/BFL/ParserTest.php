@@ -5,24 +5,24 @@
  * Comprehensive tests for the BFL parser including all block syntaxes,
  * modifiers, and nested structures.
  *
- * @package BAF
+ * @package QAF
  */
 
-class BAF_BFL_Parser_Test extends BAF_Unit_Test_Case {
+class QAF_BFL_Parser_Test extends QAF_Unit_Test_Case {
 
     /**
      * Parser instance
      *
-     * @var BAF_BFL_Parser
+     * @var QAF_BFL_Parser
      */
     private $parser;
 
     protected function setUp(): void {
         parent::setUp();
         
-        require_once BAF_PLUGIN_DIR . 'includes/bfl/class-baf-bfl-lexer.php';
-        require_once BAF_PLUGIN_DIR . 'includes/bfl/class-baf-bfl-parser.php';
-        $this->parser = new BAF_BFL_Parser();
+        require_once QAF_PLUGIN_DIR . 'includes/bfl/class-qaf-bfl-lexer.php';
+        require_once QAF_PLUGIN_DIR . 'includes/bfl/class-qaf-bfl-parser.php';
+        $this->parser = new QAF_BFL_Parser();
     }
 
     // =========================================================================

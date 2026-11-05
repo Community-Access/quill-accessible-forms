@@ -2,7 +2,7 @@
 /**
  * WordPress mock functions for unit tests
  *
- * @package BAF
+ * @package QAF
  */
 
 if ( ! defined( 'ABSPATH' ) ) {

@@ -2,23 +2,23 @@
 /**
  * Email Field Tests
  *
- * @package BAF
+ * @package QAF
  */
 
-class BAF_Field_Email_Test extends BAF_Unit_Test_Case {
+class QAF_Field_Email_Test extends QAF_Unit_Test_Case {
 
     /**
-     * @var BAF_Field_Email
+     * @var QAF_Field_Email
      */
     private $field;
 
     protected function setUp(): void {
         parent::setUp();
         
-        require_once BAF_PLUGIN_DIR . 'includes/core/class-baf-field.php';
-        require_once BAF_PLUGIN_DIR . 'includes/fields/class-baf-field-email.php';
+        require_once QAF_PLUGIN_DIR . 'includes/core/class-qaf-field.php';
+        require_once QAF_PLUGIN_DIR . 'includes/fields/class-qaf-field-email.php';
         
-        $this->field = new BAF_Field_Email( array(
+        $this->field = new QAF_Field_Email( array(
             'name'  => 'email',
             'label' => 'Email Address',
         ) );
@@ -54,7 +54,7 @@ class BAF_Field_Email_Test extends BAF_Unit_Test_Case {
     }
 
     public function test_empty_email_required() {
-        $field = new BAF_Field_Email( array(
+        $field = new QAF_Field_Email( array(
             'name'     => 'email',
             'required' => true,
         ) );
@@ -79,7 +79,7 @@ class BAF_Field_Email_Test extends BAF_Unit_Test_Case {
     }
 
     public function test_domain_restriction() {
-        $field = new BAF_Field_Email( array(
+        $field = new QAF_Field_Email( array(
             'name'            => 'email',
             'allowed_domains' => array( 'company.com', 'company.org' ),
         ) );
@@ -92,7 +92,7 @@ class BAF_Field_Email_Test extends BAF_Unit_Test_Case {
     }
 
     public function test_blocked_domains() {
-        $field = new BAF_Field_Email( array(
+        $field = new QAF_Field_Email( array(
             'name'            => 'email',
             'blocked_domains' => array( 'spam.com', 'fake.com' ),
         ) );
@@ -105,7 +105,7 @@ class BAF_Field_Email_Test extends BAF_Unit_Test_Case {
     }
 
     public function test_confirmation_field() {
-        $field = new BAF_Field_Email( array(
+        $field = new QAF_Field_Email( array(
             'name'         => 'email',
             'confirmation' => true,
         ) );
