@@ -29,7 +29,7 @@ class BAF_Captcha {
      * Constructor
      */
     public function __construct() {
-        $this->settings = new BAF_Settings();
+        $this->settings = BAF_Settings::get_instance();
     }
 
     /**
