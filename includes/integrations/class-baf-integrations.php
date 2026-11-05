@@ -54,7 +54,7 @@ class BAF_Integrations {
      * Constructor
      */
     private function __construct() {
-        $this->settings = new BAF_Settings();
+        $this->settings = BAF_Settings::get_instance();
         $this->register_default_integrations();
     }
 
@@ -274,7 +274,7 @@ abstract class BAF_Integration_Abstract {
      * Constructor
      */
     public function __construct() {
-        $this->settings = new BAF_Settings();
+        $this->settings = BAF_Settings::get_instance();
     }
 
     /**

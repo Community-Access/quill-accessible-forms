@@ -244,7 +244,6 @@ final class BITS_Accessible_Forms {
         // Import/Export
         require_once BAF_PLUGIN_DIR . 'includes/import/class-baf-csv-importer.php';
         require_once BAF_PLUGIN_DIR . 'includes/import/class-baf-form-importer.php';
-        require_once BAF_PLUGIN_DIR . 'includes/import/class-baf-auto-form-generator.php';
         require_once BAF_PLUGIN_DIR . 'includes/import/class-baf-csv-form-builder.php';
         
         // Field type converter (needed for both admin and public)
@@ -348,7 +347,7 @@ final class BITS_Accessible_Forms {
      * Register public hooks
      */
     private function define_public_hooks() {
-        $this->public = new BAF_Public();
+        $this->public = new BAF_Public( 'bits-accessible-forms', BAF_VERSION );
 
         // Enqueue public assets
         $this->loader->add_action( 'wp_enqueue_scripts', $this->public, 'enqueue_styles' );
