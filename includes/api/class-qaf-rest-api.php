@@ -560,7 +560,7 @@ class QAF_REST_API {
         $bfl = $request->get_param( 'bfl' );
 
         if ( empty( $bfl ) ) {
-            return new WP_Error( 'rest_invalid_bfl', __( 'BFL source is required.', 'quill-accessible-forms' ), array( 'status' => 400 ) );
+            return new WP_Error( 'rest_invalid_bfl', __( 'The QAF form language text is required.', 'quill-accessible-forms' ), array( 'status' => 400 ) );
         }
 
         return rest_ensure_response( QAF_BFL_Service::parse( $bfl ) );
@@ -576,7 +576,7 @@ class QAF_REST_API {
         $bfl = $request->get_param( 'bfl' );
 
         if ( empty( $bfl ) ) {
-            return new WP_Error( 'rest_invalid_bfl', __( 'BFL source is required.', 'quill-accessible-forms' ), array( 'status' => 400 ) );
+            return new WP_Error( 'rest_invalid_bfl', __( 'The QAF form language text is required.', 'quill-accessible-forms' ), array( 'status' => 400 ) );
         }
 
         return rest_ensure_response( QAF_BFL_Service::validate( $bfl ) );
@@ -592,7 +592,7 @@ class QAF_REST_API {
         $bfl = $request->get_param( 'bfl' );
 
         if ( empty( $bfl ) ) {
-            return new WP_Error( 'rest_invalid_bfl', __( 'BFL source is required.', 'quill-accessible-forms' ), array( 'status' => 400 ) );
+            return new WP_Error( 'rest_invalid_bfl', __( 'The QAF form language text is required.', 'quill-accessible-forms' ), array( 'status' => 400 ) );
         }
 
         return rest_ensure_response( QAF_BFL_Service::format( $bfl ) );

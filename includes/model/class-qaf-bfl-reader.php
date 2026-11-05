@@ -678,7 +678,7 @@ class QAF_BFL_Reader {
                 $this->warn( $t['line'], 'A block opened on line ' . $line . ' was not closed.' );
                 return 'explicit';
             }
-            $this->warn( $t['line'], 'Skipped "' . $t['v'] . '", which BFL does not expect here.' );
+            $this->warn( $t['line'], 'Skipped "' . $t['v'] . '", which the QAF form language does not expect here.' );
             $this->next();
         }
         return $explicit ? 'explicit' : ( $took ? 'indent' : 'none' );
@@ -716,7 +716,7 @@ class QAF_BFL_Reader {
                 if ( $v['t'] === 'NUMBER' && $v['line'] === $t['line'] ) {
                     $this->next();
                     if ( $v['v'] > self::VERSION ) {
-                        $this->error( $t['line'], 'This form is written in BFL ' . $v['v'] . '; this copy of QAF reads BFL ' . self::VERSION . ' and older. Update QAF to open it.' );
+                        $this->error( $t['line'], 'This form is written in version ' . $v['v'] . ' of the QAF form language; this copy of QAF reads version ' . self::VERSION . ' and older. Update QAF to open it.' );
                         return;
                     }
                 } else {
@@ -742,7 +742,7 @@ class QAF_BFL_Reader {
                 continue;
             }
             if ( $t['t'] !== 'WORD' ) {
-                $this->warn( $t['line'], 'Skipped "' . $t['v'] . '", which BFL does not expect here.' );
+                $this->warn( $t['line'], 'Skipped "' . $t['v'] . '", which the QAF form language does not expect here.' );
                 $this->next();
                 continue;
             }
@@ -782,7 +782,7 @@ class QAF_BFL_Reader {
                 }
                 continue;
             }
-            $this->warn( $t['line'], 'Skipped "' . $t['v'] . '", which BFL does not know.' );
+            $this->warn( $t['line'], 'Skipped "' . $t['v'] . '", which the QAF form language does not know.' );
             $this->next();
         }
     }

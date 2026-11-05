@@ -152,7 +152,7 @@ require_once QAF_PLUGIN_DIR . 'admin/partials/model-screens.php';
             <?php echo $structure_mode->render( $form->config, $form_id, $form->get_model() ); ?>
         </div>
         
-        <!-- BFL Code Mode Panel -->
+        <!-- QAF form language panel -->
         <div id="qaf-bfl-panel" role="tabpanel" aria-labelledby="qaf-mode-bfl" class="qaf-mode-panel" hidden>
             <div class="qaf-bfl-editor-container">
                 <div class="qaf-bfl-toolbar">

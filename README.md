@@ -346,6 +346,32 @@ Display form submissions in multiple layouts:
 composer require bits/accessible-forms
 ```
 
+### Upgrading from BITS Accessible Forms
+
+QUILL Accessible Forms is BITS Accessible Forms under its new name. Install
+it and activate it; the old plugin can then be deleted. Your forms and
+entries come across by migration, once, when QUILL Accessible Forms is
+activated (or the first time an administrator opens the dashboard after
+the files are replaced):
+
+- each `baf_` table is renamed to `qaf_`, with its rows;
+- each `baf_` option is copied to `qaf_`, unless the new one already
+  exists. The old options are left in place for one release, so going back
+  to the old plugin still works;
+- `baf_` and `_baf_` user, post and comment meta keys become `qaf_` and
+  `_qaf_`;
+- every role that had a `baf_` capability is given the `qaf_` one.
+
+Nothing has to be rewritten by hand. For one release:
+
+- pages that use `[baf_form]` or `[baf_entries]` keep working;
+- the REST namespace `baf/v1` answers GET requests as `qaf/v1` does, and
+  says that it is deprecated;
+- form files saved as `.bfl` still open. New ones are saved as `.qaf`.
+
+Uploaded files stay where they are. What the migration did is kept in the
+`qaf_migrated_from_baf` option.
+
 ## Requirements
 
 - WordPress 6.0 or higher

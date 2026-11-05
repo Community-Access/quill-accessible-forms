@@ -1,7 +1,7 @@
 {
-  "about": "BFL that must be reported as an error, with the line the error is on. 'contains' is a hint; only the line is binding for other readers.",
+  "about": "QAF form language text that must be reported as an error, with the line the error is on. 'contains' is a hint; only the line is binding for other readers.",
   "cases": [
-    { "name": "a newer BFL version", "line": 1, "contains": "BFL 2", "qaf": "bfl 2\nform \"Later\"\ntext #a \"A\"\n" },
+    { "name": "a newer form language version", "line": 1, "contains": "version 2", "qaf": "bfl 2\nform \"Later\"\ntext #a \"A\"\n" },
     { "name": "a version line without a number", "line": 1, "contains": "version number", "qaf": "bfl\nform \"X\"\n" },
     { "name": "a condition that does not parse", "line": 3, "contains": "not valid", "qaf": "form \"X\"\ntext #a \"A\"\n  @when #b is\n" },
     { "name": "an if block whose condition does not parse", "line": 2, "contains": "not valid", "qaf": "form \"X\"\nif #a is one of \"b\"\n  text #c \"C\"\n" },
