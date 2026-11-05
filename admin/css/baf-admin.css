@@ -1036,3 +1036,56 @@
         animation: none !important;
     }
 }
+
+/* ==========================================================================
+   Visual mode canvas: pages, sections and columns, drawn from the model
+   ========================================================================== */
+
+.baf-canvas-page {
+    margin: var(--baf-spacing-lg) 0 var(--baf-spacing-sm);
+    font-size: 15px;
+}
+
+.baf-card-list {
+    display: flex;
+    flex-direction: column;
+    gap: var(--baf-spacing-sm);
+}
+
+.baf-group-card {
+    border: 1px dashed var(--baf-border);
+    border-radius: var(--baf-radius-md);
+    padding: var(--baf-spacing-sm) var(--baf-spacing-md);
+}
+
+.baf-group-label {
+    font-weight: 600;
+    margin: 0 0 var(--baf-spacing-sm);
+}
+
+.baf-column-label {
+    font-weight: 500;
+    margin-top: var(--baf-spacing-sm);
+}
+
+.baf-group-empty {
+    font-style: italic;
+    margin: 0;
+}
+
+.baf-save-status {
+    margin: 0 0 0 var(--baf-spacing-sm);
+    align-self: center;
+}
+
+.baf-picker-types ul {
+    margin: 0 0 var(--baf-spacing-md);
+}
+
+.baf-picker-types [hidden] {
+    display: none;
+}
+
+.baf-btn[aria-disabled="true"] {
+    opacity: 0.6;
+}

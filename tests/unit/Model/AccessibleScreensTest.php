@@ -163,10 +163,126 @@ class BAF_Accessible_Screens_Test extends BAF_Unit_Test_Case {
         $this->assertStringContainsString( 'id="baf-live-region"', $page, 'the announcer has a region to speak in' );
         $this->assertStringNotContainsString( 'bafL10n', $js, 'the page localises bafBuilder' );
         $this->assertStringNotContainsString( 'window.confirm(', $js );
-        $this->assertStringContainsString( 'document.activeElement === $activeCard[0]', $js, 'Enter and Delete act only on the card itself, so its buttons answer Enter' );
+        $this->assertStringContainsString( 'const onCard = target === $activeCard[0];', $js, 'Enter and Delete act only on the card itself, so its buttons answer Enter' );
+        $this->assertStringContainsString( 'self.canvas.contains(target)', $js, 'F adds a question only while focus is in the canvas (WCAG 2.1.4)' );
         $this->assertStringNotContainsString( "prop('disabled', index", $js, 'a move button at either end keeps focus' );
         $this->assertStringNotContainsString( 'disabled aria-disabled', $card );
         $this->assertStringContainsString( "'(prefers-reduced-motion: reduce)'", $js );
+        $this->assertStringContainsString( 'draggable="true"', $card, 'a card can be dragged; the move buttons are the keyboard way' );
+        $this->assertStringNotContainsString( 'baf-field-action-convert"', $card, 'the card\'s Convert is not the old Structure-mode converter\'s' );
+        $this->assertStringNotContainsString( 'data-action="convert"', $card );
+        $this->assertStringContainsString( 'render_canvas(', $page, 'the canvas is drawn from the model' );
+        $this->assertStringNotContainsString( 'get_fields()', $page, 'not from the flat builder config, which has no nested questions' );
+    }
+
+    // ------------------------------------------------------------------
+    // The canvas and the type dialogs
+    // ------------------------------------------------------------------
+
+    /** A DOM of some HTML, and libxml's complaints that are not about HTML5 tags. */
+    private static function dom( $html ) {
+        $doc = new DOMDocument();
+        libxml_use_internal_errors( true );
+        $doc->loadHTML( '<!DOCTYPE html><html><head><meta charset="utf-8"></head><body>' . $html . '</body></html>' );
+        $errors = array_values( array_filter( libxml_get_errors(), function ( $e ) { return ! preg_match( '/Tag (section|main|search) invalid/', $e->message ); } ) );
+        libxml_clear_errors();
+        return array( $doc, new DOMXPath( $doc ), $errors );
+    }
+
+    private static function categories() {
+        return array(
+            'basic'   => array( 'label' => 'Basic', 'icon' => '*', 'fields' => array( array( 'type' => 'text', 'label' => 'Text Field', 'icon' => '*' ), array( 'type' => 'email', 'label' => 'Email', 'icon' => '*' ) ) ),
+            'choices' => array( 'label' => 'Choices', 'icon' => '*', 'fields' => array( array( 'type' => 'select', 'label' => 'Dropdown', 'icon' => '*' ) ) ),
+        );
+    }
+
+    public function test_type_dialogs_are_modal_labelled_and_list_every_type() {
+        require_once BAF_PLUGIN_DIR . 'admin/partials/model-screens.php';
+        ob_start();
+        baf_builder_type_dialogs( self::categories() );
+        list( $doc, $xp, $errors ) = self::dom( ob_get_clean() );
+        $this->assertSame( array(), array_map( function ( $e ) { return trim( $e->message ); }, $errors ) );
+        foreach ( array( 'baf-picker-dialog', 'baf-convert-dialog' ) as $id ) {
+            $box = $xp->query( '//*[@id="' . $id . '"]//*[@role="dialog"]' )->item( 0 );
+            $this->assertNotNull( $box, $id );
+            $this->assertSame( 'true', $box->getAttribute( 'aria-modal' ) );
+            $this->assertSame( 'h2', $doc->getElementById( $box->getAttribute( 'aria-labelledby' ) )->nodeName );
+            $this->assertSame( 1, $xp->query( './/*[@data-baf-cancel]', $box )->length );
+        }
+        foreach ( $xp->query( '//input | //select' ) as $c ) {
+            $this->assertSame( 1, $xp->query( '//label[@for="' . $c->getAttribute( 'id' ) . '"]' )->length, 'no label for ' . $c->getAttribute( 'id' ) );
+        }
+        foreach ( array( 'aria-describedby', 'aria-labelledby', 'aria-controls' ) as $attr ) {
+            foreach ( $xp->query( '//*[@' . $attr . ']' ) as $e ) {
+                foreach ( preg_split( '/\s+/', $e->getAttribute( $attr ) ) as $ref ) {
+                    $this->assertNotNull( $doc->getElementById( $ref ), $attr . ' names ' . $ref );
+                }
+            }
+        }
+        // The picker: a heading per category and a real button per type.
+        $this->assertSame( array( 'Basic', 'Choices' ), array_map( function ( $h ) { return $h->textContent; }, iterator_to_array( $xp->query( '//*[@id="baf-picker-types"]//h3' ) ) ) );
+        $this->assertSame( array( 'text', 'email', 'select' ), array_map( function ( $b ) { return $b->getAttribute( 'data-field-type' ); }, iterator_to_array( $xp->query( '//button[contains(@class,"baf-picker-type")]' ) ) ) );
+        $this->assertSame( 'polite', $doc->getElementById( 'baf-picker-count' )->getAttribute( 'aria-live' ) );
+        // Convert: one option per type, grouped, after a "Choose" prompt; the preview is said.
+        $this->assertSame( array( '', 'text', 'email', 'select' ), array_map( function ( $o ) { return $o->getAttribute( 'value' ); }, iterator_to_array( $xp->query( '//select[@id="baf-convert-type"]//option' ) ) ) );
+        $this->assertSame( 2, $xp->query( '//select[@id="baf-convert-type"]/optgroup' )->length );
+        $this->assertSame( 'polite', $doc->getElementById( 'baf-convert-preview' )->getAttribute( 'aria-live' ) );
+        $this->assertSame( '-1', $doc->getElementById( 'baf-convert-dialog-summary' )->getAttribute( 'tabindex' ) );
+    }
+
+    public function test_the_canvas_gives_every_question_a_card_in_its_own_list() {
+        require_once BAF_PLUGIN_DIR . 'includes/model/class-baf-form-model.php';
+        require_once BAF_PLUGIN_DIR . 'includes/model/class-baf-field-scoring-panel.php';
+        require_once BAF_PLUGIN_DIR . 'includes/model/class-baf-builder-field-ops.php';
+        require_once BAF_PLUGIN_DIR . 'includes/accessibility/class-baf-aria-generator.php';
+        require_once BAF_PLUGIN_DIR . 'admin/class-baf-form-builder.php';
+        if ( ! class_exists( 'BAF_Field_Registry' ) ) {
+            eval( 'class BAF_Field_Registry { public static function get_instance() { return new self(); } public function get_field_type( $t ) { return array( "label" => ucfirst( $t ), "icon" => "*" ); } }' );
+        }
+        $m = json_decode( file_get_contents( BAF_PLUGIN_DIR . 'tests/conformance/models/valid/logic-and-layout.json' ), true );
+        $builder = new BAF_Form_Builder();
+        list( $doc, $xp, $errors ) = self::dom( '<div id="baf-canvas-title">T</div><div id="baf-canvas-dropzone">' . $builder->render_canvas( $m, 3 ) . '</div>' );
+        $this->assertSame( array(), array_map( function ( $e ) { return trim( $e->message ); }, $errors ) );
+
+        // A card for every question the canvas tree reaches, in order.
+        $want = array();
+        $walk = function ( $nodes ) use ( &$walk, &$want ) {
+            foreach ( $nodes as $n ) {
+                if ( $n['kind'] === 'field' ) {
+                    $want[] = $n['item']['id'];
+                } elseif ( $n['kind'] === 'section' ) {
+                    $walk( $n['items'] );
+                } else {
+                    foreach ( $n['columns'] as $c ) {
+                        $walk( $c );
+                    }
+                }
+            }
+        };
+        foreach ( BAF_Builder_Field_Ops::canvas_tree( $m ) as $page ) {
+            $walk( $page['items'] );
+        }
+        $cards = array_map( function ( $c ) { return $c->getAttribute( 'data-field-id' ); }, iterator_to_array( $xp->query( '//div[contains(concat(" ",normalize-space(@class)," ")," baf-field-card ")]' ) ) );
+        $this->assertSame( $want, $cards );
+        $this->assertGreaterThan( 0, $xp->query( '//*[contains(@class,"baf-group-card")]//div[contains(concat(" ",normalize-space(@class)," ")," baf-field-card ")]' )->length, 'a nested question has its card inside its group' );
+
+        // Every list is labelled; every card is a list item of one; pages have headings.
+        foreach ( $xp->query( '//*[@role="list"]' ) as $list ) {
+            $this->assertNotNull( $doc->getElementById( $list->getAttribute( 'aria-labelledby' ) ), 'a list without its label' );
+        }
+        foreach ( $xp->query( '//*[@role="listitem"]' ) as $li ) {
+            $this->assertSame( 'list', $li->parentNode->getAttribute( 'role' ) );
+        }
+        $this->assertSame( count( $m['pages'] ), $xp->query( '//h3[contains(@class,"baf-canvas-page")]' )->length );
+        // Move buttons count their own list: a card first in its section says position 1.
+        $nested = $xp->query( '//*[contains(@class,"baf-group-card")]//div[contains(concat(" ",normalize-space(@class)," ")," baf-field-card ")]' )->item( 0 );
+        $up     = $xp->query( './/button[contains(@class,"baf-field-move-up")]', $nested )->item( 0 );
+        $this->assertSame( 'true', $up->getAttribute( 'aria-disabled' ) );
+        $this->assertNull( $up->attributes->getNamedItem( 'disabled' ) );
+
+        // No questions: the canvas says so, with how to add one.
+        $empty = $builder->render_canvas( BAF_Builder_Field_Ops::new_model( '' ), 0 );
+        $this->assertStringContainsString( 'No questions yet', $empty );
     }
 
     public function test_every_card_action_has_a_handler_and_every_string_is_localised() {

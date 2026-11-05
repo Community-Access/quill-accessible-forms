@@ -90,6 +90,7 @@ require_once BAF_PLUGIN_DIR . 'admin/partials/model-screens.php';
             <button type="button" class="baf-btn baf-btn-primary" id="baf-publish-btn">
                 <?php esc_html_e( 'Publish', 'bits-accessible-forms' ); ?>
             </button>
+            <p id="baf-save-status" class="baf-save-status" role="status" aria-live="polite" aria-atomic="true"><?php echo esc_html( $form_id ? ( $form->status === 'active' ? __( 'Published.', 'bits-accessible-forms' ) : __( 'Draft.', 'bits-accessible-forms' ) ) : '' ); ?></p>
         </div>
     </header>
 
@@ -109,41 +110,23 @@ require_once BAF_PLUGIN_DIR . 'admin/partials/model-screens.php';
                             <?php echo esc_html( $form->title ?: __( 'Form Canvas', 'bits-accessible-forms' ) ); ?>
                         </h2>
                         <p id="baf-canvas-instructions" class="baf-canvas-instructions">
-                            <?php esc_html_e( 'Drag fields from the palette or click to add. Use move buttons for keyboard reordering.', 'bits-accessible-forms' ); ?>
+                            <?php esc_html_e( 'Each question is a card, inside its section or column. Every change is saved as it is made. Use the move buttons, or Control with the up and down arrows, to reorder; a question moves among its neighbours, and between pages in Structure mode.', 'bits-accessible-forms' ); ?>
                         </p>
                     </div>
-                    
-                    <div class="baf-canvas-dropzone" 
+
+                    <!-- The cards, drawn from the form model (BAF_Form_Builder::render_canvas). -->
+                    <div class="baf-canvas-dropzone"
                          id="baf-canvas-dropzone"
-                         role="list"
-                         aria-labelledby="baf-canvas-title"
-                         aria-describedby="baf-canvas-instructions"
-                         data-empty-text="<?php esc_attr_e( 'No fields yet. Add a field from the palette to get started.', 'bits-accessible-forms' ); ?>">
-                        
-                        <?php
-                        $fields = $form->get_fields();
-                        $total = count( $fields );
-                        
-                        if ( empty( $fields ) ) :
-                        ?>
-                            <div class="baf-canvas-empty" role="status">
-                                <p><?php esc_html_e( 'No fields yet. Add a field from the palette to get started.', 'bits-accessible-forms' ); ?></p>
-                                <p class="baf-canvas-hint"><?php esc_html_e( 'Tip: Press F to quickly add a field, or drag from the palette.', 'bits-accessible-forms' ); ?></p>
-                            </div>
-                        <?php else : 
-                            foreach ( $fields as $index => $field ) :
-                                echo $form_builder->render_field_card( $field, $index + 1, $total, $form_id );
-                            endforeach;
-                        endif;
-                        ?>
+                         aria-describedby="baf-canvas-instructions">
+                        <?php echo $form_builder->render_canvas( $form_id ? $form->get_model() : BAF_Builder_Field_Ops::new_model( '' ), $form_id ); ?>
                     </div>
-                    
-                    <!-- Add Field Button (keyboard accessible) -->
+
+                    <!-- Add Field Button (keyboard accessible); F does the same while focus is in the canvas. -->
                     <div class="baf-canvas-footer">
-                        <button type="button" class="baf-btn baf-btn-dashed baf-add-field-btn" id="baf-add-field-btn">
+                        <button type="button" class="baf-btn baf-btn-dashed baf-add-field-btn" id="baf-add-field-btn" aria-haspopup="dialog" aria-keyshortcuts="F">
                             <span aria-hidden="true">+</span>
                             <?php esc_html_e( 'Add Field', 'bits-accessible-forms' ); ?>
-                            <span class="baf-shortcut-hint">(F)</span>
+                            <span class="baf-shortcut-hint" aria-hidden="true">(F)</span>
                         </button>
                     </div>
                 </section>
@@ -208,35 +191,8 @@ require_once BAF_PLUGIN_DIR . 'admin/partials/model-screens.php';
 
 <?php baf_model_screen_dialogs(); ?>
 
-<!-- Field Picker Modal (for Add Field button) -->
-<div id="baf-field-picker-modal" 
-     class="baf-modal" 
-     role="dialog" 
-     aria-labelledby="baf-field-picker-title" 
-     aria-modal="true" 
-     hidden>
-    <div class="baf-modal-backdrop"></div>
-    <div class="baf-modal-content" data-baf-focus-trap="true">
-        <div class="baf-modal-header">
-            <h2 id="baf-field-picker-title"><?php esc_html_e( 'Add Field', 'bits-accessible-forms' ); ?></h2>
-            <button type="button" class="baf-modal-close" aria-label="<?php esc_attr_e( 'Close', 'bits-accessible-forms' ); ?>">
-                <span aria-hidden="true">×</span>
-            </button>
-        </div>
-        <div class="baf-modal-body">
-            <div class="baf-field-picker-search">
-                <label for="baf-field-picker-search" class="baf-sr-only"><?php esc_html_e( 'Search fields', 'bits-accessible-forms' ); ?></label>
-                <input type="search" 
-                       id="baf-field-picker-search" 
-                       placeholder="<?php esc_attr_e( 'Search fields...', 'bits-accessible-forms' ); ?>"
-                       aria-controls="baf-field-picker-list">
-            </div>
-            <div id="baf-field-picker-list" class="baf-field-picker-list" role="listbox" tabindex="0">
-                <!-- Populated by JavaScript -->
-            </div>
-        </div>
-    </div>
-</div>
+<!-- Add Field (F) and Convert Type: modal dialogs, drawn from the field registry. -->
+<?php baf_builder_type_dialogs( BAF_Field_Registry::get_instance()->get_for_builder() ); ?>
 
 <!-- Confirm Delete Dialog -->
 <div id="baf-confirm-dialog" 

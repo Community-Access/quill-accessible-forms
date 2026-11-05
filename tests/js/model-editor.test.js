@@ -226,6 +226,16 @@ test('field settings: a label is needed, other keys are free', function () {
     assert.deepStrictEqual(C.checkFieldSettings({ help: '' }), [], 'a label not sent is not checked');
 });
 
+test('Find a type: word starts, any order, or the type key', function () {
+    assert.strictEqual(C.typeMatches('', 'Dropdown', 'select'), true);
+    assert.strictEqual(C.typeMatches('drop', 'Dropdown', 'select'), true);
+    assert.strictEqual(C.typeMatches('sel', 'Dropdown', 'select'), true, 'the type key counts');
+    assert.strictEqual(C.typeMatches('phone num', 'Phone Number', 'phone'), true);
+    assert.strictEqual(C.typeMatches('number phone', 'Phone Number', 'phone'), true);
+    assert.strictEqual(C.typeMatches('email', 'Phone Number', 'phone'), false);
+    assert.strictEqual(C.typeMatches('  RADIO ', 'Radio Buttons', 'radio'), true);
+});
+
 test('card order: the same IDs in the same order, numbers and strings alike', function () {
     assert.strictEqual(C.sameOrder(['a', 'b'], ['a', 'b']), true);
     assert.strictEqual(C.sameOrder(['a', 'b'], ['b', 'a']), false);

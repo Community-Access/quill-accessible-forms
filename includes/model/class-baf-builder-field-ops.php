@@ -299,6 +299,218 @@ class BAF_Builder_Field_Ops {
     }
 
     /**
+     * The model of a form that has just been made: a title and one empty page.
+     *
+     * @param string $title Title.
+     * @return array Model.
+     */
+    public static function new_model( $title ) {
+        $title = trim( (string) $title );
+        return array(
+            'version' => 1,
+            'title'   => $title !== '' ? $title : __( 'Untitled Form', 'bits-accessible-forms' ),
+            'pages'   => array( array( 'id' => 'page_1', 'items' => array() ) ),
+        );
+    }
+
+    /**
+     * Set the form's title; an empty one is not stored.
+     *
+     * @param array  $model Model.
+     * @param string $title Title.
+     * @return array Model.
+     */
+    public static function set_title( $model, $title ) {
+        $title = trim( (string) $title );
+        if ( $title !== '' ) {
+            $model['title'] = $title;
+        }
+        return $model;
+    }
+
+    /**
+     * Change a question's type, keeping what the new type can hold and
+     * giving it what the schema needs. Says, in words, what changed.
+     *
+     * @param array  $model Model.
+     * @param string $id    Question ID.
+     * @param string $type  New type.
+     * @return array|WP_Error|null array( model, changes ), an error when the
+     *                             change would lose questions, or null when
+     *                             there is no such question.
+     */
+    public static function convert( $model, $id, $type ) {
+        $at = &self::locate( $model, $id );
+        if ( $at === null ) {
+            return null;
+        }
+        $field   = &$at[0][ $at[1] ];
+        $from    = $field['type'] ?? '';
+        $changes = array();
+        if ( $from === $type ) {
+            return array( $model, array() );
+        }
+        if ( in_array( $from, array( 'section', 'columns' ), true ) ) {
+            return self::refusal( __( 'A section or columns cannot become a question.', 'bits-accessible-forms' ) );
+        }
+        if ( ! empty( $field['items'] ) && $type !== 'repeater' ) {
+            return self::refusal( __( 'This repeating group holds questions of its own, which would be lost. Move them out of it first.', 'bits-accessible-forms' ) );
+        }
+        $field['type'] = $type;
+        $had_choices   = isset( $field['choices'] ) || isset( $field['choice_library'] ) || isset( $field['cascade'] );
+        if ( in_array( $type, self::CHOICE_TYPES, true ) ) {
+            if ( ! $had_choices ) {
+                $field['choices'] = self::new_field( 'x', 'radio', '' )['choices'];
+                $changes[]        = __( 'It was given two choices to start with, Option 1 and Option 2.', 'bits-accessible-forms' );
+            }
+        } elseif ( $had_choices ) {
+            $n = isset( $field['choices'] ) ? count( $field['choices'] ) : 0;
+            unset( $field['choices'], $field['choice_library'], $field['cascade'] );
+            $changes[] = $n
+                ? sprintf( _n( 'Its %d choice was removed.', 'Its %d choices were removed.', $n, 'bits-accessible-forms' ), $n )
+                : __( 'Its choice library was removed.', 'bits-accessible-forms' );
+        }
+        if ( $type === 'quiz' && empty( $field['scoring'] ) ) {
+            $field['scoring'] = array( 'points' => 1 );
+            $changes[]        = __( 'It scores 1 point when answered correctly; set the correct answer under Scoring.', 'bits-accessible-forms' );
+        } elseif ( isset( $field['scoring'] ) && ! BAF_Field_Scoring_Panel::is_scored_type( $type ) ) {
+            unset( $field['scoring'] );
+            $changes[] = __( 'Its scoring was removed, since this type is not scored.', 'bits-accessible-forms' );
+        } elseif ( isset( $field['scoring']['correct'] ) && in_array( $type, self::CHOICE_TYPES, true ) !== in_array( $from, self::CHOICE_TYPES, true ) ) {
+            unset( $field['scoring']['correct'] );
+            $changes[] = __( 'Its correct answers were removed; set them again under Scoring.', 'bits-accessible-forms' );
+        }
+        if ( $type === 'calculation' && ! isset( $field['calculation'] ) ) {
+            $field['calculation'] = '0';
+            $changes[]            = __( 'It calculates 0 until you give it a calculation.', 'bits-accessible-forms' );
+        } elseif ( $type !== 'calculation' && $from === 'calculation' && isset( $field['calculation'] ) ) {
+            unset( $field['calculation'] );
+            $changes[] = __( 'Its calculation was removed.', 'bits-accessible-forms' );
+        }
+        if ( in_array( $type, array( 'matrix', 'likert' ), true ) ) {
+            $need = self::new_field( 'x', $type, '' )['props'];
+            foreach ( $need as $k => $v ) {
+                if ( ! isset( $field['props'][ $k ] ) ) {
+                    $field['props'][ $k ] = $v;
+                    $changes[]            = $k === 'rows' ? __( 'It was given one row to start with.', 'bits-accessible-forms' ) : __( 'It was given one column to start with.', 'bits-accessible-forms' );
+                }
+            }
+        }
+        if ( isset( $field['placeholder'] ) && ! in_array( $type, self::PLACEHOLDER_TYPES, true ) ) {
+            $changes[] = __( 'Its placeholder is kept, though this type does not show one.', 'bits-accessible-forms' );
+        }
+        // Its answers change kind (choices to typed, or back): say which conditions read it.
+        if ( in_array( $type, self::CHOICE_TYPES, true ) !== in_array( $from, self::CHOICE_TYPES, true ) ) {
+            $n = count( self::expressions_naming( $model, $id ) );
+            if ( $n ) {
+                $changes[] = sprintf( _n( '%d condition or calculation reads its answer; check it still makes sense.', '%d conditions or calculations read its answer; check they still make sense.', $n, 'bits-accessible-forms' ), $n );
+            }
+        }
+        return array( $model, $changes );
+    }
+
+    /**
+     * Every expression in the model that names a question: conditions,
+     * calculations, smart defaults, rules and quiz outcomes.
+     *
+     * @param array  $model Model.
+     * @param string $id    Question ID.
+     * @return array Expression texts.
+     */
+    public static function expressions_naming( $model, $id ) {
+        $texts = array();
+        foreach ( $model['pages'] ?? array() as $page ) {
+            if ( isset( $page['when'] ) ) {
+                $texts[] = $page['when'];
+            }
+        }
+        foreach ( BAF_Form_Model::items( $model ) as $e ) {
+            foreach ( array( 'when', 'calculation', 'smart_default' ) as $k ) {
+                if ( isset( $e['item'][ $k ] ) ) {
+                    $texts[] = $e['item'][ $k ];
+                }
+            }
+        }
+        foreach ( $model['rules'] ?? array() as $rule ) {
+            $texts[] = $rule['when'] ?? '';
+            if ( isset( $rule['value'] ) ) {
+                $texts[] = $rule['value'];
+            }
+        }
+        foreach ( $model['scoring']['outcomes'] ?? array() as $o ) {
+            $texts[] = $o['when'] ?? '';
+        }
+        $out = array();
+        foreach ( $texts as $text ) {
+            try {
+                if ( in_array( $id, BAF_Expression::refs( BAF_Expression::parse( (string) $text ) ), true ) ) {
+                    $out[] = $text;
+                }
+            } catch ( Exception $ex ) {
+                continue; // An expression that does not read is validate()'s to report.
+            }
+        }
+        return $out;
+    }
+
+    /**
+     * An error to send back (a WP_Error when WordPress is loaded).
+     *
+     * @param string $message Message.
+     * @return WP_Error|array
+     */
+    private static function refusal( $message ) {
+        return class_exists( 'WP_Error' ) ? new WP_Error( 'baf_convert_refused', $message ) : array( 'error' => $message );
+    }
+
+    /**
+     * Whether convert() refused, and why.
+     *
+     * @param mixed $result convert()'s result.
+     * @return string|null The reason, or null.
+     */
+    public static function refused( $result ) {
+        if ( class_exists( 'WP_Error' ) && $result instanceof WP_Error ) {
+            return $result->get_error_message();
+        }
+        return is_array( $result ) && isset( $result['error'] ) ? $result['error'] : null;
+    }
+
+    /**
+     * The canvas's tree: pages, and in each the questions, sections and
+     * columns in order, so every question, however deep, gets a card.
+     *
+     * @param array $model Model.
+     * @return array Pages: array( id, title, items ), each item array( kind:
+     *               field|section|columns, item, items | columns ).
+     */
+    public static function canvas_tree( $model ) {
+        $walk = function ( $items ) use ( &$walk ) {
+            $out = array();
+            foreach ( (array) $items as $item ) {
+                $type = $item['type'] ?? '';
+                if ( $type === 'section' ) {
+                    $out[] = array( 'kind' => 'section', 'item' => $item, 'items' => $walk( $item['items'] ?? array() ) );
+                } elseif ( $type === 'columns' ) {
+                    $cols = array();
+                    foreach ( $item['columns'] ?? array() as $col ) {
+                        $cols[] = $walk( $col['items'] ?? array() );
+                    }
+                    $out[] = array( 'kind' => 'columns', 'item' => $item, 'columns' => $cols );
+                } else {
+                    $out[] = array( 'kind' => 'field', 'item' => $item );
+                }
+            }
+            return $out;
+        };
+        $pages = array();
+        foreach ( $model['pages'] ?? array() as $page ) {
+            $pages[] = array( 'id' => $page['id'], 'title' => $page['title'] ?? '', 'items' => $walk( $page['items'] ?? array() ) );
+        }
+        return $pages;
+    }
+
+    /**
      * Problems with settings before they are saved.
      *
      * @param array $settings Settings.

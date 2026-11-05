@@ -689,14 +689,16 @@
             if (s.panelId !== panelId || s.started) {
                 return;
             }
-            s.started = true;
             var panel = $(s.panelId);
             var status = panel.querySelector('.baf-model-status');
             if (!formId()) {
+                // Not started: the first question or Save Draft makes the form, and the tab then loads.
                 panel.querySelector('.baf-model-needs-save').hidden = false;
                 Array.prototype.forEach.call(panel.querySelectorAll('.baf-model-body'), function (b) { b.hidden = true; });
                 return;
             }
+            s.started = true;
+            panel.querySelector('.baf-model-needs-save').hidden = true;
             load().then(function () {
                 Array.prototype.forEach.call(panel.querySelectorAll('.baf-model-body'), function (b) { b.hidden = false; });
                 s.render();

@@ -95,7 +95,7 @@ class BAF_Field_Converter_Ajax {
         }
 
         // Get parameters
-        $field_id    = isset( $_POST['field_id'] ) ? sanitize_key( $_POST['field_id'] ) : '';
+        $field_id    = isset( $_POST['field_id'] ) ? sanitize_text_field( wp_unslash( $_POST['field_id'] ) ) : '';
         $target_type = isset( $_POST['target_type'] ) ? sanitize_key( $_POST['target_type'] ) : '';
         $auto_repair = isset( $_POST['auto_repair'] ) && $_POST['auto_repair'];
         $form_id     = isset( $_POST['form_id'] ) ? absint( $_POST['form_id'] ) : 0;
@@ -104,52 +104,36 @@ class BAF_Field_Converter_Ajax {
             wp_send_json_error( array( 'message' => __( 'Missing required parameters.', 'bits-accessible-forms' ) ) );
         }
 
-        // Get form config
-        $form_config = $this->get_form_config( $form_id );
-        if ( ! $form_config ) {
+        // The conversion is made on the form model, as every other change
+        // to a question is, so validate() checks it and nothing else moves.
+        // IDs do not change, so the conditions and rules that name the
+        // question keep naming it; auto_repair has nothing left to do.
+        $form = new BAF_Form( $form_id );
+        if ( ! $form->id ) {
             wp_send_json_error( array( 'message' => __( 'Form not found.', 'bits-accessible-forms' ) ) );
         }
-
-        // Find the field
-        $field = $this->find_field_in_config( $form_config, $field_id );
-        if ( ! $field ) {
+        $result = BAF_Builder_Field_Ops::convert( $form->get_model(), $field_id, $target_type );
+        if ( $result === null ) {
             wp_send_json_error( array( 'message' => __( 'Field not found.', 'bits-accessible-forms' ) ) );
         }
-
-        // Perform conversion
-        $converter = new BAF_Field_Type_Converter();
-        $result = $converter->convert( $field, $target_type, array(
-            'dry_run' => false,
-        ) );
-
-        if ( ! $result['success'] ) {
-            wp_send_json_error( array( 
-                'message' => __( 'Conversion failed.', 'bits-accessible-forms' ),
-                'report'  => $result['report'],
-            ) );
+        $why = BAF_Builder_Field_Ops::refused( $result );
+        if ( $why !== null ) {
+            wp_send_json_error( array( 'message' => $why ) );
         }
-
-        // Update the field in form config
-        $form_config = $this->replace_field_in_config( $form_config, $result['field'] );
-
-        // Auto-repair conditional logic if requested
-        $repairs = array();
-        if ( $auto_repair ) {
-            $repair_result = $converter->repair_conditional_logic( $form_config, $field_id, $target_type );
-            $form_config = $repair_result['config'];
-            $repairs = $repair_result['repairs'];
+        list( $model, $changes ) = $result;
+        $set = $form->set_model( $model );
+        if ( is_wp_error( $set ) ) {
+            wp_send_json_error( array( 'message' => $set->get_error_message(), 'errors' => $set->get_error_data() ) );
         }
-
-        // Save the updated form
-        $saved = $this->save_form_config( $form_id, $form_config );
-        if ( ! $saved ) {
+        $saved = $form->save();
+        if ( is_wp_error( $saved ) ) {
             wp_send_json_error( array( 'message' => __( 'Failed to save form.', 'bits-accessible-forms' ) ) );
         }
 
         wp_send_json_success( array(
-            'field'   => $result['field'],
-            'report'  => $result['report'],
-            'repairs' => $repairs,
+            'field'   => BAF_Field_Scoring_Panel::find( $model, $field_id ),
+            'report'  => array( 'changes' => $changes ),
+            'repairs' => array(),
         ) );
     }
 

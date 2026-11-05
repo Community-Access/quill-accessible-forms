@@ -360,6 +360,8 @@ final class BITS_Accessible_Forms {
         $this->loader->add_action( 'wp_ajax_baf_delete_field', $this->form_builder, 'ajax_delete_field' );
         $this->loader->add_action( 'wp_ajax_baf_update_field_order', $this->form_builder, 'ajax_update_field_order' );
         $this->loader->add_action( 'wp_ajax_baf_save_field_settings', $this->form_builder, 'ajax_save_field_settings' );
+        $this->loader->add_action( 'wp_ajax_baf_convert_question', $this->form_builder, 'ajax_convert_question' );
+        $this->loader->add_action( 'wp_ajax_baf_save_form_status', $this->form_builder, 'ajax_save_form_status' );
         $this->loader->add_action( 'wp_ajax_baf_import_csv', $this->form_builder, 'ajax_import_csv' );
         
         // Settings API registration

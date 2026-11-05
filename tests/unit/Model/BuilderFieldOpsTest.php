@@ -8,6 +8,7 @@
 
 require_once BAF_PLUGIN_DIR . 'includes/model/class-baf-form-model.php';
 require_once BAF_PLUGIN_DIR . 'includes/model/class-baf-builder-field-ops.php';
+require_once BAF_PLUGIN_DIR . 'includes/model/class-baf-field-scoring-panel.php';
 
 class BAF_Builder_Field_Ops_Test extends BAF_Unit_Test_Case {
 
@@ -137,5 +138,115 @@ class BAF_Builder_Field_Ops_Test extends BAF_Unit_Test_Case {
             }
         }
         $this->fail( 'the shared model has no nested question' );
+    }
+    public function test_a_new_form_starts_valid_and_takes_its_first_question() {
+        $m = BAF_Builder_Field_Ops::new_model( '  ' );
+        $this->assertSame( 'Untitled Form', $m['title'] );
+        $this->assertSame( array(), BAF_Form_Model::validate( $m ) );
+        list( $m2, $id ) = BAF_Builder_Field_Ops::add( BAF_Builder_Field_Ops::new_model( 'Sign up' ), 'email', 'Email' );
+        $this->assertSame( 'Sign up', $m2['title'] );
+        $this->assertSame( array( 'email' ), self::ids( $m2 ) );
+        $this->assertSame( array(), BAF_Form_Model::validate( $m2 ) );
+        $this->assertSame( 'Kept', BAF_Builder_Field_Ops::set_title( $m2, ' ' )['title'] === 'Sign up' ? 'Kept' : 'Lost' );
+        $this->assertSame( 'New', BAF_Builder_Field_Ops::set_title( $m2, ' New ' )['title'] );
+    }
+
+    public function test_convert_keeps_what_the_new_type_can_hold() {
+        $m = self::model( 'quiz-and-translations.json' );
+        // A choice question to another choice type: choices kept, nothing to say.
+        list( $a, $said ) = BAF_Builder_Field_Ops::convert( $m, 'feel', 'select' );
+        $this->assertSame( 'select', $a['pages'][0]['items'][3]['type'] );
+        $this->assertSame( $m['pages'][0]['items'][3]['choices'], $a['pages'][0]['items'][3]['choices'] );
+        $this->assertSame( array(), $said );
+        $this->assertSame( array(), BAF_Form_Model::validate( $a ) );
+        // Choices to text: the choices go, and that is said.
+        list( $b, $said ) = BAF_Builder_Field_Ops::convert( $m, 'feel', 'text' );
+        $this->assertArrayNotHasKey( 'choices', $b['pages'][0]['items'][3] );
+        $this->assertSame( array( 'Its 3 choices were removed.' ), $said );
+        // Text to a choice type: two choices to start, and the typed answers go.
+        list( $c, $said ) = BAF_Builder_Field_Ops::convert( $m, 'q3', 'radio' );
+        $this->assertCount( 2, $c['pages'][0]['items'][2]['choices'] );
+        $this->assertArrayNotHasKey( 'correct', $c['pages'][0]['items'][2]['scoring'] );
+        $this->assertCount( 2, $said );
+        $this->assertSame( array(), BAF_Form_Model::validate( $c ) );
+        // A quiz question to a date: its scoring goes.
+        list( $d, $said ) = BAF_Builder_Field_Ops::convert( $m, 'q1', 'date' );
+        $this->assertArrayNotHasKey( 'scoring', $d['pages'][0]['items'][0] );
+        $this->assertSame( array(), BAF_Form_Model::validate( $d ) );
+        $this->assertNull( BAF_Builder_Field_Ops::convert( $m, 'nope', 'text' ) );
+    }
+
+    public function test_every_type_can_be_converted_to_every_type_validly() {
+        $schema = json_decode( file_get_contents( BAF_PLUGIN_DIR . 'schema/form.schema.json' ), true );
+        $types  = $schema['$defs']['field_type']['enum'];
+        foreach ( array( 'text', 'radio', 'quiz', 'matrix', 'calculation' ) as $from ) {
+            list( $m, $id ) = BAF_Builder_Field_Ops::add( BAF_Builder_Field_Ops::new_model( 'T' ), $from, 'Q' );
+            foreach ( $types as $to ) {
+                $r = BAF_Builder_Field_Ops::convert( $m, $id, $to );
+                $this->assertNull( BAF_Builder_Field_Ops::refused( $r ), $from . ' to ' . $to );
+                $this->assertSame( array(), BAF_Form_Model::validate( $r[0] ), $from . ' to ' . $to );
+            }
+        }
+    }
+
+    public function test_convert_refuses_to_lose_a_repeaters_questions() {
+        $m = self::model( 'logic-and-layout.json' );
+        foreach ( BAF_Form_Model::items( $m ) as $e ) {
+            if ( ( $e['item']['type'] ?? '' ) === 'repeater' ) {
+                $r = BAF_Builder_Field_Ops::convert( $m, $e['item']['id'], 'text' );
+                $this->assertStringContainsString( 'would be lost', (string) BAF_Builder_Field_Ops::refused( $r ) );
+                return;
+            }
+        }
+        $this->fail( 'the shared model has no repeater' );
+    }
+
+    public function test_the_canvas_tree_reaches_every_question() {
+        $m    = self::model( 'logic-and-layout.json' );
+        $tree = BAF_Builder_Field_Ops::canvas_tree( $m );
+        $this->assertSame( count( $m['pages'] ), count( $tree ) );
+        $found = array();
+        $walk  = function ( $items ) use ( &$walk, &$found ) {
+            foreach ( $items as $n ) {
+                $found[] = $n['item']['id'];
+                if ( $n['kind'] === 'section' ) {
+                    $walk( $n['items'] );
+                } elseif ( $n['kind'] === 'columns' ) {
+                    foreach ( $n['columns'] as $col ) {
+                        $walk( $col );
+                    }
+                }
+            }
+        };
+        foreach ( $tree as $page ) {
+            $walk( $page['items'] );
+        }
+        // Every item the model has, except a repeater's own questions, which live in its card.
+        $repeaters = array();
+        foreach ( BAF_Form_Model::items( $m ) as $e ) {
+            if ( ( $e['item']['type'] ?? '' ) === 'repeater' ) {
+                $repeaters[] = $e['path'] . '/items/';
+            }
+        }
+        $want = array();
+        foreach ( BAF_Form_Model::items( $m ) as $e ) {
+            $inside = false;
+            foreach ( $repeaters as $r ) {
+                $inside = $inside || strpos( $e['path'], $r ) === 0;
+            }
+            if ( ! $inside ) {
+                $want[] = $e['item']['id'];
+            }
+        }        $this->assertSame( $want, $found );
+        $this->assertContains( 'section', array_column( array_merge( ...array_column( $tree, 'items' ) ), 'kind' ) );
+    }
+    public function test_convert_says_how_many_conditions_read_the_question() {
+        $m = self::model( 'logic-and-layout.json' );
+        $naming = BAF_Builder_Field_Ops::expressions_naming( $m, 'contact_by' );
+        $this->assertNotEmpty( $naming );
+        list( , $said ) = BAF_Builder_Field_Ops::convert( $m, 'contact_by', 'date' );
+        $this->assertStringContainsString( count( $naming ) . ' condition', end( $said ) );
+        list( , $said ) = BAF_Builder_Field_Ops::convert( $m, 'contact_by', 'radio' );
+        $this->assertSame( array(), $said, 'choices to choices: the answers keep their kind' );
     }
 }

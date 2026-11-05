@@ -36,6 +36,21 @@ Where it is:
   A new question's card comes from the server, so a scored one has its
   Scoring button at once. Moving a question onto another page or section is
   refused and said; that is done in Structure mode.
+- The canvas is drawn from the model (`BAF_Form_Builder::render_canvas`), so
+  questions inside sections and columns have cards with the same actions,
+  each list labelled by its page, section or column; every action answers
+  with the canvas drawn again, so the page always shows the saved model.
+  Drag and drop is saved through the same order check as the move buttons.
+- A form not made yet is made, as a draft, by its first question or by Save
+  Draft; the page takes its new ID and address without a reload.
+- Add Field (F, while focus is in the canvas) opens a modal "Add a question"
+  dialog with the registry's types by category and a filter. Convert opens
+  a modal dialog that says what would change (`baf_convert_question` with
+  `dry_run`) before it changes the type on the model
+  (`BAF_Builder_Field_Ops::convert`), including how many conditions read the
+  question when its answers change kind. Structure mode's own Convert
+  (`baf_convert_field`) now converts on the model too. Save Draft and
+  Publish (`baf_save_form_status`) save the title and the status and say so.
 
 Differences from the plan as written: a save reads the stored model again
 and replaces only the screen's own part, so a visual-builder save made in

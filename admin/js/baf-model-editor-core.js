@@ -629,6 +629,23 @@
         return [];
     }
 
+    /**
+     * Whether a field type answers what was typed in Find a type: any word
+     * typed starts a word of its name, or the text is in its type's key.
+     */
+    function typeMatches(query, label, type) {
+        var q = String(query || '').toLowerCase().trim();
+        if (!q) {
+            return true;
+        }
+        var name = String(label || '').toLowerCase();
+        var words = name.split(/[^a-z0-9]+/);
+        var all = q.split(/\s+/).every(function (w) {
+            return words.some(function (n) { return n.indexOf(w) === 0; }) || name.indexOf(w) !== -1;
+        });
+        return all || String(type || '').toLowerCase().indexOf(q) !== -1;
+    }
+
     /** Whether two lists of IDs are in the same order. */
     function sameOrder(a, b) {
         return a.length === b.length && a.every(function (id, i) { return String(id) === String(b[i]); });
@@ -757,6 +774,7 @@
         scoringField: scoringField,
         checkFieldSettings: checkFieldSettings,
         sameOrder: sameOrder,
+        typeMatches: typeMatches,
         where: where
     };
 }));

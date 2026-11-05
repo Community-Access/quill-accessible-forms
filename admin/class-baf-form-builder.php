@@ -293,20 +293,28 @@ class BAF_Form_Builder {
     // ---------------------------------------------------------------------
 
     /**
-     * The form named by POST form_id and its model, or a JSON error.
+     * The form named by POST form_id and its model, or a JSON error. With
+     * $create, a form not yet saved (form_id 0) is made now, as a draft
+     * with the title in POST title, so a new form can take its first
+     * question without being saved and reloaded first.
      *
-     * @return array array( BAF_Form, model ).
+     * @param bool $create Make the form when there is none yet.
+     * @return array array( BAF_Form, model, created ).
      */
-    private function card_form() {
+    private function card_form( $create = false ) {
         check_ajax_referer( 'baf_builder_nonce', 'nonce' );
         if ( ! current_user_can( 'manage_options' ) ) {
             wp_send_json_error( array( 'message' => __( 'Permission denied.', 'bits-accessible-forms' ) ) );
         }
         $form = new BAF_Form( isset( $_POST['form_id'] ) ? absint( $_POST['form_id'] ) : 0 );
-        if ( ! $form->id ) {
-            wp_send_json_error( array( 'message' => __( 'Save the form first, with Save Draft; then questions can be added and changed here.', 'bits-accessible-forms' ) ) );
+        if ( $form->id ) {
+            return array( $form, $form->get_model(), false );
         }
-        return array( $form, $form->get_model() );
+        if ( ! $create ) {
+            wp_send_json_error( array( 'message' => __( 'This form has not been made yet. Add a question, or choose Save Draft, to make it.', 'bits-accessible-forms' ) ) );
+        }
+        $form->status = 'draft';
+        return array( $form, BAF_Builder_Field_Ops::new_model( sanitize_text_field( wp_unslash( $_POST['title'] ?? '' ) ) ), true );
     }
 
     /**
@@ -330,73 +338,143 @@ class BAF_Form_Builder {
         if ( is_wp_error( $saved ) ) {
             wp_send_json_error( array( 'message' => $saved->get_error_message() ) );
         }
+        if ( ! $form->id && is_numeric( $saved ) ) {
+            $form->id = (int) $saved;
+        }
     }
 
     /**
-     * A card for a question in the model.
+     * What every card action sends back: the canvas drawn again from the
+     * saved model, and the form's ID (new when this action made the form).
      *
-     * @param array $model Model.
-     * @param string $id   Question ID.
+     * @param BAF_Form $form    Form.
+     * @param array    $model   Model.
+     * @param bool     $created Whether this action made the form.
+     * @param array    $extra   More to send.
+     */
+    private function card_reply( $form, $model, $created, $extra = array() ) {
+        wp_send_json_success( array_merge( $extra, array(
+            'form_id'  => (int) $form->id,
+            'created'  => (bool) $created,
+            'edit_url' => admin_url( 'admin.php?page=baf-form-builder&form_id=' . absint( $form->id ) ),
+            'canvas'   => $this->render_canvas( $model, (int) $form->id ),
+        ) ) );
+    }
+
+    /**
+     * The canvas: a list of cards per page, and inside it a group for each
+     * section and for each column, so every question, however deep, has a
+     * card with the same actions. A move stays among its neighbours.
+     *
+     * @param array $model   Model.
      * @param int   $form_id Form ID.
      * @return string HTML.
      */
-    private function card_html( $model, $id, $form_id ) {
-        $field = BAF_Field_Scoring_Panel::find( $model, $id );
-        $total = max( 1, absint( $_POST['total'] ?? 1 ) );
-        return $this->render_field_card(
-            array(
-                'id'       => $id,
-                'type'     => $field['type'] ?? '',
-                'label'    => $field['label'] ?? '',
-                'required' => ! empty( $field['required'] ),
-            ),
-            $total,
-            $total,
-            $form_id
-        );
+    public function render_canvas( $model, $form_id = 0 ) {
+        $tree  = BAF_Builder_Field_Ops::canvas_tree( $model );
+        $count = 0;
+        foreach ( BAF_Form_Model::items( $model ) as $e ) {
+            $count += ( isset( $e['item']['type'] ) && ! in_array( $e['item']['type'], array( 'section', 'columns' ), true ) ) ? 1 : 0;
+        }
+        if ( ! $count ) {
+            return '<div class="baf-canvas-empty"><p>' . esc_html__( 'No questions yet. Add one from the palette, or with Add Field.', 'bits-accessible-forms' ) . '</p>'
+                . '<p class="baf-canvas-hint">' . esc_html__( 'Tip: press F while in the canvas to add a question.', 'bits-accessible-forms' ) . '</p></div>';
+        }
+        $html  = '';
+        $many  = count( $tree ) > 1;
+        $group = 0;
+        $list  = function ( $nodes, $label_id ) use ( &$list, &$group, $form_id ) {
+            $out   = '<div class="baf-card-list" role="list" aria-labelledby="' . esc_attr( $label_id ) . '">';
+            $total = count( $nodes );
+            foreach ( $nodes as $i => $n ) {
+                $item = $n['item'];
+                if ( $n['kind'] === 'field' ) {
+                    $out .= $this->render_field_card(
+                        array( 'id' => $item['id'], 'type' => $item['type'], 'label' => $item['label'] ?? '', 'required' => ! empty( $item['required'] ) ),
+                        $i + 1,
+                        $total,
+                        $form_id
+                    );
+                    continue;
+                }
+                $gid  = 'baf-canvas-group-' . ( ++$group );
+                $name = $n['kind'] === 'section'
+                    ? sprintf( __( 'Section: %s', 'bits-accessible-forms' ), ( $item['label'] ?? '' ) !== '' ? $item['label'] : '#' . $item['id'] )
+                    : sprintf( _n( 'Columns: %d column', 'Columns: %d columns', count( $n['columns'] ), 'bits-accessible-forms' ), count( $n['columns'] ) );
+                $out .= '<div class="baf-group-card" role="listitem" data-group-id="' . esc_attr( $item['id'] ) . '">';
+                $out .= '<p class="baf-group-label" id="' . esc_attr( $gid ) . '">' . esc_html( $name ) . '</p>';
+                if ( $n['kind'] === 'section' ) {
+                    $out .= $n['items'] ? $list( $n['items'], $gid ) : '<p class="baf-group-empty">' . esc_html__( 'No questions in this section yet. Move one in with Structure mode.', 'bits-accessible-forms' ) . '</p>';
+                } else {
+                    foreach ( $n['columns'] as $c => $col ) {
+                        $cid  = $gid . '-' . ( $c + 1 );
+                        $out .= '<p class="baf-group-label baf-column-label" id="' . esc_attr( $cid ) . '">' . esc_html( sprintf( __( 'Column %1$d of %2$d', 'bits-accessible-forms' ), $c + 1, count( $n['columns'] ) ) ) . '</p>';
+                        $out .= $col ? $list( $col, $cid ) : '<p class="baf-group-empty">' . esc_html__( 'No questions in this column yet.', 'bits-accessible-forms' ) . '</p>';
+                    }
+                }
+                $out .= '</div>';
+            }
+            return $out . '</div>';
+        };
+        foreach ( $tree as $p => $page ) {
+            $label_id = 'baf-canvas-title';
+            if ( $many ) {
+                $label_id = 'baf-canvas-page-' . ( $p + 1 );
+                $title    = $page['title'] !== '' ? sprintf( __( 'Page %1$d: %2$s', 'bits-accessible-forms' ), $p + 1, $page['title'] ) : sprintf( __( 'Page %d', 'bits-accessible-forms' ), $p + 1 );
+                $html    .= '<h3 class="baf-canvas-page" id="' . esc_attr( $label_id ) . '">' . esc_html( $title ) . '</h3>';
+            }
+            $html .= $page['items'] ? $list( $page['items'], $label_id ) : '<p class="baf-group-empty">' . esc_html__( 'No questions on this page yet.', 'bits-accessible-forms' ) . '</p>';
+        }
+        return $html;
     }
 
-    /** AJAX: add a question (POST form_id, field_type) at the end; returns its card. */
+    /**
+     * AJAX: add a question (POST form_id, field_type, title) at the end of
+     * the last page. A form not yet saved is made now, as a draft.
+     */
     public function ajax_add_field() {
-        list( $form, $model ) = $this->card_form();
         $type = sanitize_key( $_POST['field_type'] ?? '' );
         $info = class_exists( 'BAF_Field_Registry' ) ? BAF_Field_Registry::get_instance()->get_field_type( $type ) : null;
         if ( ! $info || ! BAF_Form_Model::is_field_type( $type ) ) {
+            check_ajax_referer( 'baf_builder_nonce', 'nonce' );
             wp_send_json_error( array( 'message' => __( 'That type of question cannot be added here.', 'bits-accessible-forms' ) ) );
         }
-        list( $model, $id ) = BAF_Builder_Field_Ops::add( $model, $type, (string) $info['label'] );
+        list( $form, $model, $created ) = $this->card_form( true );
+        list( $model, $id )             = BAF_Builder_Field_Ops::add( $model, $type, (string) $info['label'] );
         $this->card_save( $form, $model );
-        wp_send_json_success( array( 'field_id' => $id, 'label' => $info['label'], 'html' => $this->card_html( $model, $id, $form->id ) ) );
+        $this->card_reply( $form, $model, $created, array( 'field_id' => $id, 'label' => $info['label'] ) );
     }
 
-    /** AJAX: copy a question (POST form_id, field_id) just after it; returns the copy's card. */
+    /** AJAX: copy a question (POST form_id, field_id) just after it. */
     public function ajax_duplicate_field() {
         list( $form, $model ) = $this->card_form();
         $done = BAF_Builder_Field_Ops::duplicate( $model, sanitize_text_field( wp_unslash( $_POST['field_id'] ?? '' ) ), __( ' (copy)', 'bits-accessible-forms' ) );
         $this->card_save( $form, $done ? $done[0] : null );
         $copy = BAF_Field_Scoring_Panel::find( $done[0], $done[1] );
-        wp_send_json_success( array( 'field_id' => $done[1], 'label' => $copy['label'] ?? '', 'html' => $this->card_html( $done[0], $done[1], $form->id ) ) );
+        $this->card_reply( $form, $done[0], false, array( 'field_id' => $done[1], 'label' => $copy['label'] ?? '' ) );
     }
 
     /** AJAX: delete a question (POST form_id, field_id). */
     public function ajax_delete_field() {
         list( $form, $model ) = $this->card_form();
-        $id = sanitize_text_field( wp_unslash( $_POST['field_id'] ?? '' ) );
-        $this->card_save( $form, BAF_Builder_Field_Ops::remove( $model, $id ) );
-        wp_send_json_success( array( 'field_id' => $id ) );
+        $id    = sanitize_text_field( wp_unslash( $_POST['field_id'] ?? '' ) );
+        $model = BAF_Builder_Field_Ops::remove( $model, $id );
+        $this->card_save( $form, $model );
+        $this->card_reply( $form, $model, false, array( 'field_id' => $id ) );
     }
 
     /**
      * AJAX: put the questions in a new order (POST form_id, field_order[]).
      * Returns the order the model now has, which differs when a question
-     * was asked to move onto another page or section.
+     * was asked to move onto another page, section or column; the canvas
+     * sent back is then the model's, to put the cards back.
      */
     public function ajax_update_field_order() {
         list( $form, $model ) = $this->card_form();
         $ids   = array_map( 'sanitize_text_field', (array) wp_unslash( $_POST['field_order'] ?? array() ) );
         $model = BAF_Builder_Field_Ops::reorder( $model, $ids );
         $this->card_save( $form, $model );
-        wp_send_json_success( array( 'order' => BAF_Builder_Field_Ops::order( $model, $ids ) ) );
+        $this->card_reply( $form, $model, false, array( 'order' => BAF_Builder_Field_Ops::order( $model, $ids ) ) );
     }
 
     /** AJAX: save a question's settings (POST form_id, field_id, label, help, placeholder, required). */
@@ -420,7 +498,53 @@ class BAF_Form_Builder {
         $model = BAF_Builder_Field_Ops::apply_settings( $model, $id, $settings );
         $this->card_save( $form, $model );
         $field = BAF_Field_Scoring_Panel::find( $model, $id );
-        wp_send_json_success( array( 'field_id' => $id, 'label' => $field['label'] ?? '', 'html' => $this->card_html( $model, $id, $form->id ) ) );
+        $this->card_reply( $form, $model, false, array( 'field_id' => $id, 'label' => $field['label'] ?? '' ) );
+    }
+
+    /**
+     * AJAX: change a question's type on the model (POST form_id, field_id,
+     * target_type; dry_run=1 only says what would change).
+     */
+    public function ajax_convert_question() {
+        list( $form, $model ) = $this->card_form();
+        $id     = sanitize_text_field( wp_unslash( $_POST['field_id'] ?? '' ) );
+        $type   = sanitize_key( $_POST['target_type'] ?? '' );
+        $info   = class_exists( 'BAF_Field_Registry' ) ? BAF_Field_Registry::get_instance()->get_field_type( $type ) : null;
+        if ( ! $info || ! BAF_Form_Model::is_field_type( $type ) ) {
+            wp_send_json_error( array( 'message' => __( 'Choose the type to change it to.', 'bits-accessible-forms' ) ) );
+        }
+        $result = BAF_Builder_Field_Ops::convert( $model, $id, $type );
+        if ( $result === null ) {
+            $this->card_save( $form, null );
+        }
+        $why = BAF_Builder_Field_Ops::refused( $result );
+        if ( $why !== null ) {
+            wp_send_json_error( array( 'message' => $why ) );
+        }
+        list( $model, $changes ) = $result;
+        if ( ! empty( $_POST['dry_run'] ) ) {
+            $problems = BAF_Form_Model::validate( $model );
+            wp_send_json_success( array( 'changes' => $changes, 'problems' => $problems, 'type_label' => $info['label'] ) );
+        }
+        $this->card_save( $form, $model );
+        $this->card_reply( $form, $model, false, array( 'field_id' => $id, 'changes' => $changes, 'type_label' => $info['label'] ) );
+    }
+
+    /**
+     * AJAX: Save Draft and Publish (POST form_id, title, status draft|active).
+     * The title goes into the model; the questions are already saved, each
+     * as it was changed. A form not yet saved is made now.
+     */
+    public function ajax_save_form_status() {
+        list( $form, $model, $created ) = $this->card_form( true );
+        $status = sanitize_key( $_POST['status'] ?? 'draft' );
+        if ( ! in_array( $status, array( 'draft', 'active' ), true ) ) {
+            wp_send_json_error( array( 'message' => __( 'Unknown status.', 'bits-accessible-forms' ) ) );
+        }
+        $model        = BAF_Builder_Field_Ops::set_title( $model, sanitize_text_field( wp_unslash( $_POST['title'] ?? '' ) ) );
+        $form->status = $status;
+        $this->card_save( $form, $model );
+        $this->card_reply( $form, $model, $created, array( 'status' => $status, 'title' => $model['title'] ) );
     }
 
     /**
@@ -603,7 +727,7 @@ class BAF_Form_Builder {
 
         ob_start();
         ?>
-        <div class="baf-field-card" data-field-id="<?php echo esc_attr( $field_id ); ?>" data-position="<?php echo esc_attr( $position ); ?>" role="listitem" aria-label="<?php echo esc_attr( $field_label ); ?>">
+        <div class="baf-field-card" data-field-id="<?php echo esc_attr( $field_id ); ?>" data-field-type="<?php echo esc_attr( $field_config['type'] ?? '' ); ?>" data-position="<?php echo esc_attr( $position ); ?>" role="listitem" aria-label="<?php echo esc_attr( $field_label ); ?>" draggable="true">
             <div class="baf-field-card-header">
                 <span class="baf-field-drag-handle" aria-hidden="true" tabindex="-1">⋮⋮</span>
                 <span class="baf-field-icon" aria-hidden="true"><?php echo esc_html( $field_info['icon'] ?? '📝' ); ?></span>
@@ -673,8 +797,8 @@ class BAF_Form_Builder {
                 
                 <!-- Convert Type Button -->
                 <button type="button" 
-                        class="baf-action-btn baf-field-action-convert" 
-                        data-action="convert"
+                        class="baf-action-btn baf-field-action-convert-model baf-field-convert" 
+                        data-action="convert-type"
                         aria-label="<?php echo esc_attr( sprintf( __( 'Convert %s to different type', 'bits-accessible-forms' ), $field_label ) ); ?>"
                         aria-haspopup="dialog">
                     <span aria-hidden="true">🔄</span>

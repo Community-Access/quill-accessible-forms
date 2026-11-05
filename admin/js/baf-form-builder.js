@@ -7,9 +7,14 @@
  * Every card action changes the stored form model on the server and saves
  * it, changing only its own question (or the order): baf_add_field,
  * baf_duplicate_field, baf_delete_field, baf_update_field_order,
- * baf_get_field_settings (field_id: the settings panel's content) and
- * baf_save_field_settings. A refusal (for example deleting a question a
- * rule names) is said, and the page is left as the model is.
+ * baf_get_field_settings (field_id: the settings panel's content),
+ * baf_save_field_settings, baf_convert_question and baf_save_form_status
+ * (Save Draft and Publish). Each answers with the canvas drawn again from
+ * the saved model, so the cards (nested in their sections and columns)
+ * always show the model as it is. A refusal (deleting a question a rule
+ * names, moving one onto another page) is said, and the cards are left as
+ * the model is. A form not saved yet is made by its first question or by
+ * Save Draft, without a reload.
  *
  * @package BAF
  * @since 1.0.0
@@ -36,6 +41,30 @@
         return !!(window.matchMedia && window.matchMedia('(prefers-reduced-motion: reduce)').matches);
     }
 
+    /** The name of a field type, from the registry the page was given. */
+    function typeLabel(type) {
+        const cats = data.fieldTypes || {};
+        for (const k in cats) {
+            const list = (cats[k] && cats[k].fields) || [];
+            for (let i = 0; i < list.length; i++) {
+                if (list[i].type === type) {
+                    return list[i].label;
+                }
+            }
+        }
+        return type;
+    }
+
+    /** Put words in a status region, cleared first so the same words are said again. */
+    function setStatus(el, text) {
+        if (!el) return;
+        el.textContent = '';
+        setTimeout(function() { el.textContent = text; }, 60);
+    }
+
+    /** The cards and groups that move among each other. */
+    const SIBLINGS = '.baf-field-card, .baf-group-card';
+
     /**
      * Form Builder Controller
      */
@@ -46,6 +75,7 @@
         settingsPanel: null,
         announcer: null,
         focusManager: null,
+        busy: false,
 
         /**
          * Initialize the form builder
@@ -65,6 +95,9 @@
             this.bindEvents();
             this.initDragDrop();
             this.initKeyboardShortcuts();
+            this.savedOrder = this.cardIds();
+            this.updateMoveButtonStates();
+            this.lastCanvas = this.dropzone.innerHTML;
         },
 
         /** POST to admin-ajax with the nonce and the form's ID. */
@@ -81,14 +114,53 @@
             return (response && response.data && response.data.message) || fallback;
         },
 
+        cards: function() {
+            return $(this.dropzone).find('.baf-field-card');
+        },
+
         /** A card's question label, without the required badge. */
         labelOf: function($card) {
             const $l = $card.find('.baf-field-label').first().clone();
             $l.find('.baf-required-badge').remove();
             return $l.text().replace(/\s+/g, ' ').trim();
         },
-        cards: function() {
-            return $(this.dropzone).find('.baf-field-card');
+
+        cardFor: function(fieldId) {
+            return this.cards().filter(function() { return String($(this).data('field-id')) === String(fieldId); });
+        },
+
+        /**
+         * Take the canvas the server drew from the saved model, and the
+         * form's ID when this action made the form; then focus a card's
+         * button (or Add Field when that card is gone).
+         */
+        applyReply: function(reply, focusId, action) {
+            if (!reply) return;
+            this.adoptForm(reply);
+            if (typeof reply.canvas === 'string') {
+                $(this.dropzone).html(reply.canvas);
+                this.savedOrder = this.cardIds();
+                this.updateMoveButtonStates();
+                this.lastCanvas = this.dropzone.innerHTML; // The model as saved, to go back to.
+            }
+            if (focusId !== undefined) {
+                const $b = focusId === null ? $() : this.cardFor(focusId).find(action || '.baf-field-edit');
+                ($b.length ? $b : $('#baf-add-field-btn')).first().focus();
+            }
+        },
+
+        /** A form made by this action: the page now edits it, and its address says so. */
+        adoptForm: function(reply) {
+            if (!reply.form_id || Number(reply.form_id) === this.getFormId()) return;
+            data.formId = Number(reply.form_id);
+            if (window.bafModelEditor) window.bafModelEditor.formId = data.formId;
+            $('#baf-form-id').val(data.formId);
+            if (reply.edit_url && window.history && window.history.replaceState) {
+                try { window.history.replaceState(null, '', reply.edit_url); } catch (e) { /* another origin in tests */ }
+            }
+            if (reply.created) {
+                this.announcer.announce(L('formCreated', 'The form is made, as a draft. Every change is saved as you make it.'), 'polite');
+            }
         },
 
         /**
@@ -103,10 +175,30 @@
             $(document).on('click', '.baf-field-edit', this.editField.bind(this));
             $(document).on('click', '.baf-field-duplicate', this.duplicateField.bind(this));
             $(document).on('click', '.baf-field-delete', this.deleteField.bind(this));
+            $(document).on('click', '.baf-field-convert', this.openConvert.bind(this));
 
             // Field palette - add field (the palette's entries are .baf-palette-field)
-            $(document).on('click', '.baf-field-type, .baf-palette-field', this.addField.bind(this));
+            $(document).on('click', '.baf-field-type, .baf-palette-field', this.addFromPalette.bind(this));
             $(document).on('keydown', '.baf-field-type, .baf-palette-field', this.handlePaletteKeydown.bind(this));
+
+            // Add Field (F): the picker dialog
+            $(document).on('click', '#baf-add-field-btn', this.openPicker.bind(this));
+            $(document).on('click', '.baf-picker-type', this.pickType.bind(this));
+            $(document).on('input', '#baf-picker-filter', this.filterPicker.bind(this));
+            $(document).on('keydown', '#baf-picker-filter', (e) => {
+                if (e.key === 'Enter') {
+                    e.preventDefault();
+                    $('#baf-picker-types .baf-picker-type:visible').first().trigger('click');
+                }
+            });
+
+            // Convert type
+            $(document).on('change', '#baf-convert-type', this.previewConvert.bind(this));
+            $(document).on('submit', '#baf-convert-dialog form', this.submitConvert.bind(this));
+
+            // Save Draft and Publish
+            $(document).on('click', '#baf-save-draft-btn', (e) => this.saveStatus(e, 'draft'));
+            $(document).on('click', '#baf-publish-btn', (e) => this.saveStatus(e, 'active'));
 
             // Settings panel: the form is drawn by the server; Enter or Save submits it.
             $(document).on('submit', '#baf-fs-form', this.saveFieldSettings.bind(this));
@@ -132,24 +224,25 @@
         },
 
         /**
-         * Initialize drag and drop with keyboard alternative
+         * Initialize drag and drop with keyboard alternative. A drop is saved
+         * through the same order check as the move buttons.
          */
         initDragDrop: function() {
             const dropzone = this.dropzone;
             const self = this;
 
-            // Make field cards draggable
             $(dropzone).on('dragstart', '.baf-field-card', function(e) {
+                if (e.target !== this) return; // a button inside the card, not the card
                 $(this).addClass('baf-dragging');
                 e.originalEvent.dataTransfer.effectAllowed = 'move';
-                e.originalEvent.dataTransfer.setData('text/plain', $(this).data('field-id'));
+                e.originalEvent.dataTransfer.setData('text/plain', String($(this).data('field-id')));
             });
 
             $(dropzone).on('dragend', '.baf-field-card', function() {
                 $(this).removeClass('baf-dragging');
+                $(dropzone).find('.baf-drop-indicator').remove();
             });
 
-            // Handle drop zone
             $(dropzone).on('dragover', function(e) {
                 e.preventDefault();
                 e.originalEvent.dataTransfer.dropEffect = 'move';
@@ -164,18 +257,29 @@
         },
 
         /**
-         * Initialize keyboard shortcuts. They act only when the card itself
-         * has focus, so Enter on one of its buttons presses that button.
+         * Keyboard shortcuts. Control with the up or down arrow moves the
+         * card focus is in. Enter and Delete act only when the card itself
+         * has focus, so Enter on one of its buttons presses that button. F
+         * opens Add Field only while focus is in the canvas and not in a
+         * text box, so it is never a page-wide single-key shortcut.
          */
         initKeyboardShortcuts: function() {
             const self = this;
 
             $(document).on('keydown', function(e) {
-                const $activeCard = $(document.activeElement).closest('.baf-field-card');
-                if (!$activeCard.length) return;
-                const onCard = document.activeElement === $activeCard[0];
+                const target = document.activeElement;
+                const inText = $(target).is('input, textarea, select, [contenteditable="true"]');
+                if ((e.key === 'f' || e.key === 'F') && !e.ctrlKey && !e.metaKey && !e.altKey && !inText
+                    && self.canvas.contains(target) && !$(target).closest('.baf-model-modal').length) {
+                    e.preventDefault();
+                    self.openPicker({ currentTarget: target }); // Escape returns focus where F was pressed.
+                    return;
+                }
 
-                // Ctrl/Cmd + Arrow keys for moving fields, from anywhere in the card
+                const $activeCard = $(target).closest('.baf-field-card');
+                if (!$activeCard.length) return;
+                const onCard = target === $activeCard[0];
+
                 if (e.ctrlKey || e.metaKey) {
                     if (e.key === 'ArrowUp') {
                         e.preventDefault();
@@ -218,140 +322,137 @@
         },
 
         /**
-         * Move field up in order
+         * Move field up among its neighbours (a section or columns counts
+         * as one neighbour, moved past whole).
          */
         moveFieldUp: function(e) {
             const $card = $(e.currentTarget).closest('.baf-field-card');
-            const $prev = $card.prev('.baf-field-card');
+            const $prev = $card.prev(SIBLINGS);
 
             if (!$prev.length) {
-                this.announcer.announce(L('alreadyAtTop', '%s is already first.', BAFFormBuilder.labelOf($card)), 'polite');
+                this.announcer.announce(L('alreadyAtTop', '%s is already first.', this.labelOf($card)), 'polite');
                 return;
             }
 
             this.swap($card, $prev, true, () => {
                 $card.insertBefore($prev);
                 $card.find('.baf-field-move-up').focus();
-                this.afterMove($card);
+                this.afterMove($card, '.baf-field-move-up');
             });
         },
 
         /**
-         * Move field down in order
+         * Move field down among its neighbours
          */
         moveFieldDown: function(e) {
             const $card = $(e.currentTarget).closest('.baf-field-card');
-            const $next = $card.next('.baf-field-card');
+            const $next = $card.next(SIBLINGS);
 
             if (!$next.length) {
-                this.announcer.announce(L('alreadyAtBottom', '%s is already last.', BAFFormBuilder.labelOf($card)), 'polite');
+                this.announcer.announce(L('alreadyAtBottom', '%s is already last.', this.labelOf($card)), 'polite');
                 return;
             }
 
             this.swap($card, $next, false, () => {
                 $card.insertAfter($next);
                 $card.find('.baf-field-move-down').focus();
-                this.afterMove($card);
+                this.afterMove($card, '.baf-field-move-down');
             });
         },
 
         /**
          * Save the new order, then say where the card is. When the model
-         * keeps a question on its own page or section, the cards are put
-         * back in the model's order and that is said instead.
+         * keeps a question with its own page, section or column, the canvas
+         * comes back in the model's order and that is said instead.
          */
-        afterMove: function($card) {
-            const fieldLabel = BAFFormBuilder.labelOf($card);
+        afterMove: function($card, button) {
+            const fieldId = String($card.data('field-id'));
+            const fieldLabel = this.labelOf($card);
+            const wanted = this.cardIds();
             this.updateMoveButtonStates();
             this.updateFieldOrder().then((response) => {
                 if (!response || !response.success) {
-                    this.restoreOrder(null);
+                    this.applyReply({ canvas: this.lastCanvas }, fieldId, button);
                     this.announcer.announce(this.failure(response, L('moveFailed', 'The new order was not saved.')), 'polite');
                     return;
                 }
-                const wanted = this.cardIds();
                 const order = response.data.order || wanted;
-                const same = window.BAFModelEditorCore ? window.BAFModelEditorCore.sameOrder(order, wanted) : order.join('\n') === wanted.join('\n');
+                const C = window.BAFModelEditorCore;
+                const same = C ? C.sameOrder(order, wanted) : order.join('\n') === wanted.join('\n');
                 if (!same) {
-                    this.restoreOrder(order);
-                    $card.find('.baf-field-edit').focus();
+                    this.applyReply(response.data, fieldId, '.baf-field-edit');
                     this.announcer.announce(L('moveStays', '%s stays with its page or section. Move it to another page in Structure mode.', fieldLabel), 'polite');
                     return;
                 }
-                this.announcer.announceFieldMoved(fieldLabel, this.getFieldPosition($card), wanted.length);
+                this.lastCanvas = this.dropzone.innerHTML;
+                const $now = this.cardFor(fieldId);
+                const $sib = $now.parent().children(SIBLINGS);
+                this.announcer.announceFieldMoved(fieldLabel, $sib.index($now) + 1, $sib.length);
             }, () => {
                 this.announcer.announce(L('moveFailed', 'The new order was not saved.'), 'polite');
             });
         },
 
+        /** The IDs of every card and group, in the canvas's order. */
         cardIds: function() {
-            return this.cards().map(function() { return String($(this).data('field-id')); }).get();
-        },
-
-        /** Put the cards in the given order (or the last saved one). */
-        restoreOrder: function(order) {
-            order = order || this.savedOrder || [];
-            const $zone = $(this.dropzone);
-            order.forEach((id) => {
-                const $c = this.cards().filter(function() { return String($(this).data('field-id')) === id; });
-                $zone.append($c);
-            });
-            this.updateMoveButtonStates();
+            return $(this.dropzone).find('[data-field-id].baf-field-card, [data-group-id]').map(function() {
+                return String($(this).attr('data-field-id') || $(this).attr('data-group-id'));
+            }).get();
         },
 
         /**
-         * Get field position (1-indexed)
+         * Get field position among its neighbours (1-indexed)
          */
         getFieldPosition: function($card) {
-            return this.cards().index($card) + 1;
+            return $card.parent().children(SIBLINGS).index($card) + 1;
         },
 
         /**
-         * Move buttons at either end say so rather than being disabled, so
-         * focus is never lost when a card reaches the top or the bottom.
+         * Move buttons at either end of their list say so rather than being
+         * disabled, so focus is never lost when a card reaches the top or
+         * the bottom.
          */
         updateMoveButtonStates: function() {
-            const $cards = this.cards();
-            const totalCards = $cards.length;
-
-            $cards.each(function(index) {
+            const self = this;
+            this.cards().each(function() {
                 const $card = $(this);
+                const $sib = $card.parent().children(SIBLINGS);
+                const index = $sib.index($card);
+                const total = $sib.length;
                 const $moveUp = $card.find('.baf-field-move-up');
                 const $moveDown = $card.find('.baf-field-move-down');
-                const fieldLabel = BAFFormBuilder.labelOf($card);
+                const fieldLabel = self.labelOf($card);
 
                 $moveUp.prop('disabled', false).attr('aria-disabled', index === 0 ? 'true' : null);
-                $moveDown.prop('disabled', false).attr('aria-disabled', index === totalCards - 1 ? 'true' : null);
+                $moveDown.prop('disabled', false).attr('aria-disabled', index === total - 1 ? 'true' : null);
 
-                $moveUp.attr('aria-label', L('moveUpAt', 'Move %1$s up (currently position %2$d of %3$d)', fieldLabel, index + 1, totalCards));
-                $moveDown.attr('aria-label', L('moveDownAt', 'Move %1$s down (currently position %2$d of %3$d)', fieldLabel, index + 1, totalCards));
+                $moveUp.attr('aria-label', L('moveUpAt', 'Move %1$s up (currently position %2$d of %3$d)', fieldLabel, index + 1, total));
+                $moveDown.attr('aria-label', L('moveDownAt', 'Move %1$s down (currently position %2$d of %3$d)', fieldLabel, index + 1, total));
             });
         },
 
-        /**
-         * Add a new field from palette
-         */
-        addField: function(e) {
+        /** The palette's entry: add its type. */
+        addFromPalette: function(e) {
             e.preventDefault();
             const $entry = $(e.currentTarget);
-            const fieldType = $entry.data('field-type');
-            const fieldLabel = ($entry.find('.baf-palette-field-label').text() || $entry.attr('aria-label') || $entry.text()).trim();
+            const label = ($entry.find('.baf-palette-field-label').text() || $entry.attr('aria-label') || $entry.text()).trim();
+            this.addField($entry.data('field-type'), label);
+        },
 
-            this.post('baf_add_field', { field_type: fieldType, total: this.cards().length + 1 }).then((response) => {
+        /**
+         * Add a question of a type at the end of the last page. A form not
+         * made yet is made by this, as a draft, with the title typed so far.
+         */
+        addField: function(fieldType, fieldLabel) {
+            this.post('baf_add_field', { field_type: fieldType, title: $('#baf-form-title').val() || '' }).then((response) => {
                 if (!response.success) {
                     this.announcer.announce(this.failure(response, L('addFailed', 'The question was not added.')), 'polite');
+                    $('#baf-add-field-btn').focus();
                     return;
                 }
-                $(this.dropzone).find('.baf-canvas-empty').remove();
-                const $newCard = $(response.data.html);
-                $(this.dropzone).append($newCard);
-                this.savedOrder = this.cardIds();
-                this.updateMoveButtonStates();
-
-                // Focus the new field card
-                $newCard.find('.baf-field-edit').focus();
-
-                this.announcer.announceFieldAdded(fieldLabel, this.cards().length);
+                this.applyReply(response.data, response.data.field_id, '.baf-field-edit');
+                const $new = this.cardFor(response.data.field_id);
+                this.announcer.announceFieldAdded(fieldLabel || response.data.label, this.getFieldPosition($new));
             }, () => {
                 this.announcer.announce(L('addFailed', 'The question was not added.'), 'polite');
             });
@@ -365,7 +466,7 @@
             const $button = $(e.currentTarget);
             if (e.key === 'Enter' || e.key === ' ') {
                 if (!$button.is('button')) {
-                    this.addField(e);
+                    this.addFromPalette(e);
                 }
                 return;
             }
@@ -391,6 +492,159 @@
                 $buttons.eq(newIndex).focus();
             }
         },
+
+        // ------------------------------------------------------------------
+        // Add Field (F): the picker
+        // ------------------------------------------------------------------
+
+        openPicker: function(e) {
+            const E = window.BAFModelEditor;
+            const wrapper = document.getElementById('baf-picker-dialog');
+            if (!E || !wrapper) return;
+            $('#baf-picker-filter').val('');
+            this.filterPicker();
+            this.picker = E.showDialog(wrapper, {
+                returnTo: (e && e.currentTarget) || document.getElementById('baf-add-field-btn'),
+                first: document.getElementById('baf-picker-filter')
+            });
+        },
+
+        filterPicker: function() {
+            const q = String($('#baf-picker-filter').val() || '').toLowerCase().trim();
+            let shown = 0;
+            $('#baf-picker-types .baf-picker-category').each(function() {
+                let here = 0;
+                $(this).find('li').each(function() {
+                    const $li = $(this);
+                    const $b = $li.find('.baf-picker-type');
+                    const C = window.BAFModelEditorCore;
+                    const match = C ? C.typeMatches(q, $b.text(), $b.data('field-type'))
+                        : (!q || $b.text().toLowerCase().indexOf(q) !== -1 || String($b.data('field-type')).indexOf(q) !== -1);
+                    $li.prop('hidden', !match);
+                    here += match ? 1 : 0;
+                });
+                $(this).prop('hidden', here === 0);
+                shown += here;
+            });
+            setStatus(document.getElementById('baf-picker-count'), shown === 1 ? L('oneType', '1 type.') : L('nTypes', '%d types.', shown));
+        },
+
+        pickType: function(e) {
+            e.preventDefault();
+            const $b = $(e.currentTarget);
+            if (this.picker) {
+                this.picker.close(document.body); // Focus goes to the new card once it is there.
+                this.picker = null;
+            }
+            this.addField($b.data('field-type'), $b.text().trim());
+        },
+
+        // ------------------------------------------------------------------
+        // Convert type
+        // ------------------------------------------------------------------
+
+        openConvert: function(e) {
+            e.preventDefault();
+            const E = window.BAFModelEditor;
+            const wrapper = document.getElementById('baf-convert-dialog');
+            if (!E || !wrapper) return;
+            const $card = $(e.currentTarget).closest('.baf-field-card');
+            const type = String($card.data('field-type') || '');
+            this.converting = { fieldId: String($card.data('field-id')), label: this.labelOf($card), type: type };
+            $('#baf-convert-dialog-title').text(L('convertTitle', 'Convert %s', this.converting.label));
+            $('#baf-convert-current').text(L('convertCurrent', 'It is now: %s.', typeLabel(type)));
+            const $select = $('#baf-convert-type').val('');
+            $select.find('option').prop('disabled', false);
+            $select.find('option[value="' + type + '"]').prop('disabled', true);
+            $('#baf-convert-changes').empty();
+            $('#baf-convert-preview-heading').prop('hidden', true);
+            E.showProblems(document.getElementById('baf-convert-dialog-summary'), this.convertFields(), []);
+            this.convertDialog = E.showDialog(wrapper, { returnTo: e.currentTarget, first: $select[0] });
+        },
+
+        convertFields: function() {
+            return { type: { control: document.getElementById('baf-convert-type'), error: document.getElementById('baf-convert-type-error') } };
+        },
+
+        /** Say what the chosen type would change, before anything is changed. */
+        previewConvert: function() {
+            const type = $('#baf-convert-type').val();
+            const $list = $('#baf-convert-changes').empty();
+            $('#baf-convert-preview-heading').prop('hidden', !type);
+            if (!type || !this.converting) return;
+            this.post('baf_convert_question', { field_id: this.converting.fieldId, target_type: type, dry_run: '1' }).then((response) => {
+                if ($('#baf-convert-type').val() !== type) return; // chosen again meanwhile
+                if (!response.success) {
+                    $list.append($('<li>').text(this.failure(response, L('convertFailed', 'It could not be converted.'))));
+                    return;
+                }
+                const d = response.data;
+                (d.changes || []).forEach((c) => $list.append($('<li>').text(c)));
+                (d.problems || []).forEach((p) => $list.append($('<li>').text(L('convertProblem', 'It could not be saved: %s', p.message))));
+                if (!(d.changes || []).length && !(d.problems || []).length) {
+                    $list.append($('<li>').text(L('convertNothing', 'Nothing else changes.')));
+                }
+            });
+        },
+
+        submitConvert: function(e) {
+            e.preventDefault();
+            const E = window.BAFModelEditor;
+            const type = $('#baf-convert-type').val();
+            if (!type) {
+                E.showProblems(document.getElementById('baf-convert-dialog-summary'), this.convertFields(), [{ field: 'type', message: L('convertChoose', 'Choose the type to change it to.') }]);
+                return;
+            }
+            const job = this.converting;
+            this.post('baf_convert_question', { field_id: job.fieldId, target_type: type }).then((response) => {
+                if (!response.success) {
+                    E.showProblems(document.getElementById('baf-convert-dialog-summary'), this.convertFields(), [{ field: 'type', message: this.failure(response, L('convertFailed', 'It could not be converted.')) }]);
+                    return;
+                }
+                this.convertDialog.close(document.body);
+                this.applyReply(response.data, job.fieldId, '.baf-field-convert');
+                const changes = (response.data.changes || []).join(' ');
+                this.announcer.announce(L('converted', '%1$s is now %2$s.', job.label, response.data.type_label) + (changes ? ' ' + changes : ''), 'polite');
+            }, () => {
+                E.showProblems(document.getElementById('baf-convert-dialog-summary'), this.convertFields(), [{ field: 'type', message: L('convertFailed', 'It could not be converted.') }]);
+            });
+        },
+
+        // ------------------------------------------------------------------
+        // Save Draft and Publish
+        // ------------------------------------------------------------------
+
+        /**
+         * The questions are saved as they change; these save the title and
+         * the status, and make the form if it was not made yet.
+         */
+        saveStatus: function(e, status) {
+            e.preventDefault();
+            const $button = $(e.currentTarget);
+            const statusEl = document.getElementById('baf-save-status');
+            if (this.busy) return;
+            this.busy = true;
+            $button.attr('aria-disabled', 'true');
+            this.post('baf_save_form_status', { status: status, title: $('#baf-form-title').val() || '' }).then((response) => {
+                this.busy = false;
+                $button.removeAttr('aria-disabled');
+                if (!response.success) {
+                    setStatus(statusEl, this.failure(response, L('statusFailed', 'The form was not saved.')));
+                    return;
+                }
+                this.adoptForm(response.data);
+                $('#baf-canvas-title').text(response.data.title);
+                setStatus(statusEl, status === 'active' ? L('published', 'Published. The form is live.') : L('draftSaved', 'Saved as a draft.'));
+            }, () => {
+                this.busy = false;
+                $button.removeAttr('aria-disabled');
+                setStatus(statusEl, L('statusFailed', 'The form was not saved.'));
+            });
+        },
+
+        // ------------------------------------------------------------------
+        // Settings panel
+        // ------------------------------------------------------------------
 
         /**
          * Edit field settings: the server draws them from the question in
@@ -448,10 +702,6 @@
             }
         },
 
-        cardFor: function(fieldId) {
-            return this.cards().filter(function() { return String($(this).data('field-id')) === String(fieldId); });
-        },
-
         /** Show problems in the settings panel, joined to their fields. */
         settingsProblems: function(problems) {
             const E = window.BAFModelEditor;
@@ -491,7 +741,6 @@
                 this.settingsProblems(local);
                 return;
             }
-            fields.total = this.cards().length;
 
             this.post('baf_save_field_settings', fields).then((response) => {
                 if (!response.success) {
@@ -503,17 +752,10 @@
                     return;
                 }
                 this.settingsProblems([]);
-                const $old = this.cardFor(fieldId);
-                const $new = $(response.data.html);
-                $new.find('.baf-field-edit').attr('aria-expanded', 'true');
-                $old.replaceWith($new);
-                this.updateMoveButtonStates();
+                this.applyReply(response.data);
+                this.cardFor(fieldId).find('.baf-field-edit').attr('aria-expanded', 'true');
                 $panel.find('#baf-fs-heading').text(L('settingsHeading', 'Settings: %s', response.data.label));
-                const status = document.getElementById('baf-fs-status');
-                if (status) {
-                    status.textContent = '';
-                    setTimeout(() => { status.textContent = L('settingsSaved', 'Settings saved for %s.', response.data.label); }, 60);
-                }
+                setStatus(document.getElementById('baf-fs-status'), L('settingsSaved', 'Settings saved for %s.', response.data.label));
             }, () => {
                 this.settingsProblems([{ field: null, message: L('settingsNotSaved', 'The settings were not saved.') }]);
             });
@@ -525,22 +767,16 @@
         duplicateField: function(e) {
             const $card = $(e.currentTarget).closest('.baf-field-card');
             const fieldId = String($card.data('field-id'));
-            const fieldLabel = BAFFormBuilder.labelOf($card);
+            const fieldLabel = this.labelOf($card);
 
-            this.post('baf_duplicate_field', { field_id: fieldId, total: this.cards().length + 1 }).then((response) => {
+            this.post('baf_duplicate_field', { field_id: fieldId }).then((response) => {
                 if (!response.success) {
                     this.announcer.announce(this.failure(response, L('duplicateFailed', 'The question was not copied.')), 'polite');
                     return;
                 }
-                const $newCard = $(response.data.html);
-                $card.after($newCard);
-                this.savedOrder = this.cardIds();
-                this.updateMoveButtonStates();
-
-                // Focus the new field card
-                $newCard.find('.baf-field-edit').focus();
-
-                this.announcer.announce(L('fieldDuplicated', '%1$s copied, as %2$s, at position %3$d.', fieldLabel, response.data.label, this.getFieldPosition($newCard)), 'polite');
+                this.applyReply(response.data, response.data.field_id, '.baf-field-edit');
+                const $new = this.cardFor(response.data.field_id);
+                this.announcer.announce(L('fieldDuplicated', '%1$s copied, as %2$s, at position %3$d.', fieldLabel, response.data.label, this.getFieldPosition($new)), 'polite');
             }, () => {
                 this.announcer.announce(L('duplicateFailed', 'The question was not copied.'), 'polite');
             });
@@ -552,7 +788,7 @@
         deleteField: function(e) {
             const $card = $(e.currentTarget).closest('.baf-field-card');
             const fieldId = String($card.data('field-id'));
-            const fieldLabel = BAFFormBuilder.labelOf($card);
+            const fieldLabel = this.labelOf($card);
             const $button = $card.find('.baf-field-delete');
             const E = window.BAFModelEditor;
             if (!E || !document.getElementById('baf-model-confirm')) {
@@ -561,10 +797,10 @@
 
             E.confirmDelete(L('deleteTitle', 'Delete question %d?', this.getFieldPosition($card)), L('confirmDelete', '%s will be deleted from the form.', fieldLabel), $button[0]).then((yes) => {
                 if (!yes) return;
-                // Find next focusable element before removing
+                // The card that will take its place, or the one before.
                 const $next = $card.next('.baf-field-card');
                 const $prev = $card.prev('.baf-field-card');
-                const $focusTarget = $next.length ? $next : $prev;
+                const focusId = $next.length ? String($next.data('field-id')) : ($prev.length ? String($prev.data('field-id')) : null);
 
                 this.post('baf_delete_field', { field_id: fieldId }).then((response) => {
                     if (!response.success) {
@@ -572,20 +808,10 @@
                         this.announcer.announce(L('deleteRefused', '%1$s was not deleted. %2$s', fieldLabel, this.failure(response, '')), 'polite');
                         return;
                     }
-                    $card.remove();
-                    this.savedOrder = this.cardIds();
-                    this.updateMoveButtonStates();
-
-                    // Move focus to next/prev field, or to Add Field
-                    if ($focusTarget.length) {
-                        $focusTarget.find('.baf-field-edit').focus();
-                    } else {
-                        $('#baf-add-field-btn').focus();
-                    }
-                    if ($(this.settingsPanel).data('field-id') === fieldId) {
+                    if (String($(this.settingsPanel).data('field-id')) === fieldId) {
                         $(this.settingsPanel).prop('hidden', true).removeData('field-id').find('#baf-settings-body').empty();
                     }
-
+                    this.applyReply(response.data, focusId, '.baf-field-edit');
                     this.announcer.announceFieldDeleted(fieldLabel, this.cards().length);
                 }, () => {
                     $button.focus();
@@ -595,16 +821,10 @@
         },
 
         /**
-         * Save the order of the cards. Resolves with the server's reply.
+         * Save the order of the cards and groups. Resolves with the reply.
          */
         updateFieldOrder: function() {
-            const fieldOrder = this.cardIds();
-            const request = this.post('baf_update_field_order', { field_order: fieldOrder });
-            request.then((response) => {
-                if (response && response.success) {
-                    this.savedOrder = response.data.order || fieldOrder;
-                }
-            });
+            const request = this.post('baf_update_field_order', { field_order: this.cardIds() });
             $(document).trigger('baf:fieldOrderChanged');
             return request;
         },
@@ -616,56 +836,54 @@
             return Number(data.formId || $('#baf-form-id').val() || 0);
         },
 
+        /** The card or group under the pointer, and whether to drop after it. */
+        dropTarget: function(e, $dragged) {
+            let best = null;
+            $(this.dropzone).find(SIBLINGS).not('.baf-dragging').each(function() {
+                if ($dragged && $.contains($dragged[0], this)) return;
+                const rect = this.getBoundingClientRect();
+                if (e.clientY >= rect.top && e.clientY <= rect.bottom) {
+                    best = { el: this, after: e.clientY > rect.top + rect.height / 2 }; // innermost wins: later in the walk
+                }
+            });
+            return best;
+        },
+
         /**
          * Handle drop indicator during drag
          */
         updateDropIndicator: function(e) {
             const $dropzone = $(this.dropzone);
             $dropzone.find('.baf-drop-indicator').remove();
-
-            const $cards = $dropzone.find('.baf-field-card:not(.baf-dragging)');
-            let insertAfter = null;
-
-            $cards.each(function() {
-                const rect = this.getBoundingClientRect();
-                if (e.clientY > rect.top + rect.height / 2) {
-                    insertAfter = this;
-                }
-            });
-
+            const t = this.dropTarget(e, $dropzone.find('.baf-dragging'));
+            if (!t) return;
             const $indicator = $('<div class="baf-drop-indicator" aria-hidden="true"></div>');
-            if (insertAfter) {
-                $(insertAfter).after($indicator);
+            if (t.after) {
+                $(t.el).after($indicator);
             } else {
-                $dropzone.prepend($indicator);
+                $(t.el).before($indicator);
             }
         },
 
         /**
-         * Handle drop
+         * Handle drop: put the card where it was dropped, then save through
+         * the same order check as the move buttons.
          */
         handleDrop: function(fieldId, e) {
             const $dropzone = $(this.dropzone);
             $dropzone.find('.baf-drop-indicator').remove();
-
             const $card = this.cardFor(fieldId);
-            const $cards = $dropzone.find('.baf-field-card:not(.baf-dragging)');
-            let insertAfter = null;
-
-            $cards.each(function() {
-                const rect = this.getBoundingClientRect();
-                if (e.clientY > rect.top + rect.height / 2) {
-                    insertAfter = this;
-                }
-            });
-
-            if (insertAfter) {
-                $card.insertAfter(insertAfter);
+            if (!$card.length) return;
+            const t = this.dropTarget(e, $card);
+            if (!t || t.el === $card[0]) return;
+            if (t.after) {
+                $card.insertAfter(t.el);
             } else {
-                $dropzone.prepend($card);
+                $card.insertBefore(t.el);
             }
-
-            this.afterMove($card);
+            $card.removeClass('baf-dragging');
+            $card.find('.baf-field-edit').focus();
+            this.afterMove($card, '.baf-field-edit');
         },
 
         /**
@@ -728,8 +946,8 @@
             this.announce(L('fieldMoved', '%1$s moved to position %2$d of %3$d.', fieldLabel, position, total), 'polite');
         }
 
-        announceFieldAdded(fieldLabel, total) {
-            this.announce(L('fieldAdded', '%1$s added, at position %2$d.', fieldLabel, total), 'polite');
+        announceFieldAdded(fieldLabel, position) {
+            this.announce(L('fieldAdded', '%1$s added, at position %2$d.', fieldLabel, position), 'polite');
         }
 
         announceFieldDeleted(fieldLabel, total) {
@@ -797,10 +1015,6 @@
     // Initialize on DOM ready
     $(document).ready(function() {
         BAFFormBuilder.init();
-        if (BAFFormBuilder.dropzone) {
-            BAFFormBuilder.savedOrder = BAFFormBuilder.cardIds();
-            BAFFormBuilder.updateMoveButtonStates();
-        }
     });
 
     // Export for external use

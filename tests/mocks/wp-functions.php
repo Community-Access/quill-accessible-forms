@@ -180,3 +180,9 @@ if ( ! function_exists( 'esc_attr_e' ) ) {
         echo esc_attr( $text );
     }
 }
+
+if ( ! function_exists( '_n' ) ) {
+    function _n( $single, $plural, $number, $domain = 'default' ) {
+        return 1 === (int) $number ? $single : $plural;
+    }
+}

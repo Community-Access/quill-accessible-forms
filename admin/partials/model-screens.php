@@ -19,6 +19,76 @@ if ( ! defined( 'ABSPATH' ) ) {
     exit;
 }
 
+if ( ! function_exists( 'baf_builder_type_dialogs' ) ) {
+
+    /**
+     * The Visual mode's two type dialogs: Add a question (the Add Field
+     * button, or F in the canvas) and Convert type. Both list the field
+     * registry's types by category; both are modal, with the page behind
+     * made inert, Escape to close and focus returned to the opener.
+     *
+     * @param array $categories BAF_Field_Registry::get_for_builder(): id => array( label, fields => list of array( type, label ) ).
+     */
+    function baf_builder_type_dialogs( $categories ) {
+        ?>
+        <div id="baf-picker-dialog" class="baf-model-modal" hidden>
+            <div class="baf-model-backdrop"></div>
+            <div class="baf-modal-content baf-model-dialog" role="dialog" aria-modal="true" aria-labelledby="baf-picker-dialog-title" aria-describedby="baf-picker-intro">
+                <div class="baf-modal-header">
+                    <h2 id="baf-picker-dialog-title"><?php esc_html_e( 'Add a question', 'bits-accessible-forms' ); ?></h2>
+                </div>
+                <div class="baf-modal-body">
+                    <p id="baf-picker-intro"><?php esc_html_e( 'Choose the type of question. It is added at the end of the last page and saved straight away.', 'bits-accessible-forms' ); ?></p>
+                    <p>
+                        <label for="baf-picker-filter"><?php esc_html_e( 'Find a type', 'bits-accessible-forms' ); ?></label><br>
+                        <input type="search" id="baf-picker-filter" class="regular-text" autocomplete="off" aria-controls="baf-picker-types" aria-describedby="baf-picker-count">
+                        <span id="baf-picker-count" class="baf-sr-only" role="status" aria-live="polite"></span>
+                    </p>
+                    <div id="baf-picker-types" class="baf-picker-types">
+                        <?php foreach ( $categories as $cat_id => $category ) : ?>
+                            <div class="baf-picker-category" data-category="<?php echo esc_attr( $cat_id ); ?>">
+                                <h3 id="baf-picker-cat-<?php echo esc_attr( $cat_id ); ?>"><?php echo esc_html( $category['label'] ); ?></h3>
+                                <ul aria-labelledby="baf-picker-cat-<?php echo esc_attr( $cat_id ); ?>">
+                                    <?php foreach ( $category['fields'] as $type ) : ?>
+                                        <li><button type="button" class="button-link baf-picker-type" data-field-type="<?php echo esc_attr( $type['type'] ); ?>"><?php echo esc_html( $type['label'] ); ?></button></li>
+                                    <?php endforeach; ?>
+                                </ul>
+                            </div>
+                        <?php endforeach; ?>
+                    </div>
+                </div>
+                <div class="baf-modal-footer">
+                    <button type="button" class="button" data-baf-cancel><?php esc_html_e( 'Cancel', 'bits-accessible-forms' ); ?></button>
+                </div>
+            </div>
+        </div>
+
+        <?php baf_model_dialog_start( 'baf-convert-dialog', __( 'Convert question', 'bits-accessible-forms' ) ); ?>
+            <p id="baf-convert-current"></p>
+            <p>
+                <label for="baf-convert-type"><?php esc_html_e( 'New type', 'bits-accessible-forms' ); ?></label><br>
+                <select id="baf-convert-type" aria-describedby="baf-convert-type-help baf-convert-type-error">
+                    <option value=""><?php esc_html_e( 'Choose a type', 'bits-accessible-forms' ); ?></option>
+                    <?php foreach ( $categories as $category ) : ?>
+                        <optgroup label="<?php echo esc_attr( $category['label'] ); ?>">
+                            <?php foreach ( $category['fields'] as $type ) : ?>
+                                <option value="<?php echo esc_attr( $type['type'] ); ?>"><?php echo esc_html( $type['label'] ); ?></option>
+                            <?php endforeach; ?>
+                        </optgroup>
+                    <?php endforeach; ?>
+                </select>
+                <span id="baf-convert-type-help" class="description"><?php esc_html_e( 'Its label, help, ID and the rules that name it are kept. What else changes is listed after you choose.', 'bits-accessible-forms' ); ?></span>
+                <span id="baf-convert-type-error" class="baf-field-error" hidden></span>
+            </p>
+            <div id="baf-convert-preview" aria-live="polite" aria-atomic="true">
+                <h3 id="baf-convert-preview-heading" hidden><?php esc_html_e( 'What will change', 'bits-accessible-forms' ); ?></h3>
+                <ul id="baf-convert-changes" aria-labelledby="baf-convert-preview-heading"></ul>
+            </div>
+        <?php
+        baf_model_dialog_end( __( 'Convert', 'bits-accessible-forms' ) );
+    }
+}
+
 if ( ! function_exists( 'baf_model_screen_tabs' ) ) {
 
     /**
@@ -28,7 +98,7 @@ if ( ! function_exists( 'baf_model_screen_tabs' ) ) {
      */
     function baf_model_screens() {
         return array(
-            'rules'     => __( 'Rules', 'bits-accessible-forms' ),
+            'rules'        => __( 'Rules', 'bits-accessible-forms' ),
             'outcomes'     => __( 'Quiz outcomes', 'bits-accessible-forms' ),
             'translations' => __( 'Translations', 'bits-accessible-forms' ),
             'libraries'    => __( 'Choice libraries', 'bits-accessible-forms' ),
@@ -60,7 +130,7 @@ if ( ! function_exists( 'baf_model_screen_tabs' ) ) {
         <div id="baf-<?php echo $k; ?>-panel" role="tabpanel" aria-labelledby="baf-mode-<?php echo $k; ?>" class="baf-mode-panel baf-model-panel" hidden>
             <h2 id="baf-<?php echo $k; ?>-heading"><?php echo esc_html( $title ); ?></h2>
             <p><?php echo esc_html( $intro ); ?></p>
-            <p class="baf-model-needs-save" hidden><?php esc_html_e( 'Save the form first, with Save Draft or Publish; then this screen can edit it.', 'bits-accessible-forms' ); ?></p>
+            <p class="baf-model-needs-save" hidden><?php esc_html_e( 'This form is not made yet. Add a question in the Visual mode, or choose Save Draft, and it is made; then this screen can edit it.', 'bits-accessible-forms' ); ?></p>
             <div id="baf-<?php echo $k; ?>-summary" class="baf-error-summary" tabindex="-1" hidden></div>
             <div id="baf-<?php echo $k; ?>-status" class="baf-model-status baf-status" role="status" aria-live="polite" aria-atomic="true"></div>
         <?php
