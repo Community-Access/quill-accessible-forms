@@ -1,0 +1,30 @@
+[
+  {
+    "id": 42,
+    "field_id": 12,
+    "fields": {
+      "0": { "id": "0", "type": "name", "label": "Name", "format": "first-last", "required": "1" },
+      "1": { "id": "1", "type": "email", "label": "Email", "required": "1", "description": "We reply within a day." },
+      "2": { "id": "2", "type": "select", "label": "Topic", "choices": { "1": { "label": "Support", "value": "" }, "2": { "label": "Sales", "value": "" }, "3": { "label": "Press", "value": "press" } } },
+      "3": { "id": "3", "type": "text", "label": "Order number", "input_mask": "AA-9999", "conditional_logic": "1", "conditional_type": "show", "conditionals": [ [ { "field": "2", "operator": "==", "value": "1" } ] ] },
+      "4": { "id": "4", "type": "pagebreak", "position": "normal", "title": "Details", "next": "Continue" },
+      "5": { "id": "5", "type": "textarea", "label": "Message", "required": "1", "limit_enabled": "1", "limit_mode": "characters", "limit_count": "500", "placeholder": "How can we help?" },
+      "6": { "id": "6", "type": "checkbox", "label": "Contact me by", "choices": { "1": { "label": "Email", "value": "", "default": "1" }, "2": { "label": "Phone", "value": "" } } },
+      "7": { "id": "7", "type": "phone", "label": "Phone", "conditional_logic": "1", "conditional_type": "show", "conditionals": [ [ { "field": "6", "operator": "==", "value": "2" } ], [ { "field": "2", "operator": "==", "value": "2" }, { "field": "1", "operator": "!e", "value": "" } ] ] },
+      "8": { "id": "8", "type": "divider", "label": "Optional" },
+      "9": { "id": "9", "type": "net_promoter_score", "label": "Would you recommend us?" },
+      "10": { "id": "10", "type": "gdpr-checkbox", "label": "Privacy", "required": "1", "choices": { "1": { "label": "I consent to having this website store my submitted information." } } },
+      "11": { "id": "11", "type": "layout", "label": "Two columns" },
+      "12": { "id": "12", "type": "pagebreak", "position": "bottom" }
+    },
+    "settings": {
+      "form_title": "Contact us",
+      "form_desc": "",
+      "submit_text": "Send",
+      "antispam": "1",
+      "ajax_submit": "1",
+      "notifications": { "1": { "email": "{admin_email}", "subject": "New message", "sender_name": "Website", "sender_address": "{admin_email}", "replyto": "{field_id=\"1\"}", "message": "{all_fields}" } },
+      "confirmations": { "1": { "type": "message", "message": "<p>Thanks, we will be in touch.</p>" }, "2": { "type": "page", "page": "77", "conditional_logic": "1", "conditional_type": "show", "conditionals": [ [ { "field": "2", "operator": "==", "value": "3" } ] ] } }
+    }
+  }
+]

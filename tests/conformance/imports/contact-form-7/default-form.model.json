@@ -1,0 +1,168 @@
+{
+    "version": 1,
+    "title": "Contact form 1",
+    "pages": [
+        {
+            "id": "page_1",
+            "items": [
+                {
+                    "id": "text",
+                    "type": "html",
+                    "props": {
+                        "content": "<p>Please fill in the form below.</p>"
+                    }
+                },
+                {
+                    "id": "your_name",
+                    "type": "text",
+                    "label": "Your name",
+                    "required": true,
+                    "props": {
+                        "autocomplete": "name"
+                    }
+                },
+                {
+                    "id": "your_email",
+                    "type": "email",
+                    "label": "Your email",
+                    "required": true,
+                    "props": {
+                        "autocomplete": "email"
+                    }
+                },
+                {
+                    "id": "your_subject",
+                    "type": "text",
+                    "label": "Subject",
+                    "placeholder": "What is it about?"
+                },
+                {
+                    "id": "department",
+                    "type": "select",
+                    "label": "Department",
+                    "choices": [
+                        {
+                            "value": "support",
+                            "label": "Support"
+                        },
+                        {
+                            "value": "sales",
+                            "label": "Sales"
+                        },
+                        {
+                            "value": "Press",
+                            "label": "Press"
+                        }
+                    ],
+                    "props": {
+                        "include_blank": true
+                    }
+                },
+                {
+                    "id": "heard",
+                    "type": "checkbox",
+                    "label": "How did you hear about us?",
+                    "choices": [
+                        {
+                            "value": "Search",
+                            "label": "Search"
+                        },
+                        {
+                            "value": "Friend",
+                            "label": "Friend",
+                            "selected": true
+                        },
+                        {
+                            "value": "Newsletter",
+                            "label": "Newsletter"
+                        }
+                    ]
+                },
+                {
+                    "id": "guests",
+                    "type": "number",
+                    "label": "Guests",
+                    "default": "0",
+                    "validation": {
+                        "min": 0,
+                        "max": 5
+                    },
+                    "props": {
+                        "step": 1
+                    }
+                },
+                {
+                    "id": "your_message",
+                    "type": "textarea",
+                    "label": "Your message",
+                    "validation": {
+                        "max_length": 2000
+                    },
+                    "props": {
+                        "cols": 40,
+                        "rows": 6
+                    }
+                },
+                {
+                    "id": "visit",
+                    "type": "date",
+                    "label": "Visit date",
+                    "validation": {
+                        "min": "2026-01-01"
+                    }
+                },
+                {
+                    "id": "attachment",
+                    "type": "fileupload",
+                    "props": {
+                        "max_size": "2mb",
+                        "accept": ".pdf,.docx"
+                    }
+                },
+                {
+                    "id": "human",
+                    "type": "text",
+                    "label": "What is 1 + 1?",
+                    "required": true,
+                    "scoring": {
+                        "correct": [
+                            "2"
+                        ]
+                    }
+                },
+                {
+                    "id": "terms",
+                    "type": "consent",
+                    "required": true,
+                    "props": {
+                        "consent_text": "I agree to the privacy policy."
+                    }
+                },
+                {
+                    "id": "submit",
+                    "type": "submit",
+                    "label": "Send message"
+                }
+            ]
+        }
+    ],
+    "confirmations": [
+        {
+            "id": "confirmation_1",
+            "type": "message",
+            "message": "Thank you for your message. It has been sent."
+        }
+    ],
+    "notifications": [
+        {
+            "id": "notification_1",
+            "enabled": true,
+            "to": "{admin_email}",
+            "from_name": "{site_name}",
+            "from_email": "wordpress@example.org",
+            "reply_to": "{your_email}",
+            "subject": "{site_name} \"{your_subject}\"",
+            "message": "From: {your_name} <{your_email}>\n\n{your_message}"
+        }
+    ]
+}

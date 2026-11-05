@@ -1,0 +1,38 @@
+{
+  "about": "A form as BAF's visual builder saved it before the form model: the baf_forms columns, with the builder's defaults, numbers as text, flat sections and rule-list conditions.",
+  "title": "Volunteer sign-up",
+  "description": "",
+  "config": {
+    "pages": [
+      { "id": "page_1", "title": "About you", "description": "" },
+      { "id": "page_2", "title": "Availability", "description": "Tell us when you can help" }
+    ],
+    "fields": [
+      { "id": "full-name", "type": "name", "label": "Full name", "description": "", "required": "1", "placeholder": "", "default_value": "", "css_class": "", "size": "medium", "label_placement": "inherit", "admin_only": false, "visibility": "visible", "conditional_logic": [], "aria_label": "", "custom_error_message": "", "validation_rules": [], "pattern": "", "unique": false, "unique_scope": "form", "unique_message": "", "read_only": false, "spellcheck": null, "page": "page_1" },
+      { "id": "email", "type": "email", "label": "Email", "required": true, "unique": "1", "unique_scope": "everywhere", "smart_default": "user:user_email", "page": "page_1" },
+      { "id": "age", "type": "number", "label": "Age", "min": "16", "max": "99", "step": "1", "page": "page_1" },
+      { "id": "s1", "type": "section", "label": "Experience", "description": "Optional", "page": "page_1" },
+      { "id": "role", "type": "dropdown", "label": "Preferred role", "choices": [ { "value": "driver", "label": "Driver" }, { "value": 2, "label": "Reader", "price": "" }, { "value": "guide", "label": "Sighted guide", "colour": "blue" } ], "page": "page_1" },
+      { "id": "licence", "type": "text", "label": "Licence number", "input_mask": "AA999999", "conditional_logic": { "enabled": true, "action": "show", "logic": "all", "rules": [ { "field": "role", "operator": "equals", "value": "driver" }, { "field": "age", "operator": "greater_than", "value": "17" } ] }, "page": "page_1" },
+      { "id": "other_role", "type": "text", "label": "Other role", "conditional_logic": { "enabled": true, "action": "hide", "logic": "any", "rules": [ { "field": "role", "operator": "is_not_empty", "value": "" }, { "field": "role", "operator": "sounds_like", "value": "x" } ] }, "page": "page_1" },
+      { "id": "agree", "type": "checkbox", "label": "I agree to the code of conduct", "required": true, "page": "page_1" },
+      { "id": "s2", "type": "section", "label": "When", "page": "page_2" },
+      { "id": "start", "type": "date", "label": "Earliest start", "smart_default": "today+3", "page": "page_2" },
+      { "id": "days", "type": "checkboxes", "label": "Days", "options": { "mon": "Monday", "wed": "Wednesday" }, "page": "page_2" },
+      { "id": "region", "type": "select", "label": "Region", "choices": { "library": "us_states" }, "page": "page_2" },
+      { "id": "hours", "type": "number", "label": "Hours a week", "page": "page_2" },
+      { "id": "rate", "type": "number", "label": "Mileage rate", "default_value": "0.45", "page": "page_2" },
+      { "id": "claim", "type": "calculation", "label": "Weekly claim", "formula": "{hours} * {rate}", "page": "page_2" },
+      { "id": "fancy", "type": "calculation", "label": "Spreadsheet sum", "formula": "SUM({hours}; {rate})", "page": "page_2" },
+      { "id": "tagline", "type": "text", "label": "Tagline", "custom_attributes": { "data-track": "tagline", "onclick": "steal()" }, "page": "page_2" },
+      { "id": "orphan", "type": "text", "label": "On a page that is gone", "page": "page_9" },
+      { "id": "beam", "type": "teleporter", "label": "Beam me up", "page": "page_2" },
+      { "id": "q1", "type": "quiz", "label": "Which side does a sighted guide walk?", "choices": [ { "value": "half_step_ahead", "label": "Half a step ahead" }, { "value": "behind", "label": "Behind" } ], "correct_answers": [ "half_step_ahead" ], "points": "2", "partial_credit": false, "feedback_correct": "Yes.", "page": "page_2" },
+      { "type": "divider", "page": "page_2" },
+      { "id": "cols", "type": "columns", "column_count": 2, "columns": [ [ { "id": "phone", "type": "phone", "label": "Phone" } ], [ { "id": "mobile", "type": "phone", "label": "Mobile" } ] ], "page": "page_2" }
+    ]
+  },
+  "settings": { "form_button_text": "Sign up", "ajax_submission": true, "enable_honeypot": true, "captcha_type": "recaptcha_v3", "conditional_logic": [] },
+  "confirmations": [ { "type": "message", "message": "Thank you for volunteering." }, { "type": "popup", "message": "Hi" } ],
+  "notifications": [ { "to": "volunteers@example.org", "subject": "New volunteer", "message": "{all_fields}", "attach_files": true } ]
+}

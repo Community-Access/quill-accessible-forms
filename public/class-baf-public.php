@@ -159,10 +159,26 @@ class BAF_Public {
      * Enqueue public scripts
      */
     public function enqueue_scripts() {
+        // The expression language and the model's runtime, the same rules the
+        // server applies, for forms saved with a model.
+        wp_register_script(
+            $this->plugin_name . '-expression',
+            BAF_PLUGIN_URL . 'public/js/baf-expression.js',
+            array(),
+            $this->version,
+            true
+        );
+        wp_register_script(
+            $this->plugin_name . '-form-model',
+            BAF_PLUGIN_URL . 'public/js/baf-form-model.js',
+            array( $this->plugin_name . '-expression' ),
+            $this->version,
+            true
+        );
         wp_enqueue_script(
             $this->plugin_name,
             BAF_PLUGIN_URL . 'public/js/baf-public.js',
-            array( 'jquery' ),
+            array( 'jquery', $this->plugin_name . '-form-model' ),
             $this->version,
             true
         );
@@ -188,6 +204,16 @@ class BAF_Public {
                 'minLength'      => __( 'Please enter at least %d characters.', 'bits-accessible-forms' ),
                 'maxLength'      => __( 'Please enter no more than %d characters.', 'bits-accessible-forms' ),
                 'pageProgress'   => __( 'Page %1$d of %2$d', 'bits-accessible-forms' ),
+                'pageChanged'    => __( 'Now on page %1$d of %2$d.', 'bits-accessible-forms' ),
+                'validationErrors' => __( 'Please correct the errors before submitting.', 'bits-accessible-forms' ),
+                /* translators: %d: number of questions that appeared. */
+                'questionsShown' => __( '%d more questions shown.', 'bits-accessible-forms' ),
+                'questionShown'  => __( '1 more question shown.', 'bits-accessible-forms' ),
+                /* translators: %d: number of questions that were hidden. */
+                'questionsHidden' => __( '%d questions hidden.', 'bits-accessible-forms' ),
+                'questionHidden' => __( '1 question hidden.', 'bits-accessible-forms' ),
+                /* translators: %s: the quiz score. */
+                'yourScore'      => __( 'Your score: %s.', 'bits-accessible-forms' ),
             ),
         ) );
 

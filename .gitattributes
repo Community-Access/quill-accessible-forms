@@ -1,0 +1,3 @@
+# Conformance files are compared byte for byte by more than one reader.
+tests/conformance/** text eol=lf
+schema/** text eol=lf

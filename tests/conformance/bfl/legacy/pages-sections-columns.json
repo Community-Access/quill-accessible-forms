@@ -1,0 +1,166 @@
+{
+    "version": 1,
+    "title": "Layout",
+    "pages": [
+        {
+            "id": "page_1",
+            "title": "Step 1",
+            "items": [
+                {
+                    "id": "field_1",
+                    "type": "section",
+                    "label": "Personal Info",
+                    "items": [
+                        {
+                            "id": "name",
+                            "type": "text",
+                            "label": "Name",
+                            "required": true
+                        }
+                    ]
+                },
+                {
+                    "id": "field_3",
+                    "type": "section",
+                    "label": "Contact Info",
+                    "items": [
+                        {
+                            "id": "email",
+                            "type": "email",
+                            "label": "Email",
+                            "required": true
+                        }
+                    ]
+                }
+            ]
+        },
+        {
+            "id": "page_2",
+            "title": "Step 2",
+            "description": "Almost done",
+            "items": [
+                {
+                    "id": "field_5",
+                    "type": "columns",
+                    "columns": [
+                        {
+                            "items": [
+                                {
+                                    "id": "first",
+                                    "type": "text",
+                                    "label": "First Name"
+                                }
+                            ]
+                        },
+                        {
+                            "items": [
+                                {
+                                    "id": "last2",
+                                    "type": "text",
+                                    "label": "Last Name"
+                                }
+                            ]
+                        }
+                    ]
+                },
+                {
+                    "id": "field_8",
+                    "type": "columns",
+                    "columns": [
+                        {
+                            "items": [
+                                {
+                                    "id": "a",
+                                    "type": "text",
+                                    "label": "A",
+                                    "required": true
+                                }
+                            ]
+                        },
+                        {
+                            "items": [
+                                {
+                                    "id": "b",
+                                    "type": "text",
+                                    "label": "B"
+                                }
+                            ]
+                        }
+                    ]
+                },
+                {
+                    "id": "field_11",
+                    "type": "columns",
+                    "columns": [
+                        {
+                            "items": [
+                                {
+                                    "id": "c",
+                                    "type": "text",
+                                    "label": "C"
+                                }
+                            ]
+                        },
+                        {
+                            "items": [
+                                {
+                                    "id": "d",
+                                    "type": "text",
+                                    "label": "D"
+                                }
+                            ]
+                        },
+                        {
+                            "items": [
+                                {
+                                    "id": "e",
+                                    "type": "text",
+                                    "label": "E"
+                                }
+                            ]
+                        }
+                    ]
+                }
+            ]
+        },
+        {
+            "id": "page_3",
+            "title": "Step 3",
+            "items": [
+                {
+                    "id": "type",
+                    "type": "radio",
+                    "label": "Type",
+                    "choices": [
+                        {
+                            "value": "personal",
+                            "label": "Personal"
+                        },
+                        {
+                            "value": "business",
+                            "label": "Business"
+                        }
+                    ]
+                },
+                {
+                    "id": "biz",
+                    "type": "text",
+                    "label": "Company Name",
+                    "when": "#type is \"Business\""
+                },
+                {
+                    "id": "field_17",
+                    "type": "html",
+                    "props": {
+                        "element": "divider"
+                    }
+                },
+                {
+                    "id": "notes",
+                    "type": "textarea",
+                    "label": "Notes"
+                }
+            ]
+        }
+    ]
+}

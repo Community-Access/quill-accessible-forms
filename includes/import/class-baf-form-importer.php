@@ -55,7 +55,8 @@ class BAF_Form_Importer {
         $form->status = 'draft';
 
         // Generate unique IDs for fields
-        if ( ! empty( $form->config['fields'] ) ) {
+        // A form with a stored model keeps its IDs: its conditions name them.
+        if ( ! empty( $form->config['fields'] ) && ! isset( $form->config['form_model'] ) ) {
             $form->config['fields'] = $this->regenerate_field_ids( $form->config['fields'] );
         }
 

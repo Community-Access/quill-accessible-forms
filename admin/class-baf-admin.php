@@ -117,6 +117,15 @@ class BAF_Admin {
         // Settings
         add_submenu_page(
             'baf-forms',
+            __( 'Import and Export Forms', 'bits-accessible-forms' ),
+            __( 'Import and Export', 'bits-accessible-forms' ),
+            'manage_options',
+            'baf-import-export',
+            array( $this, 'render_import_export_page' )
+        );
+
+        add_submenu_page(
+            'baf-forms',
             __( 'Settings', 'bits-accessible-forms' ),
             __( 'Settings', 'bits-accessible-forms' ),
             'manage_options',
@@ -209,6 +218,61 @@ class BAF_Admin {
                 true
             );
 
+            // The BFL panel: Format Code and Sync to Visual, on the form model.
+            wp_enqueue_script(
+                'baf-bfl-mode',
+                BAF_PLUGIN_URL . 'admin/js/baf-bfl-mode.js',
+                array( 'baf-form-builder' ),
+                BAF_VERSION,
+                true
+            );
+
+            // Rules, Quiz outcomes, Translations and Choice libraries: the
+            // screens check expressions with the published form's evaluator.
+            wp_enqueue_script(
+                'baf-admin-expression',
+                BAF_PLUGIN_URL . 'public/js/baf-expression.js',
+                array(),
+                BAF_VERSION,
+                true
+            );
+            wp_enqueue_script(
+                'baf-model-editor-core',
+                BAF_PLUGIN_URL . 'admin/js/baf-model-editor-core.js',
+                array( 'baf-admin-expression' ),
+                BAF_VERSION,
+                true
+            );
+            wp_enqueue_script(
+                'baf-model-editor',
+                BAF_PLUGIN_URL . 'admin/js/baf-model-editor.js',
+                array( 'baf-model-editor-core' ),
+                BAF_VERSION,
+                true
+            );
+            wp_enqueue_script(
+                'baf-model-screens',
+                BAF_PLUGIN_URL . 'admin/js/baf-model-screens.js',
+                array( 'baf-model-editor' ),
+                BAF_VERSION,
+                true
+            );
+            // The Scoring section of a question's settings in the Visual mode.
+            wp_enqueue_script(
+                'baf-field-scoring',
+                BAF_PLUGIN_URL . 'admin/js/baf-field-scoring.js',
+                array( 'baf-model-editor' ),
+                BAF_VERSION,
+                true
+            );
+            wp_localize_script( 'baf-model-editor', 'bafModelEditor', array(
+                'ajaxUrl'   => admin_url( 'admin-ajax.php' ),
+                'nonce'     => wp_create_nonce( 'baf_builder_nonce' ),
+                'formId'    => isset( $_GET['form_id'] ) ? absint( $_GET['form_id'] ) : 0,
+                'libraries' => class_exists( 'BAF_Choice_Libraries' ) ? BAF_Choice_Libraries::get_all() : array(),
+                'i18n'      => require BAF_PLUGIN_DIR . 'admin/model-editor-i18n.php',
+            ) );
+
             // Get field registry for builder
             $field_registry = BAF_Field_Registry::get_instance();
 
@@ -218,7 +282,8 @@ class BAF_Admin {
                 'formId'      => isset( $_GET['form_id'] ) ? absint( $_GET['form_id'] ) : 0,
                 'fieldTypes'  => $field_registry->get_for_builder(),
                 'i18n'        => array(
-                    'confirmDelete'    => __( 'Are you sure you want to delete this field?', 'bits-accessible-forms' ),
+                    /* translators: %s: question label. */
+                    'confirmDelete'    => __( '%s will be deleted from the form.', 'bits-accessible-forms' ),
                     'saved'            => __( 'Form saved successfully.', 'bits-accessible-forms' ),
                     'saveError'        => __( 'Error saving form. Please try again.', 'bits-accessible-forms' ),
                     'addField'         => __( 'Add Field', 'bits-accessible-forms' ),
@@ -229,6 +294,51 @@ class BAF_Admin {
                     'duplicate'        => __( 'Duplicate', 'bits-accessible-forms' ),
                     'untitledForm'     => __( 'Untitled Form', 'bits-accessible-forms' ),
                     'noFieldsYet'      => __( 'No fields yet. Add a field from the palette to get started.', 'bits-accessible-forms' ),
+                    'bflError'         => __( 'Error', 'bits-accessible-forms' ),
+                    'bflWarning'       => __( 'Warning', 'bits-accessible-forms' ),
+                    'bflProblems'      => __( 'Problems in the BFL', 'bits-accessible-forms' ),
+                    /* translators: %d: line number. */
+                    'bflLine'          => __( 'line %d', 'bits-accessible-forms' ),
+                    /* translators: %d: number of errors. */
+                    'bflHasErrors'     => __( 'The BFL has %d errors. They are listed after the editor.', 'bits-accessible-forms' ),
+                    'bflFormatted'     => __( 'Formatted.', 'bits-accessible-forms' ),
+                    'bflSynced'        => __( 'Saved. Reloading the visual builder.', 'bits-accessible-forms' ),
+                    // The field cards (baf-form-builder.js). %s, %d and %1$s are filled in by the script.
+                    // phpcs:disable WordPress.WP.I18n.MissingTranslatorsComment
+                    'addFailed'        => __( 'The question was not added.', 'bits-accessible-forms' ),
+                    'alreadyAtBottom'  => __( '%s is already last.', 'bits-accessible-forms' ),
+                    'alreadyAtTop'     => __( '%s is already first.', 'bits-accessible-forms' ),
+                    'deleteFailed'     => __( 'The question was not deleted.', 'bits-accessible-forms' ),
+                    'deleteRefused'    => __( '%1$s was not deleted. %2$s', 'bits-accessible-forms' ),
+                    'deleteTitle'      => __( 'Delete question %d?', 'bits-accessible-forms' ),
+                    'duplicateFailed'  => __( 'The question was not copied.', 'bits-accessible-forms' ),
+                    'fieldAdded'       => __( '%1$s added, at position %2$d.', 'bits-accessible-forms' ),
+                    'fieldDeleted'     => __( '%1$s deleted. %2$d questions left.', 'bits-accessible-forms' ),
+                    'fieldDuplicated'  => __( '%1$s copied, as %2$s, at position %3$d.', 'bits-accessible-forms' ),
+                    'fieldMoved'       => __( '%1$s moved to position %2$d of %3$d.', 'bits-accessible-forms' ),
+                    'moveDownAt'       => __( 'Move %1$s down (currently position %2$d of %3$d)', 'bits-accessible-forms' ),
+                    'moveFailed'       => __( 'The new order was not saved.', 'bits-accessible-forms' ),
+                    'moveStays'        => __( '%s stays with its page or section. Move it to another page in Structure mode.', 'bits-accessible-forms' ),
+                    'moveUpAt'         => __( 'Move %1$s up (currently position %2$d of %3$d)', 'bits-accessible-forms' ),
+                    'needLabel'        => __( 'A question needs a label, so people know what it asks.', 'bits-accessible-forms' ),
+                    'settingsFailed'   => __( 'The settings could not be opened.', 'bits-accessible-forms' ),
+                    'settingsHeading'  => __( 'Settings: %s', 'bits-accessible-forms' ),
+                    'settingsNotSaved' => __( 'The settings were not saved.', 'bits-accessible-forms' ),
+                    'settingsSaved'    => __( 'Settings saved for %s.', 'bits-accessible-forms' ),
+                    'convertChoose'    => __( 'Choose the type to change it to.', 'bits-accessible-forms' ),
+                    'convertCurrent'   => __( 'It is now: %s.', 'bits-accessible-forms' ),
+                    'convertFailed'    => __( 'It could not be converted.', 'bits-accessible-forms' ),
+                    'convertNothing'   => __( 'Nothing else changes.', 'bits-accessible-forms' ),
+                    'convertProblem'   => __( 'It could not be saved: %s', 'bits-accessible-forms' ),
+                    'convertTitle'     => __( 'Convert %s', 'bits-accessible-forms' ),
+                    'converted'        => __( '%1$s is now %2$s.', 'bits-accessible-forms' ),
+                    'draftSaved'       => __( 'Saved as a draft.', 'bits-accessible-forms' ),
+                    'formCreated'      => __( 'The form is made, as a draft. Every change is saved as you make it.', 'bits-accessible-forms' ),
+                    'nTypes'           => __( '%d types.', 'bits-accessible-forms' ),
+                    'oneType'          => __( '1 type.', 'bits-accessible-forms' ),
+                    'published'        => __( 'Published. The form is live.', 'bits-accessible-forms' ),
+                    'statusFailed'     => __( 'The form was not saved.', 'bits-accessible-forms' ),
+                    // phpcs:enable
                 ),
             ) );
 
@@ -283,6 +393,54 @@ class BAF_Admin {
                 'coachOpened'        => __( 'Accessibility coach opened', 'bits-accessible-forms' ),
                 'coachClosed'        => __( 'Accessibility coach closed', 'bits-accessible-forms' ),
                 'analyzeError'       => __( 'Analysis failed. Please try again.', 'bits-accessible-forms' ),
+            ) );
+        }
+
+        // Import and Export Forms
+        if ( strpos( $hook, 'baf-import-export' ) !== false ) {
+            wp_enqueue_script(
+                'baf-import-export',
+                BAF_PLUGIN_URL . 'admin/js/baf-import-export.js',
+                array(),
+                BAF_VERSION,
+                true
+            );
+            wp_localize_script( 'baf-import-export', 'bafImportExport', array(
+                'ajaxUrl' => admin_url( 'admin-ajax.php' ),
+                'nonce'   => wp_create_nonce( 'baf_builder_nonce' ),
+                'i18n'    => array(
+                    'notCarried'      => __( 'Not carried over', 'bits-accessible-forms' ),
+                    'changed'         => __( 'Changed', 'bits-accessible-forms' ),
+                    'problems'        => __( 'Problems', 'bits-accessible-forms' ),
+                    'toCheck'         => __( 'To check', 'bits-accessible-forms' ),
+                    'notCarriedCount' => __( 'not carried over', 'bits-accessible-forms' ),
+                    'changedCount'    => __( 'changed', 'bits-accessible-forms' ),
+                    'problemsCount'   => __( 'problems', 'bits-accessible-forms' ),
+                    'toCheckCount'    => __( 'to check', 'bits-accessible-forms' ),
+                    'everything'      => __( 'Everything came across.', 'bits-accessible-forms' ),
+                    'fileRead'        => __( 'The file is in the text box. Check it, then choose Import.', 'bits-accessible-forms' ),
+                    'fileUnreadable'  => __( 'That file could not be read.', 'bits-accessible-forms' ),
+                    'needExport'      => __( 'Paste the exported form, or choose its file.', 'bits-accessible-forms' ),
+                    'importing'       => __( 'Importing...', 'bits-accessible-forms' ),
+                    'failed'          => __( 'The import did not work.', 'bits-accessible-forms' ),
+                    'importReport'    => __( 'Import report', 'bits-accessible-forms' ),
+                    /* translators: 1: number of items, 2: form builder. */
+                    'imported'        => __( 'Imported %1$d items from %2$s as a draft form.', 'bits-accessible-forms' ),
+                    'openForm'        => __( 'Open the new form in the builder', 'bits-accessible-forms' ),
+                    'reportFollows'   => __( 'The report follows the Import button.', 'bits-accessible-forms' ),
+                    'exporting'       => __( 'Exporting...', 'bits-accessible-forms' ),
+                    'exportFailed'    => __( 'The export did not work.', 'bits-accessible-forms' ),
+                    'exportReport'    => __( 'Export report', 'bits-accessible-forms' ),
+                    /* translators: 1: number of items, 2: form builder. */
+                    'exported'        => __( 'Exported %1$d items to %2$s.', 'bits-accessible-forms' ),
+                    'exportFollows'   => __( 'The report and the export follow the Export button.', 'bits-accessible-forms' ),
+                    /* translators: %s: file name. */
+                    'download'        => __( 'Download %s', 'bits-accessible-forms' ),
+                    /* translators: %s: file name. */
+                    'downloaded'      => __( 'Downloading %s.', 'bits-accessible-forms' ),
+                    'copied'          => __( 'The export is copied.', 'bits-accessible-forms' ),
+                    'copyFailed'      => __( 'Copying was refused; the export is selected for you to copy.', 'bits-accessible-forms' ),
+                ),
             ) );
         }
 
@@ -364,5 +522,12 @@ class BAF_Admin {
      */
     public function render_csv_import_page() {
         include BAF_PLUGIN_DIR . 'admin/partials/csv-import-wizard.php';
+    }
+
+    /**
+     * Render the Import and Export Forms page
+     */
+    public function render_import_export_page() {
+        include BAF_PLUGIN_DIR . 'admin/partials/import-export.php';
     }
 }

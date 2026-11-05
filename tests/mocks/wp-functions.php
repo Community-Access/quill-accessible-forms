@@ -155,3 +155,34 @@ if ( ! function_exists( 'is_wp_error' ) ) {
         return $thing instanceof WP_Error;
     }
 }
+
+if ( ! function_exists( 'sanitize_title' ) ) {
+    // Matches WordPress for plain ASCII titles, which is all the tests use.
+    function sanitize_title( $title ) {
+        return trim( preg_replace( '/[^a-z0-9]+/', '-', strtolower( (string) $title ) ), '-' );
+    }
+}
+
+if ( ! function_exists( 'esc_attr__' ) ) {
+    function esc_attr__( $text, $domain = 'default' ) {
+        return esc_attr( $text );
+    }
+}
+
+if ( ! function_exists( 'esc_html_e' ) ) {
+    function esc_html_e( $text, $domain = 'default' ) {
+        echo esc_html( $text );
+    }
+}
+
+if ( ! function_exists( 'esc_attr_e' ) ) {
+    function esc_attr_e( $text, $domain = 'default' ) {
+        echo esc_attr( $text );
+    }
+}
+
+if ( ! function_exists( '_n' ) ) {
+    function _n( $single, $plural, $number, $domain = 'default' ) {
+        return 1 === (int) $number ? $single : $plural;
+    }
+}

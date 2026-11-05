@@ -1,0 +1,178 @@
+{
+    "version": 1,
+    "title": "Modifiers",
+    "pages": [
+        {
+            "id": "page_1",
+            "items": [
+                {
+                    "id": "code",
+                    "type": "text",
+                    "label": "Code",
+                    "validation": {
+                        "pattern": "[A-Z]{3}-[0-9]{4}"
+                    },
+                    "props": {
+                        "autofocus": true,
+                        "spellcheck": false
+                    }
+                },
+                {
+                    "id": "doc",
+                    "type": "fileupload",
+                    "label": "Document",
+                    "props": {
+                        "accept": "image/*,.pdf"
+                    }
+                },
+                {
+                    "id": "photo",
+                    "type": "fileupload",
+                    "label": "Photo",
+                    "props": {
+                        "capture": "environment"
+                    }
+                },
+                {
+                    "id": "selfie",
+                    "type": "fileupload",
+                    "label": "Selfie",
+                    "props": {
+                        "capture": "environment"
+                    }
+                },
+                {
+                    "id": "bio",
+                    "type": "textarea",
+                    "label": "Bio",
+                    "props": {
+                        "rows": 10,
+                        "cols": 80
+                    }
+                },
+                {
+                    "id": "phone",
+                    "type": "text",
+                    "label": "Phone",
+                    "mask": "(999) 999-9999",
+                    "props": {
+                        "inputmode": "tel",
+                        "enterkeyhint": "next"
+                    }
+                },
+                {
+                    "id": "email",
+                    "type": "email",
+                    "label": "Email",
+                    "validation": {
+                        "unique": true,
+                        "unique_scope": "global",
+                        "unique_message": "Already registered"
+                    },
+                    "props": {
+                        "confirm_email": true
+                    }
+                },
+                {
+                    "id": "display_name",
+                    "type": "text",
+                    "label": "Name",
+                    "smart_default": "user(\"display_name\")"
+                },
+                {
+                    "id": "start",
+                    "type": "date",
+                    "label": "Start",
+                    "smart_default": "today() + 7"
+                },
+                {
+                    "id": "today",
+                    "type": "date",
+                    "label": "Today",
+                    "smart_default": "today()"
+                },
+                {
+                    "id": "where",
+                    "type": "text",
+                    "label": "Country",
+                    "smart_default": "geo()"
+                },
+                {
+                    "id": "ref",
+                    "type": "hidden",
+                    "label": "Referrer",
+                    "smart_default": "query(\"ref\")"
+                },
+                {
+                    "id": "plain",
+                    "type": "text",
+                    "label": "Plain",
+                    "smart_default": "\"Hello\""
+                },
+                {
+                    "id": "ship",
+                    "type": "address",
+                    "label": "Shipping Address",
+                    "props": {
+                        "autocomplete": true,
+                        "autocomplete_provider": "google_places",
+                        "autocomplete_countries": [
+                            "US",
+                            "CA"
+                        ],
+                        "autocomplete_types": [
+                            "address"
+                        ]
+                    }
+                },
+                {
+                    "id": "tagged",
+                    "type": "text",
+                    "label": "Tagged",
+                    "attributes": {
+                        "data-analytics": "contact-form",
+                        "aria-describedby": "hint1"
+                    }
+                },
+                {
+                    "id": "ro",
+                    "type": "text",
+                    "label": "Read only",
+                    "props": {
+                        "read_only": true,
+                        "disabled": true,
+                        "css_class": "wide",
+                        "admin_only": true,
+                        "visibility": "hidden",
+                        "allow_other": true
+                    }
+                },
+                {
+                    "id": "qty",
+                    "type": "number",
+                    "label": "Quantity",
+                    "default": 1,
+                    "validation": {
+                        "min": 1,
+                        "max": 99
+                    },
+                    "props": {
+                        "step": 1,
+                        "prefix": "x",
+                        "suffix": "items"
+                    }
+                },
+                {
+                    "id": "kids",
+                    "type": "repeater",
+                    "label": "Children",
+                    "items": [],
+                    "props": {
+                        "min_rows": 1,
+                        "max_rows": 4
+                    }
+                }
+            ]
+        }
+    ]
+}

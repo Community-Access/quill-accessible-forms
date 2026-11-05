@@ -1,0 +1,11 @@
+{
+    "source": "WPForms",
+    "carried": 10,
+    "entries": [
+        {
+            "level": "dropped",
+            "where": "field 11 (Two columns)",
+            "message": "BAF has no field like WPForms' \"layout\"."
+        }
+    ]
+}

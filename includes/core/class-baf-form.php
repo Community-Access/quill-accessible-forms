@@ -183,11 +183,15 @@ class BAF_Form {
         $table = $wpdb->prefix . 'baf_forms';
         $now   = current_time( 'mysql' );
 
+        // Forms saved before the form model get it now, when it converts cleanly.
+        // The builder's own fields stay as they are, so nothing that reads them changes.
+        $this->upgrade_to_model();
+
         $data = array(
             'title'         => sanitize_text_field( $this->title ),
             'slug'          => sanitize_title( $this->slug ?: $this->title ),
             'description'   => wp_kses_post( $this->description ),
-            'config'        => wp_json_encode( $this->config ),
+            'config'        => wp_json_encode( $this->config, JSON_PRESERVE_ZERO_FRACTION ),
             'bfl_source'    => $this->bfl_source,
             'status'        => $this->status,
             'settings'      => wp_json_encode( $this->settings ),
@@ -367,14 +371,146 @@ class BAF_Form {
         $new_form->confirmations = $this->confirmations;
         $new_form->notifications = $this->notifications;
 
-        // Generate new field IDs
-        if ( ! empty( $new_form->config['fields'] ) ) {
+        // Generate new field IDs. A form with a stored model keeps its IDs:
+        // they belong to the form, and its conditions and calculations name them.
+        if ( ! empty( $new_form->config['fields'] ) && ! isset( $new_form->config['form_model'] ) ) {
             foreach ( $new_form->config['fields'] as &$field ) {
                 $field['id'] = $this->generate_field_id();
             }
         }
 
         return $new_form->save();
+    }
+
+    // ---------------------------------------------------------------------
+    // The form model (docs/form-model.md)
+    // ---------------------------------------------------------------------
+
+    /**
+     * The form as BAF stores it, for the model converter.
+     *
+     * @return array Stored form.
+     */
+    public function to_stored() {
+        return array(
+            'title'         => $this->title,
+            'description'   => $this->description,
+            'config'        => $this->config,
+            'settings'      => $this->settings,
+            'confirmations' => $this->confirmations,
+            'notifications' => $this->notifications,
+        );
+    }
+
+    /**
+     * The form model: the stored model, or one read from the builder's
+     * fields for a form saved before the model existed.
+     *
+     * @return array Model.
+     */
+    public function get_model() {
+        return $this->get_model_and_report()['model'];
+    }
+
+    /**
+     * The form model, with the report of anything that did not convert.
+     *
+     * @return array array( 'model' => ..., 'report' => BAF_Import_Report ).
+     */
+    public function get_model_and_report() {
+        return BAF_Form_Model_Converter::from_legacy( $this->to_stored() );
+    }
+
+    /**
+     * Replace the form with a model. The model is stored as it is, and the
+     * builder's fields, settings, confirmations, notifications and BFL source
+     * are rewritten from it, so every view stays in step. Call save() after.
+     *
+     * @param array $model Model.
+     * @return true|WP_Error True, or the model's problems.
+     */
+    public function set_model( $model ) {
+        $errors = BAF_Form_Model::validate( $model );
+        if ( $errors ) {
+            return new WP_Error( 'baf_invalid_model', __( 'The form model is not valid.', 'bits-accessible-forms' ), $errors );
+        }
+        $stored                       = BAF_Form_Model_Converter::to_legacy( $model );
+        $this->title                  = $stored['title'];
+        $this->description            = $stored['description'];
+        $this->config                 = $stored['config'];
+        $this->config['form_model']   = $model;
+        $this->settings               = $stored['settings'];
+        $this->confirmations          = $stored['confirmations'];
+        $this->notifications          = $stored['notifications'];
+        $this->bfl_source             = BAF_BFL_Writer::write( $model );
+        return true;
+    }
+
+    /**
+     * Take the visual builder's fields and settings, keeping what the builder
+     * has no place for (rules, quiz outcomes, translations, choice libraries,
+     * page conditions) from the model as it was. Call save() after.
+     *
+     * @param array      $config   The builder's config.
+     * @param array|null $settings The builder's settings, if it sent them.
+     * @return BAF_Import_Report What the builder's fields lost on the way in.
+     */
+    public function apply_builder_config( $config, $settings = null ) {
+        $previous = $this->get_model();
+        unset( $config['form_model'] );
+        $this->config = is_array( $config ) ? $config : array();
+        if ( is_array( $settings ) ) {
+            $this->settings = $settings;
+        }
+        $result = BAF_Form_Model_Converter::from_legacy( $this->to_stored() );
+        $model  = $result['model'];
+        foreach ( array( 'id', 'language', 'choice_libraries', 'rules', 'scoring', 'translations', 'extensions' ) as $key ) {
+            if ( ! isset( $model[ $key ] ) && isset( $previous[ $key ] ) ) {
+                $model[ $key ] = $previous[ $key ];
+            }
+        }
+        $old_pages = array();
+        foreach ( $previous['pages'] ?? array() as $page ) {
+            $old_pages[ $page['id'] ] = $page;
+        }
+        foreach ( $model['pages'] as &$page ) {
+            foreach ( array( 'when', 'props' ) as $key ) {
+                if ( ! isset( $page[ $key ] ) && isset( $old_pages[ $page['id'] ][ $key ] ) ) {
+                    $page[ $key ] = $old_pages[ $page['id'] ][ $key ];
+                }
+            }
+        }
+        unset( $page );
+        $kept = $this->set_model( $model );
+        if ( is_wp_error( $kept ) ) {
+            // Keep the builder's fields as they are; the model is read from them later.
+            $this->config = is_array( $config ) ? $config : array();
+            foreach ( $kept->get_error_data() as $e ) {
+                $result['report']->error( $e['path'], $e['message'] );
+            }
+        }
+        return $result['report'];
+    }
+
+    /**
+     * Store the model beside the builder's fields of a form saved before the
+     * model existed, when they convert to a valid model.
+     *
+     * @return bool Whether the form now has a stored model.
+     */
+    public function upgrade_to_model() {
+        if ( isset( $this->config['form_model'] ) ) {
+            return true;
+        }
+        if ( ! class_exists( 'BAF_Form_Model_Converter' ) ) {
+            return false;
+        }
+        $model = BAF_Form_Model_Converter::from_legacy( $this->to_stored() )['model'];
+        if ( BAF_Form_Model::validate( $model ) ) {
+            return false;
+        }
+        $this->config['form_model'] = $model;
+        return true;
     }
 
     /**
@@ -675,8 +811,8 @@ class BAF_Form {
         $form->notifications = isset( $data['notifications'] ) ? $data['notifications'] : array();
         $form->status        = 'draft';
 
-        // Regenerate field IDs to avoid conflicts
-        if ( ! empty( $form->config['fields'] ) ) {
+        // Regenerate field IDs to avoid conflicts (not for a stored model; see duplicate()).
+        if ( ! empty( $form->config['fields'] ) && ! isset( $form->config['form_model'] ) ) {
             foreach ( $form->config['fields'] as &$field ) {
                 $field['id'] = $form->generate_field_id();
             }

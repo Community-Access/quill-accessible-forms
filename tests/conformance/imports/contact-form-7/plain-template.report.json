@@ -1,0 +1,16 @@
+{
+    "source": "Contact Form 7",
+    "carried": 4,
+    "entries": [
+        {
+            "level": "changed",
+            "where": "[text]",
+            "message": "Its name \"your-name\" became the ID \"your_name\"."
+        },
+        {
+            "level": "changed",
+            "where": "[email]",
+            "message": "Its name \"your-email\" became the ID \"your_email\"."
+        }
+    ]
+}

@@ -1,0 +1,168 @@
+{
+    "field_id": 20,
+    "fields": {
+        "1": {
+            "id": "1",
+            "type": "radio",
+            "label": "Joining as",
+            "required": "1",
+            "choices": {
+                "1": {
+                    "label": "An individual",
+                    "value": "person"
+                },
+                "2": {
+                    "label": "A business",
+                    "value": "business"
+                },
+                "3": {
+                    "label": "A charity",
+                    "value": "charity"
+                }
+            }
+        },
+        "2": {
+            "id": "2",
+            "type": "text",
+            "label": "Company name",
+            "conditional_logic": "1",
+            "conditional_type": "show",
+            "conditionals": [
+                [
+                    {
+                        "field": "1",
+                        "operator": "==",
+                        "value": "2"
+                    }
+                ],
+                [
+                    {
+                        "field": "1",
+                        "operator": "==",
+                        "value": "3"
+                    }
+                ]
+            ]
+        },
+        "3": {
+            "id": "3",
+            "type": "number",
+            "label": "Staff"
+        },
+        "4": {
+            "id": "4",
+            "type": "text",
+            "label": "First name"
+        },
+        "5": {
+            "id": "5",
+            "type": "text",
+            "label": "Last name"
+        },
+        "6": {
+            "id": "6",
+            "type": "divider",
+            "label": "How to reach you",
+            "description": "We only use this to send your card."
+        },
+        "7": {
+            "id": "7",
+            "type": "select",
+            "label": "Contact me by",
+            "choices": {
+                "1": {
+                    "label": "Email",
+                    "value": "email"
+                },
+                "2": {
+                    "label": "Phone",
+                    "value": "phone"
+                },
+                "3": {
+                    "label": "Post",
+                    "value": "post"
+                }
+            }
+        },
+        "8": {
+            "id": "8",
+            "type": "phone",
+            "label": "Phone"
+        },
+        "9": {
+            "id": "9",
+            "type": "divider",
+            "label": "Postal address",
+            "conditional_logic": "1",
+            "conditional_type": "show",
+            "conditionals": [
+                [
+                    {
+                        "field": "7",
+                        "operator": "==",
+                        "value": "3"
+                    }
+                ]
+            ]
+        },
+        "10": {
+            "id": "10",
+            "type": "select",
+            "label": "Country"
+        },
+        "11": {
+            "id": "11",
+            "type": "select",
+            "label": "State or province"
+        },
+        "12": {
+            "id": "12",
+            "type": "html",
+            "code": "<p>Almost there.</p>"
+        },
+        "13": {
+            "id": "13",
+            "type": "pagebreak",
+            "title": "Your family"
+        },
+        "14": {
+            "id": "14",
+            "type": "date-time",
+            "format": "date",
+            "label": "Start date"
+        },
+        "15": {
+            "id": "15",
+            "type": "date-time",
+            "format": "date",
+            "label": "Renewal"
+        },
+        "16": {
+            "id": "16",
+            "type": "pagebreak",
+            "title": "Payment",
+            "next": "Continue"
+        },
+        "17": {
+            "id": "17",
+            "type": "payment-single",
+            "label": "Fee each"
+        },
+        "18": {
+            "id": "18",
+            "type": "payment-total",
+            "label": "Total"
+        },
+        "19": {
+            "id": "19",
+            "type": "gdpr-checkbox",
+            "label": "I agree",
+            "required": "1"
+        }
+    },
+    "settings": {
+        "form_title": "Membership",
+        "form_desc": "Every rule shape, condition shape and layout container.",
+        "submit_text": "Join"
+    }
+}

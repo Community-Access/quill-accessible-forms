@@ -1,0 +1,36 @@
+{
+    "source": "Gravity Forms",
+    "carried": 18,
+    "entries": [
+        {
+            "level": "changed",
+            "where": "field 1 (Name)",
+            "message": "Its parts (first name, city and so on) are BAF's own name parts."
+        },
+        {
+            "level": "changed",
+            "where": "field 12 (Hotel total)",
+            "message": "A number with a calculation is a calculation field."
+        },
+        {
+            "level": "dropped",
+            "where": "field 18 (Referral code)",
+            "message": "Its default \"{embed_url}\" is a Gravity Forms merge tag BAF does not have."
+        },
+        {
+            "level": "dropped",
+            "where": "field 19 (Coupon)",
+            "message": "BAF has no field like Gravity Forms' \"coupon\"."
+        },
+        {
+            "level": "dropped",
+            "where": "field 20 (Badge name)",
+            "message": "A condition on field 99 with \"is\" could not be read."
+        },
+        {
+            "level": "dropped",
+            "where": "notification By role",
+            "message": "Its routing rules (send to different people by answer) have no place in the model."
+        }
+    ]
+}

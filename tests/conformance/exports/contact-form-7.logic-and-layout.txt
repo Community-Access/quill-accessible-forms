@@ -1,0 +1,49 @@
+<h2>About you</h2>
+
+<label> Joining as
+    [radio* type "An individual|person" "A business|business" "A charity|charity"] </label>
+
+<label> Company name
+    [text company] </label>
+
+<label> Staff
+    [number staff] </label>
+
+<label> First name
+    [text first] </label>
+
+<label> Last name
+    [text last] </label>
+
+<h3>How to reach you</h3>
+
+<label> Contact me by
+    [select contact_by "Email|email" "Phone|phone" "Post|post"] </label>
+
+<label> Phone
+    [tel phone] </label>
+
+<h3>Postal address</h3>
+
+<label> Country
+    [select country] </label>
+
+<label> State or province
+    [select region] </label>
+
+<p>Almost there.</p>
+
+<h2>Your family</h2>
+
+<label> Start date
+    [date start] </label>
+
+<label> Renewal
+    [date renewal] </label>
+
+<h2>Payment</h2>
+
+<label> I agree
+    [acceptance agree] </label>
+
+[submit "Join"]

@@ -742,6 +742,9 @@ end
 
 ### Current limitations (important)
 
+> Since BFL 1 these limits belong to the older parser only. The form-model reader (`docs/bfl-and-the-model.md`) reads `and`, `or`, `not`, `is one of`, `else`, date tests and nested blocks, and conditions on pages and sections.
+
+
 These are not "future plans"—they're simply what the current parser does:
 
 - Conditions currently parse **a single rule** (no `and`/`or` groups).

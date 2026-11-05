@@ -1,0 +1,415 @@
+{
+    "title": "Membership",
+    "description": "Every rule shape, condition shape and layout container.",
+    "config": {
+        "model_version": 1,
+        "fields": [
+            {
+                "id": "type",
+                "type": "radio",
+                "label": "Joining as",
+                "required": true,
+                "choice_library": "member_types",
+                "page": "about"
+            },
+            {
+                "id": "company",
+                "type": "text",
+                "label": "Company name",
+                "conditional_logic": {
+                    "enabled": true,
+                    "action": "show",
+                    "logic": "any",
+                    "rules": [
+                        {
+                            "field": "type",
+                            "operator": "equals",
+                            "value": "business"
+                        },
+                        {
+                            "field": "type",
+                            "operator": "equals",
+                            "value": "charity"
+                        }
+                    ]
+                },
+                "page": "about"
+            },
+            {
+                "id": "staff",
+                "type": "number",
+                "label": "Staff",
+                "conditional_logic": {
+                    "enabled": true,
+                    "action": "show",
+                    "logic": "all",
+                    "rules": [],
+                    "expression": "#type is one of [\"business\", \"charity\"] and #company is not empty"
+                },
+                "page": "about"
+            },
+            {
+                "id": "names",
+                "type": "columns",
+                "columns": [
+                    {
+                        "width": "1/2",
+                        "fields": [
+                            {
+                                "id": "first",
+                                "type": "text",
+                                "label": "First name",
+                                "smart_default": "user:first_name"
+                            }
+                        ]
+                    },
+                    {
+                        "width": "1/2",
+                        "fields": [
+                            {
+                                "id": "last",
+                                "type": "text",
+                                "label": "Last name"
+                            }
+                        ]
+                    }
+                ],
+                "page": "about"
+            },
+            {
+                "id": "contact",
+                "type": "section",
+                "label": "How to reach you",
+                "description": "We only use this to send your card.",
+                "model_items": 3,
+                "page": "about"
+            },
+            {
+                "id": "contact_by",
+                "type": "select",
+                "label": "Contact me by",
+                "choices": [
+                    {
+                        "value": "email",
+                        "label": "Email"
+                    },
+                    {
+                        "value": "phone",
+                        "label": "Phone"
+                    },
+                    {
+                        "value": "post",
+                        "label": "Post"
+                    }
+                ],
+                "page": "about"
+            },
+            {
+                "id": "phone",
+                "type": "phone",
+                "label": "Phone",
+                "input_mask": "(999) 999-9999",
+                "page": "about"
+            },
+            {
+                "id": "postal",
+                "type": "section",
+                "label": "Postal address",
+                "conditional_logic": {
+                    "enabled": true,
+                    "action": "show",
+                    "logic": "all",
+                    "rules": [
+                        {
+                            "field": "contact_by",
+                            "operator": "equals",
+                            "value": "post"
+                        }
+                    ]
+                },
+                "model_items": 2,
+                "page": "about"
+            },
+            {
+                "id": "country",
+                "type": "select",
+                "label": "Country",
+                "choice_library": "countries",
+                "page": "about"
+            },
+            {
+                "id": "region",
+                "type": "select",
+                "label": "State or province",
+                "cascade_from": "country",
+                "cascade_library": "states",
+                "empty_message": "Choose a country first.",
+                "loading_message": "Loading...",
+                "page": "about"
+            },
+            {
+                "id": "after_section",
+                "type": "html",
+                "content": "<p>Almost there.</p>",
+                "page": "about"
+            },
+            {
+                "id": "children",
+                "type": "repeater",
+                "label": "Children",
+                "fields": [
+                    {
+                        "id": "child_name",
+                        "type": "text",
+                        "label": "Name"
+                    },
+                    {
+                        "id": "child_born",
+                        "type": "date",
+                        "label": "Date of birth"
+                    },
+                    {
+                        "id": "child_school",
+                        "type": "section",
+                        "label": "School",
+                        "conditional_logic": {
+                            "enabled": true,
+                            "action": "show",
+                            "logic": "all",
+                            "rules": [],
+                            "expression": "age(#child_born) >= 5"
+                        },
+                        "model_items": 1
+                    },
+                    {
+                        "id": "school",
+                        "type": "text",
+                        "label": "School name"
+                    }
+                ],
+                "max_rows": 6,
+                "page": "family"
+            },
+            {
+                "id": "start",
+                "type": "date",
+                "label": "Start date",
+                "smart_default": "today+1",
+                "conditional_logic": {
+                    "enabled": true,
+                    "action": "show",
+                    "logic": "all",
+                    "rules": [],
+                    "expression": "#type is \"person\" and not #children is empty"
+                },
+                "page": "family"
+            },
+            {
+                "id": "renewal",
+                "type": "date",
+                "label": "Renewal",
+                "conditional_logic": {
+                    "enabled": true,
+                    "action": "show",
+                    "logic": "all",
+                    "rules": [],
+                    "expression": "#start is within 30 days or #start is before \"2027-01-01\" or #start is after today()"
+                },
+                "page": "family"
+            },
+            {
+                "id": "members",
+                "type": "quantity",
+                "label": "Members",
+                "default_value": 1,
+                "page": "pay"
+            },
+            {
+                "id": "fee",
+                "type": "price",
+                "label": "Fee each",
+                "base_price": 20,
+                "page": "pay"
+            },
+            {
+                "id": "discount",
+                "type": "calculation",
+                "label": "Discount",
+                "calculation": "if(#members > 10, #members * #fee * 0.1, 0)",
+                "page": "pay"
+            },
+            {
+                "id": "total",
+                "type": "total",
+                "label": "Total",
+                "calculation": "round(#members * #fee - #discount, 2)",
+                "page": "pay"
+            },
+            {
+                "id": "agree",
+                "type": "consent",
+                "label": "I agree",
+                "required": true,
+                "page": "pay"
+            }
+        ],
+        "pages": [
+            {
+                "id": "about",
+                "title": "About you"
+            },
+            {
+                "id": "family",
+                "title": "Your family",
+                "description": "Only for household memberships.",
+                "when": "#type is \"person\"",
+                "props": {
+                    "next_button_text": "Continue"
+                }
+            },
+            {
+                "id": "pay",
+                "title": "Payment"
+            }
+        ],
+        "model_extra": {
+            "language": "en",
+            "choice_libraries": {
+                "member_types": [
+                    {
+                        "value": "person",
+                        "label": "An individual"
+                    },
+                    {
+                        "value": "business",
+                        "label": "A business"
+                    },
+                    {
+                        "value": "charity",
+                        "label": "A charity"
+                    }
+                ]
+            },
+            "rules": [
+                {
+                    "action": "show",
+                    "targets": [
+                        "company"
+                    ],
+                    "when": "#type is not \"person\""
+                },
+                {
+                    "action": "hide",
+                    "targets": [
+                        "staff"
+                    ],
+                    "when": "#staff is empty and #type is \"charity\""
+                },
+                {
+                    "action": "require",
+                    "targets": [
+                        "phone"
+                    ],
+                    "when": "#contact_by is \"phone\""
+                },
+                {
+                    "action": "optional",
+                    "targets": [
+                        "last"
+                    ],
+                    "when": "#first contains \" \""
+                },
+                {
+                    "action": "enable",
+                    "targets": [
+                        "total"
+                    ],
+                    "when": "#members >= 1"
+                },
+                {
+                    "action": "disable",
+                    "targets": [
+                        "fee",
+                        "discount"
+                    ],
+                    "when": "#members < 1"
+                },
+                {
+                    "action": "set",
+                    "targets": [
+                        "fee"
+                    ],
+                    "when": "#type is \"charity\"",
+                    "value": "10"
+                },
+                {
+                    "action": "skip_to",
+                    "targets": [
+                        "pay"
+                    ],
+                    "when": "#type is not \"person\""
+                }
+            ],
+            "extensions": {
+                "quill": {
+                    "last_opened_on": "page_2"
+                }
+            }
+        }
+    },
+    "settings": {
+        "submit_label": "Join",
+        "ajax_submission": true,
+        "enable_honeypot": true,
+        "save_continue_enabled": true,
+        "validation_mode": "on_blur"
+    },
+    "confirmations": [
+        {
+            "id": "charity_thanks",
+            "type": "message",
+            "message": "Thank you. Charity membership is free for the first year.",
+            "conditional_logic": {
+                "enabled": true,
+                "action": "show",
+                "logic": "all",
+                "rules": [
+                    {
+                        "field": "type",
+                        "operator": "equals",
+                        "value": "charity"
+                    }
+                ]
+            }
+        },
+        {
+            "id": "thanks",
+            "type": "redirect",
+            "url": "https://example.org/welcome",
+            "props": {
+                "pass_field_data": true
+            }
+        }
+    ],
+    "notifications": [
+        {
+            "id": "office",
+            "enabled": true,
+            "to": "office@example.org",
+            "subject": "New member: {first} {last}",
+            "message": "{all_fields}",
+            "conditional_logic": {
+                "enabled": true,
+                "action": "show",
+                "logic": "all",
+                "rules": [
+                    {
+                        "field": "total",
+                        "operator": "greater_than",
+                        "value": 0
+                    }
+                ]
+            }
+        }
+    ]
+}

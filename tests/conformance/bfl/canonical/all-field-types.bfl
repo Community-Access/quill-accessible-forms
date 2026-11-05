@@ -1,0 +1,204 @@
+bfl 1
+form #every_type "Every field type"
+  @description "One field of each of the 64 types, with the parts each type needs."
+  @language "en"
+
+page "Text and numbers"
+  text #f_text "Text"
+    @placeholder "Type here"
+    @mask "aaa-999"
+    @minlength 2
+    @maxlength 40
+    @pattern "^[A-Za-z0-9-]+$"
+    @error_message "Letters, digits and hyphens only."
+  textarea #f_textarea "Paragraph"
+    @rows 6
+    @show_counter
+  number #f_number "Number"
+    @default 5
+    @min 0
+    @max 100
+    @step 0.5
+    @suffix "kg"
+  email #f_email "Email"
+    @required
+    @unique
+    @unique_scope "global"
+    @unique_message "Already registered."
+    @confirm_email
+  phone #f_phone "Phone"
+    @mask "(999) 999-9999"
+    @default_country "US"
+  website #f_website "Website"
+    @require_https
+  hidden #f_hidden "Campaign"
+    @smart_default query("utm_campaign")
+  password #f_password "Password"
+    @minlength 12
+    @require_number
+  color #f_color "Favourite colour"
+    @default "#336699"
+    @show_input
+  range #f_range "Budget range"
+    @min 0
+    @max 5000
+    @dual_handle
+  slider #f_slider "Volume"
+    @default 50
+    @show_value
+    @step 5
+  currency #f_currency "Donation"
+    @currency_code "USD"
+    @decimal_places 2
+  otp #f_otp "Code we sent you"
+    @length 6
+    @input_type "numeric"
+  toggle #f_toggle "Send me news"
+    @default false
+    @on_label "Yes"
+    @off_label "No"
+
+page "Choices"
+  select #f_select "Size"
+    @searchable
+    + s|Small
+    + "m" | "Medium" @selected
+    + l|Large
+  multiselect #f_multiselect "Languages spoken"
+    @library "languages"
+    @max_selections 3
+  radio #f_radio "Contact me by"
+    @allow_other
+    + Email
+    + Phone
+  checkbox #f_checkbox "Interests"
+    @default ["audio"]
+    + Braille
+    + audio|Audio description
+  consent #f_consent "Agreement"
+    @required
+    @consent_text "I agree to the terms."
+    @terms_page 12
+  image_choice #f_image_choice "Pick a cover"
+    @layout "grid"
+    @columns 2
+    + "sea" | "The sea" @image "https://example.org/sea.jpg"
+    + "hills" | "The hills" @image "https://example.org/hills.jpg"
+  likert #f_likert "How do you feel about"
+    @rows [{"value":"q1","label":"The menus"},{"value":"q2","label":"The keys"}]
+    @columns [{"value":"1","label":"Disagree"},{"value":"2","label":"Neutral"},{"value":"3","label":"Agree"}]
+  matrix #f_matrix "Rate each"
+    @rows ["Speed","Quality"]
+    @columns ["Poor","Fair","Good"]
+    @input_type "radio"
+  ranking #f_ranking "Put these in order"
+    + a|Price
+    + b|Speed
+    + c|Support
+  rating #f_rating "Stars"
+    @max_rating 5
+    @icon_type "star"
+  nps #f_nps "How likely are you to recommend us?"
+    @low_label "Not at all likely"
+    @high_label "Extremely likely"
+  quiz #f_quiz "What is the capital of France?"
+    @correct ["paris"]
+    @points 2
+    @feedback_correct "Right."
+    @feedback_incorrect "Not quite."
+    + Paris
+    + Lyon
+
+page "Dates and advanced"
+  date #f_date "Start date"
+    @smart_default today() + 7
+    @min "2026-01-01"
+    @max "2027-12-31"
+  time #f_time "Time"
+    @step 15
+  datetime #f_datetime "When"
+  daterange #f_daterange "Dates away"
+    @max_duration 14
+  appointment #f_appointment "Book a time"
+    @duration 30
+    @buffer_time 10
+  name #f_name "Your name"
+    @required
+    @format "first_last"
+  address #f_address "Address"
+    @autocomplete
+    @autocomplete_provider "google_places"
+    @autocomplete_countries ["US","CA"]
+  fileupload #f_fileupload "Attach a file"
+    @accept ".pdf,.docx"
+    @max_size 10
+    @max_files 3
+  signature #f_signature "Sign here"
+    @allow_type
+  typed_signature #f_typed_signature "Type your name to sign"
+    @require_confirmation
+  rich_text #f_rich_text "Your story"
+    @max_chars 5000
+  map #f_map "Where?"
+    @map_provider "leaflet"
+    @default_zoom 12
+  social #f_social "Social profiles"
+    @networks ["mastodon","bluesky"]
+  table #f_table "Household"
+    @columns [{"label":"Name","type":"text"},{"label":"Age","type":"number"}]
+    @max_rows 8
+  captcha #f_captcha "Are you human?"
+    @captcha_type "math"
+  repeater #f_repeater "Children"
+    @min_rows 1
+    @max_rows 5
+    text #child_name "Child's name"
+    number #child_age "Age"
+  calculation #f_calculation "Subtotal"
+    @calculate #f_quantity * #f_price
+    @format "currency"
+    @decimal_places 2
+
+page "Payments, helpers and WordPress"
+  payment #f_payment "Pay"
+    @amount_type "field"
+    @amount_field "f_total"
+    @currency "USD"
+  product #f_product "T-shirt"
+    + "s" | "Small" @price 15
+    + "l" | "Large" @price 17.5
+  quantity #f_quantity "How many"
+    @default 1
+    @min 1
+    @max 10
+  price #f_price "Price each"
+    @base_price 15
+  total #f_total "Total"
+    @calculate #f_calculation - #f_coupon
+  coupon #f_coupon "Coupon code"
+    @case_sensitive_codes false
+  html #f_html
+    @content "<p>Thanks for reading this far.</p>"
+  progress #f_progress
+    @style "steps"
+  summary #f_summary "Check your answers"
+    @allow_edit
+  save #f_save "Save and finish later"
+    @button_text "Save my progress"
+  post_title #f_post_title "Post title"
+  post_content #f_post_content "Post"
+    @editor_type "basic"
+  post_excerpt #f_post_excerpt "Excerpt"
+  post_category #f_post_category "Category"
+    @display_style "dropdown"
+  post_tags #f_post_tags "Tags"
+    @max_tags 5
+  post_image #f_post_image "Featured image"
+  post_custom #f_post_custom "Event venue"
+    @meta_key "venue"
+  user_login #f_user_login "Username"
+  user_email #f_user_email "Account email"
+  user_password #f_user_password "Account password"
+    @min_strength "medium"
+  submit #f_submit "Send"
+    @button_style "primary"

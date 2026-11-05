@@ -1,0 +1,44 @@
+{
+    "version": 1,
+    "title": "",
+    "pages": [
+        {
+            "id": "page_1",
+            "items": [
+                {
+                    "id": "your_name",
+                    "type": "text",
+                    "label": "Your name",
+                    "required": true
+                },
+                {
+                    "id": "your_email",
+                    "type": "email",
+                    "label": "Your email",
+                    "required": true
+                },
+                {
+                    "id": "pick",
+                    "type": "radio",
+                    "label": "Pick one",
+                    "choices": [
+                        {
+                            "value": "Tea",
+                            "label": "Tea",
+                            "selected": true
+                        },
+                        {
+                            "value": "Coffee",
+                            "label": "Coffee"
+                        }
+                    ]
+                },
+                {
+                    "id": "submit",
+                    "type": "submit",
+                    "label": "Send"
+                }
+            ]
+        }
+    ]
+}

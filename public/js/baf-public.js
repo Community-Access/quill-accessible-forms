@@ -57,6 +57,9 @@
             // Initialize character counters
             this.initCharacterCounters(form);
 
+            // A form saved with a model runs the model's rules
+            this.initModel(form);
+
             // Mark form as loaded (for honeypot timing)
             const loadedField = form.querySelector('input[name="_baf_form_loaded"]');
             if (loadedField) {
@@ -107,6 +110,75 @@
         },
 
         /**
+         * The form's answers, as the server receives them: { fields: { id: value } }
+         * plus any other named inputs. Disabled inputs (hidden questions) are left out.
+         * @param {HTMLFormElement} form
+         * @returns {Object}
+         */
+        collectValues: function(form) {
+            const formData = new FormData(form);
+            const data = {
+                fields: {}
+            };
+            formData.forEach((value, key) => {
+                // Canonical: fields[field_id]
+                if (key.startsWith('fields[')) {
+                    const fieldId = key.match(/fields\[([^\]]+)\]/)?.[1];
+                    if (fieldId) {
+                        if (data.fields[fieldId]) {
+                            if (!Array.isArray(data.fields[fieldId])) {
+                                data.fields[fieldId] = [data.fields[fieldId]];
+                            }
+                            data.fields[fieldId].push(value);
+                        } else {
+                            data.fields[fieldId] = value;
+                        }
+                    }
+                    return;
+                }
+
+                // Field classes currently render: baf_fields[field_id]
+                if (key.startsWith('baf_fields[')) {
+                    const fieldId = key.match(/baf_fields\[([^\]]+)\]/)?.[1];
+                    if (fieldId) {
+                        if (data.fields[fieldId]) {
+                            if (!Array.isArray(data.fields[fieldId])) {
+                                data.fields[fieldId] = [data.fields[fieldId]];
+                            }
+                            data.fields[fieldId].push(value);
+                        } else {
+                            data.fields[fieldId] = value;
+                        }
+                    }
+                    return;
+                }
+
+                // Composite field classes render: baf_field_<id>[sub]
+                if (key.startsWith('baf_field_')) {
+                    const match = key.match(/^baf_field_([^\[]+)(?:\[(.+)\])?$/);
+                    const fieldId = match?.[1];
+                    const subKey = match?.[2];
+                    if (fieldId) {
+                        if (subKey) {
+                            if (!data.fields[fieldId] || typeof data.fields[fieldId] !== 'object' || Array.isArray(data.fields[fieldId])) {
+                                data.fields[fieldId] = {};
+                            }
+                            data.fields[fieldId][subKey] = value;
+                        } else {
+                            data.fields[fieldId] = value;
+                        }
+                    }
+                    return;
+                }
+
+                if (!key.startsWith('_')) {
+                    data[key] = value;
+                }
+            });
+            return data;
+        },
+
+        /**
          * Handle form submission
          * @param {HTMLFormElement} form 
          */
@@ -131,69 +203,7 @@
             this.announce(instanceId, bafPublic.i18n.submitting, 'polite');
 
             try {
-                const formData = new FormData(form);
-                
-                // Convert FormData to object for JSON
-                const data = {
-                    fields: {}
-                };
-
-                formData.forEach((value, key) => {
-                    // Canonical: fields[field_id]
-                    if (key.startsWith('fields[')) {
-                        const fieldId = key.match(/fields\[([^\]]+)\]/)?.[1];
-                        if (fieldId) {
-                            if (data.fields[fieldId]) {
-                                if (!Array.isArray(data.fields[fieldId])) {
-                                    data.fields[fieldId] = [data.fields[fieldId]];
-                                }
-                                data.fields[fieldId].push(value);
-                            } else {
-                                data.fields[fieldId] = value;
-                            }
-                        }
-                        return;
-                    }
-
-                    // Field classes currently render: baf_fields[field_id]
-                    if (key.startsWith('baf_fields[')) {
-                        const fieldId = key.match(/baf_fields\[([^\]]+)\]/)?.[1];
-                        if (fieldId) {
-                            if (data.fields[fieldId]) {
-                                if (!Array.isArray(data.fields[fieldId])) {
-                                    data.fields[fieldId] = [data.fields[fieldId]];
-                                }
-                                data.fields[fieldId].push(value);
-                            } else {
-                                data.fields[fieldId] = value;
-                            }
-                        }
-                        return;
-                    }
-
-                    // Composite field classes render: baf_field_<id>[sub]
-                    if (key.startsWith('baf_field_')) {
-                        const match = key.match(/^baf_field_([^\[]+)(?:\[(.+)\])?$/);
-                        const fieldId = match?.[1];
-                        const subKey = match?.[2];
-                        if (fieldId) {
-                            if (subKey) {
-                                if (!data.fields[fieldId] || typeof data.fields[fieldId] !== 'object' || Array.isArray(data.fields[fieldId])) {
-                                    data.fields[fieldId] = {};
-                                }
-                                data.fields[fieldId][subKey] = value;
-                            } else {
-                                data.fields[fieldId] = value;
-                            }
-                        }
-                        return;
-                    }
-
-                    if (!key.startsWith('_')) {
-                        data[key] = value;
-                    }
-                });
-
+                const data = this.collectValues(form);
                 // Get nonce
                 const nonce = form.querySelector('input[name="_baf_token"]')?.value;
 
@@ -243,7 +253,10 @@
             form.reset();
 
             // Show success message
-            const message = result.message || bafPublic.i18n.successMessage;
+            let message = result.message || bafPublic.i18n.successMessage;
+            if (result.outcome && result.outcome.score !== undefined && bafPublic.i18n.yourScore) {
+                message += ' ' + bafPublic.i18n.yourScore.replace('%s', result.outcome.score);
+            }
             
             if (messagesDiv) {
                 messagesDiv.innerHTML = `
@@ -542,13 +555,17 @@
             const instanceId = form.id;
             let currentPage = 1;
             const totalPages = pages.length;
+            // Pages visited, so Previous returns the way the visitor came
+            // when the model skipped pages.
+            const history = [];
 
             // Previous button
             form.querySelectorAll('[data-action="prev-page"]').forEach(btn => {
                 btn.addEventListener('click', () => {
                     if (currentPage > 1) {
-                        this.goToPage(form, currentPage - 1);
-                        currentPage--;
+                        const target = history.length ? history.pop() : currentPage - 1;
+                        this.goToPage(form, target);
+                        currentPage = target;
                     }
                 });
             });
@@ -558,9 +575,11 @@
                 btn.addEventListener('click', () => {
                     // Validate current page
                     if (this.validatePage(form, currentPage)) {
-                        if (currentPage < totalPages) {
-                            this.goToPage(form, currentPage + 1);
-                            currentPage++;
+                        const target = this.nextPage(form, currentPage, totalPages);
+                        if (target !== null) {
+                            history.push(currentPage);
+                            this.goToPage(form, target);
+                            currentPage = target;
                         }
                     } else {
                         this.announce(instanceId, bafPublic.i18n.validationErrors, 'assertive');
@@ -629,11 +648,18 @@
             // Update progress indicator
             this.updateProgress(form, pageNum, totalPages);
 
-            // Show/hide submit button
+            // Show/hide submit button: on the last page, or on any page the
+            // model leaves with nowhere further to go.
             const submitWrapper = form.querySelector('.baf-submit-wrapper');
             if (submitWrapper) {
                 const showOnPage = parseInt(submitWrapper.dataset.showOnPage || totalPages);
-                submitWrapper.classList.toggle('baf-submit-hidden', pageNum < showOnPage);
+                const isLast = pageNum >= showOnPage || (!!form.__bafModel && this.nextPage(form, pageNum, totalPages) === null);
+                submitWrapper.classList.toggle('baf-submit-hidden', !isLast);
+                if (targetPage) {
+                    targetPage.querySelectorAll('[data-action="next-page"]').forEach(btn => {
+                        btn.hidden = isLast && pageNum < totalPages;
+                    });
+                }
             }
 
             // Announce page change
@@ -1041,7 +1067,8 @@
          * @param {string} priority 
          */
         announce: function(form, message, priority = 'polite') {
-            const instanceId = form.id;
+            // Callers pass the form or its instance ID.
+            const instanceId = typeof form === 'string' ? form : form.id;
             const announcer = this.announcers?.[instanceId];
             
             if (announcer) {
@@ -1375,6 +1402,232 @@
                 input.addEventListener('input', applyMask);
                 applyMask();
             });
+        },
+
+        // ------------------------------------------------------------------
+        // The form model (forms saved with one). The same rules the server
+        // applies: public/js/baf-expression.js and baf-form-model.js.
+        // ------------------------------------------------------------------
+
+        /**
+         * Start running a form's model, when it has one.
+         * @param {HTMLFormElement} form
+         */
+        initModel: function(form) {
+            const script = form.querySelector('script.baf-form-model');
+            if (!script || !window.BAFFormModel) return;
+
+            let payload;
+            try {
+                payload = JSON.parse(script.textContent);
+            } catch (e) {
+                console.error('BAF: the form model could not be read', e);
+                return;
+            }
+            const query = {};
+            new URLSearchParams(window.location.search).forEach((v, k) => { query[k] = v; });
+            const extra = Object.assign({ geo: null }, payload.context || {}, { query: query });
+            form.__bafModel = { model: payload.model, extra: extra, shown: null, result: null };
+
+            this.applySmartDefaults(form);
+            this.applyModel(form, true);
+
+            const rerun = () => this.applyModel(form, false);
+            form.addEventListener('input', rerun);
+            form.addEventListener('change', rerun);
+        },
+
+        /**
+         * Starting values: a smart default fills an empty field when the form opens.
+         * @param {HTMLFormElement} form
+         */
+        applySmartDefaults: function(form) {
+            const state = form.__bafModel;
+            window.BAFFormModel.items(state.model).forEach(entry => {
+                const item = entry.item;
+                if (item.smart_default === undefined) return;
+                const value = window.BAFFormModel.smartDefault(item, state.extra);
+                if (value === null || value === undefined || window.BAFExpression.isEmpty(value)) return;
+                this.fieldInputs(form, item.id).forEach(input => {
+                    if (input.type === 'checkbox' || input.type === 'radio') return;
+                    if (input.value === '') {
+                        input.value = window.BAFExpression.str(value);
+                    }
+                });
+            });
+        },
+
+        /**
+         * Inputs belonging to a field.
+         * @param {HTMLFormElement} form
+         * @param {string} id
+         * @returns {HTMLElement[]}
+         */
+        fieldInputs: function(form, id) {
+            return Array.from(form.querySelectorAll('input, select, textarea')).filter(el => {
+                const n = el.name || '';
+                return n === `fields[${id}]` || n.startsWith(`fields[${id}][`) ||
+                    n === `baf_fields[${id}]` || n.startsWith(`baf_fields[${id}][`) ||
+                    n === `baf_field_${id}` || n.startsWith(`baf_field_${id}[`);
+            });
+        },
+
+        /**
+         * The wrapper the renderer draws around an item.
+         * @param {HTMLFormElement} form
+         * @param {string} id
+         * @returns {HTMLElement|null}
+         */
+        itemWrapper: function(form, id) {
+            return form.querySelector(`[data-field-id="${CSS.escape(String(id))}"]`);
+        },
+
+        /**
+         * Evaluate the model for the current answers and apply what it says:
+         * which questions are shown, required, enabled, set or calculated.
+         * Questions that appear or disappear are announced, because nothing
+         * else tells a screen-reader user that the form changed.
+         * @param {HTMLFormElement} form
+         * @param {boolean} first True when the form has just opened (nothing is announced).
+         */
+        applyModel: function(form, first) {
+            const state = form.__bafModel;
+            if (!state || state.busy) return;
+            state.busy = true;
+            try {
+                // Two passes at most: a calculation or "set" can change what holds.
+                let result = null;
+                for (let pass = 0; pass < 2; pass++) {
+                    const values = this.collectValues(form).fields;
+                    result = window.BAFFormModel.evaluateForm(state.model, values, state.extra);
+                    if (!this.writeValues(form, result)) break;
+                }
+                state.result = result;
+
+                let appeared = 0;
+                let vanished = 0;
+                Object.keys(result.shown).forEach(id => {
+                    const wrapper = this.itemWrapper(form, id);
+                    if (!wrapper) return;
+                    const shown = result.shown[id];
+                    const was = state.shown ? state.shown[id] : undefined;
+                    if (was !== undefined && was !== shown) {
+                        if (shown) appeared++; else vanished++;
+                    }
+                    wrapper.hidden = !shown;
+                    wrapper.style.display = shown ? '' : 'none';
+                    wrapper.querySelectorAll('input, select, textarea, button').forEach(input => {
+                        if (shown) {
+                            if (input.dataset.bafHiddenByModel) {
+                                input.disabled = false;
+                                delete input.dataset.bafHiddenByModel;
+                            }
+                        } else if (!input.disabled) {
+                            // A hidden question is not sent and not checked.
+                            input.disabled = true;
+                            input.dataset.bafHiddenByModel = '1';
+                        }
+                    });
+                });
+                state.shown = result.shown;
+
+                Object.keys(result.required).forEach(id => {
+                    this.fieldInputs(form, id).forEach(input => {
+                        if (input.type === 'hidden') return;
+                        if (result.required[id]) {
+                            input.setAttribute('required', 'required');
+                            input.setAttribute('aria-required', 'true');
+                        } else {
+                            input.removeAttribute('required');
+                            input.removeAttribute('aria-required');
+                        }
+                    });
+                });
+
+                Object.keys(result.disabled).forEach(id => {
+                    if (result.shown[id] === false) return;
+                    this.fieldInputs(form, id).forEach(input => {
+                        input.disabled = !!result.disabled[id];
+                    });
+                });
+
+                // Pages the model hides are marked, so navigation passes them by.
+                form.querySelectorAll('.baf-page[data-page-id]').forEach(page => {
+                    page.dataset.modelShown = result.pages[page.dataset.pageId] === false ? 'false' : 'true';
+                });
+
+                if (!first && (appeared || vanished)) {
+                    const i18n = (window.bafPublic && bafPublic.i18n) || {};
+                    const parts = [];
+                    if (appeared) {
+                        parts.push(appeared === 1 ? (i18n.questionShown || '1 more question shown.') : (i18n.questionsShown || '%d more questions shown.').replace('%d', appeared));
+                    }
+                    if (vanished) {
+                        parts.push(vanished === 1 ? (i18n.questionHidden || '1 question hidden.') : (i18n.questionsHidden || '%d questions hidden.').replace('%d', vanished));
+                    }
+                    this.announce(form, parts.join(' '), 'polite');
+                }
+            } finally {
+                state.busy = false;
+            }
+        },
+
+        /**
+         * Write calculated and "set" values into their fields.
+         * @param {HTMLFormElement} form
+         * @param {Object} result From BAFFormModel.evaluateForm.
+         * @returns {boolean} True when anything changed.
+         */
+        writeValues: function(form, result) {
+            let changed = false;
+            const write = (id, value) => {
+                const text = value === null || value === undefined ? '' : window.BAFExpression.str(value);
+                this.fieldInputs(form, id).forEach(input => {
+                    if (input.type === 'checkbox' || input.type === 'radio' || input.type === 'file') return;
+                    if (input.value !== text) {
+                        input.value = text;
+                        changed = true;
+                    }
+                });
+                const wrapper = this.itemWrapper(form, id);
+                const output = wrapper ? wrapper.querySelector('output, .baf-calculation-display') : null;
+                if (output && output.textContent !== text) {
+                    output.textContent = text;
+                }
+            };
+            Object.keys(result.calculated).forEach(id => write(id, result.calculated[id]));
+            Object.keys(result.set).forEach(id => write(id, result.set[id]));
+            return changed;
+        },
+
+        /**
+         * The page to go to from this one: the page a "skip to" rule names,
+         * else the next page the model shows. Null when there is none.
+         * @param {HTMLFormElement} form
+         * @param {number} current 1-based page number.
+         * @param {number} total
+         * @returns {number|null}
+         */
+        nextPage: function(form, current, total) {
+            const state = form.__bafModel;
+            if (!state || !state.result) {
+                return current < total ? current + 1 : null;
+            }
+            const shown = n => {
+                const el = form.querySelector(`.baf-page[data-page="${n}"]`);
+                return !el || el.dataset.modelShown !== 'false';
+            };
+            if (state.result.skipTo) {
+                const el = form.querySelector(`.baf-page[data-page-id="${CSS.escape(String(state.result.skipTo))}"]`);
+                const target = el ? parseInt(el.dataset.page, 10) : null;
+                if (target !== null && target > current && shown(target)) {
+                    return target;
+                }
+            }
+            for (let n = current + 1; n <= total; n++) {
+                if (shown(n)) return n;
+            }
+            return null;
         },
 
         /**

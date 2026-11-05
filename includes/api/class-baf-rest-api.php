@@ -130,6 +130,18 @@ class BAF_REST_API {
             'callback'            => array( $this, 'compile_bfl' ),
             'permission_callback' => array( $this, 'get_forms_permissions_check' ),
         ) );
+
+        register_rest_route( self::NAMESPACE, '/bfl/validate', array(
+            'methods'             => WP_REST_Server::CREATABLE,
+            'callback'            => array( $this, 'validate_bfl' ),
+            'permission_callback' => array( $this, 'get_forms_permissions_check' ),
+        ) );
+
+        register_rest_route( self::NAMESPACE, '/bfl/format', array(
+            'methods'             => WP_REST_Server::CREATABLE,
+            'callback'            => array( $this, 'format_bfl' ),
+            'permission_callback' => array( $this, 'get_forms_permissions_check' ),
+        ) );
     }
 
     /**
@@ -195,6 +207,11 @@ class BAF_REST_API {
         $form->status      = $request->get_param( 'status' ) ?: 'draft';
         $form->settings    = $request->get_param( 'settings' ) ?: array();
 
+        $model_result = $this->apply_model( $form, $request );
+        if ( is_wp_error( $model_result ) ) {
+            return $model_result;
+        }
+
         $result = $form->save();
 
         if ( is_wp_error( $result ) ) {
@@ -202,6 +219,31 @@ class BAF_REST_API {
         }
 
         return rest_ensure_response( $this->prepare_form_response( $form ) );
+    }
+
+    /**
+     * Store a form model sent with a create or update (QUILL, BFL tools).
+     *
+     * A form saved with only `config` keeps its model but shows no fields,
+     * because the renderer reads `config.fields`. With a `model`, set_model()
+     * writes the fields the renderer reads. Other `config` keys the site
+     * already had (or that came with the request) are kept.
+     *
+     * @param BAF_Form        $form    The form being saved.
+     * @param WP_REST_Request $request Request object.
+     * @return true|WP_Error True, or the model's validation error.
+     */
+    private function apply_model( $form, $request ) {
+        if ( ! $request->has_param( 'model' ) ) {
+            return true;
+        }
+        $kept   = is_array( $form->config ) ? $form->config : array();
+        $result = $form->set_model( $request->get_param( 'model' ) );
+        if ( is_wp_error( $result ) ) {
+            return $result;
+        }
+        $form->config = array_merge( $kept, $form->config );
+        return true;
     }
 
     /**
@@ -234,6 +276,11 @@ class BAF_REST_API {
         }
         if ( $request->has_param( 'settings' ) ) {
             $form->settings = $request->get_param( 'settings' );
+        }
+
+        $model_result = $this->apply_model( $form, $request );
+        if ( is_wp_error( $model_result ) ) {
+            return $model_result;
         }
 
         $result = $form->save();
@@ -463,11 +510,26 @@ class BAF_REST_API {
          */
         do_action( 'baf_form_submitted', $entry, $form );
 
-        return rest_ensure_response( array(
+        $response = array(
             'success' => true,
             'message' => __( 'Form submitted successfully.', 'bits-accessible-forms' ),
             'entry_id' => $entry->id,
-        ) );
+        );
+
+        // A quiz: the outcome is chosen here, so its answers never reach the page.
+        $model = ( isset( $form->config['form_model'] ) && is_array( $form->config['form_model'] ) ) ? $form->config['form_model'] : null;
+        if ( $model ) {
+            $lang    = BAF_Form_Runtime::language( $model, sanitize_key( (string) $request->get_param( 'baf_lang' ) ) );
+            $outcome = BAF_Form_Runtime::outcome( $model, $sanitized_values, $lang, array( 'today' => wp_date( 'Y-m-d' ) ) );
+            if ( $outcome ) {
+                $response['outcome'] = $outcome;
+                if ( $outcome['message'] !== '' ) {
+                    $response['message'] = $outcome['message'];
+                }
+            }
+        }
+
+        return rest_ensure_response( $response );
     }
 
     /**
@@ -486,10 +548,13 @@ class BAF_REST_API {
     }
 
     /**
-     * Parse BFL
+     * Parse BFL with the BFL 1 reader (which reads every older spelling too).
+     *
+     * The reply is the form model, the builder's shape written from it
+     * (config, title, settings), and line-numbered errors and warnings.
      *
      * @param WP_REST_Request $request Request object.
-     * @return WP_REST_Response Response.
+     * @return WP_REST_Response|WP_Error Response.
      */
     public function parse_bfl( $request ) {
         $bfl = $request->get_param( 'bfl' );
@@ -498,29 +563,58 @@ class BAF_REST_API {
             return new WP_Error( 'rest_invalid_bfl', __( 'BFL source is required.', 'bits-accessible-forms' ), array( 'status' => 400 ) );
         }
 
-        $parser = new BAF_BFL_Parser();
-        $result = $parser->parse( $bfl );
-
-        return rest_ensure_response( $result );
+        return rest_ensure_response( BAF_BFL_Service::parse( $bfl ) );
     }
 
     /**
-     * Compile BFL
+     * Check BFL: the reader's problems, then the model's schema and rules.
      *
      * @param WP_REST_Request $request Request object.
-     * @return WP_REST_Response Response.
+     * @return WP_REST_Response|WP_Error Response.
      */
-    public function compile_bfl( $request ) {
-        $form_config = $request->get_param( 'config' );
+    public function validate_bfl( $request ) {
+        $bfl = $request->get_param( 'bfl' );
 
-        if ( empty( $form_config ) ) {
-            return new WP_Error( 'rest_invalid_config', __( 'Form config is required.', 'bits-accessible-forms' ), array( 'status' => 400 ) );
+        if ( empty( $bfl ) ) {
+            return new WP_Error( 'rest_invalid_bfl', __( 'BFL source is required.', 'bits-accessible-forms' ), array( 'status' => 400 ) );
         }
 
-        $compiler = new BAF_BFL_Compiler();
-        $bfl = $compiler->compile( $form_config );
+        return rest_ensure_response( BAF_BFL_Service::validate( $bfl ) );
+    }
 
-        return rest_ensure_response( array( 'bfl' => $bfl ) );
+    /**
+     * Rewrite BFL in its canonical form.
+     *
+     * @param WP_REST_Request $request Request object.
+     * @return WP_REST_Response|WP_Error Response.
+     */
+    public function format_bfl( $request ) {
+        $bfl = $request->get_param( 'bfl' );
+
+        if ( empty( $bfl ) ) {
+            return new WP_Error( 'rest_invalid_bfl', __( 'BFL source is required.', 'bits-accessible-forms' ), array( 'status' => 400 ) );
+        }
+
+        return rest_ensure_response( BAF_BFL_Service::format( $bfl ) );
+    }
+
+    /**
+     * Write BFL from a form model ("model") or the builder's shape ("config").
+     *
+     * @param WP_REST_Request $request Request object.
+     * @return WP_REST_Response|WP_Error Response.
+     */
+    public function compile_bfl( $request ) {
+        $input = $request->get_param( 'model' );
+        if ( empty( $input ) ) {
+            $input = $request->get_param( 'config' );
+        }
+
+        if ( empty( $input ) || ! is_array( $input ) ) {
+            return new WP_Error( 'rest_invalid_config', __( 'A form model or form config is required.', 'bits-accessible-forms' ), array( 'status' => 400 ) );
+        }
+
+        return rest_ensure_response( BAF_BFL_Service::compile( $input ) );
     }
 
     /**
@@ -536,6 +630,7 @@ class BAF_REST_API {
             'slug'          => $form->slug,
             'description'   => $form->description,
             'config'        => $form->config,
+            'model'         => $form->get_model(),
             'bfl_source'    => $form->bfl_source,
             'status'        => $form->status,
             'settings'      => $form->settings,

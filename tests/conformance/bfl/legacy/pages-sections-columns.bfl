@@ -1,0 +1,39 @@
+form "Layout"
+page "Step 1"
+section "Personal Info"
+text #name "Name" @required
+section "Contact Info"
+email #email "Email" @required
+page "Step 2" @description "Almost done"
+columns 2
+  column
+    text #first "First Name"
+  column
+    text #last2 "Last Name"
+columns 2 {
+  column {
+    text #a "A" @required
+  }
+  column {
+    text #b "B"
+  }
+}
+columns 3 begin
+  column begin
+    text #c "C"
+  end
+  column begin
+    text #d "D"
+  end
+  column begin
+    text #e "E"
+  end
+end
+page "Step 3"
+radio #type "Type"
+  + Personal
+  + Business
+if #type is "Business"
+  text #biz "Company Name"
+divider
+paragraph #notes "Notes"

@@ -1,0 +1,100 @@
+{
+  "version": 1,
+  "id": "every_type",
+  "title": "Every field type",
+  "description": "One field of each of the 64 types, with the parts each type needs.",
+  "language": "en",
+  "pages": [
+    {
+      "id": "page_1",
+      "title": "Text and numbers",
+      "items": [
+        { "id": "f_text", "type": "text", "label": "Text", "placeholder": "Type here", "mask": "aaa-999", "validation": { "min_length": 2, "max_length": 40, "pattern": "^[A-Za-z0-9-]+$", "message": "Letters, digits and hyphens only." } },
+        { "id": "f_textarea", "type": "textarea", "label": "Paragraph", "props": { "rows": 6, "show_counter": true } },
+        { "id": "f_number", "type": "number", "label": "Number", "default": 5, "validation": { "min": 0, "max": 100 }, "props": { "step": 0.5, "suffix": "kg" } },
+        { "id": "f_email", "type": "email", "label": "Email", "required": true, "validation": { "unique": true, "unique_scope": "global", "unique_message": "Already registered." }, "props": { "confirm_email": true } },
+        { "id": "f_phone", "type": "phone", "label": "Phone", "mask": "(999) 999-9999", "props": { "default_country": "US" } },
+        { "id": "f_website", "type": "website", "label": "Website", "props": { "require_https": true } },
+        { "id": "f_hidden", "type": "hidden", "label": "Campaign", "smart_default": "query(\"utm_campaign\")" },
+        { "id": "f_password", "type": "password", "label": "Password", "validation": { "min_length": 12 }, "props": { "require_number": true } },
+        { "id": "f_color", "type": "color", "label": "Favourite colour", "default": "#336699", "props": { "show_input": true } },
+        { "id": "f_range", "type": "range", "label": "Budget range", "validation": { "min": 0, "max": 5000 }, "props": { "dual_handle": true } },
+        { "id": "f_slider", "type": "slider", "label": "Volume", "default": 50, "props": { "show_value": true, "step": 5 } },
+        { "id": "f_currency", "type": "currency", "label": "Donation", "props": { "currency_code": "USD", "decimal_places": 2 } },
+        { "id": "f_otp", "type": "otp", "label": "Code we sent you", "props": { "length": 6, "input_type": "numeric" } },
+        { "id": "f_toggle", "type": "toggle", "label": "Send me news", "default": false, "props": { "on_label": "Yes", "off_label": "No" } }
+      ]
+    },
+    {
+      "id": "page_2",
+      "title": "Choices",
+      "items": [
+        { "id": "f_select", "type": "select", "label": "Size", "choices": [ { "value": "s", "label": "Small" }, { "value": "m", "label": "Medium", "selected": true }, { "value": "l", "label": "Large" } ], "props": { "searchable": true } },
+        { "id": "f_multiselect", "type": "multiselect", "label": "Languages spoken", "choice_library": "languages", "props": { "max_selections": 3 } },
+        { "id": "f_radio", "type": "radio", "label": "Contact me by", "choices": [ { "value": "email", "label": "Email" }, { "value": "phone", "label": "Phone" } ], "props": { "allow_other": true } },
+        { "id": "f_checkbox", "type": "checkbox", "label": "Interests", "choices": [ { "value": "braille", "label": "Braille" }, { "value": "audio", "label": "Audio description" } ], "default": ["audio"] },
+        { "id": "f_consent", "type": "consent", "label": "Agreement", "required": true, "props": { "consent_text": "I agree to the terms.", "terms_page": 12 } },
+        { "id": "f_image_choice", "type": "image_choice", "label": "Pick a cover", "choices": [ { "value": "sea", "label": "The sea", "image": "https://example.org/sea.jpg" }, { "value": "hills", "label": "The hills", "image": "https://example.org/hills.jpg" } ], "props": { "layout": "grid", "columns": 2 } },
+        { "id": "f_likert", "type": "likert", "label": "How do you feel about", "props": { "rows": [ { "value": "q1", "label": "The menus" }, { "value": "q2", "label": "The keys" } ], "columns": [ { "value": "1", "label": "Disagree" }, { "value": "2", "label": "Neutral" }, { "value": "3", "label": "Agree" } ] } },
+        { "id": "f_matrix", "type": "matrix", "label": "Rate each", "props": { "rows": ["Speed", "Quality"], "columns": ["Poor", "Fair", "Good"], "input_type": "radio" } },
+        { "id": "f_ranking", "type": "ranking", "label": "Put these in order", "choices": [ { "value": "a", "label": "Price" }, { "value": "b", "label": "Speed" }, { "value": "c", "label": "Support" } ] },
+        { "id": "f_rating", "type": "rating", "label": "Stars", "props": { "max_rating": 5, "icon_type": "star" } },
+        { "id": "f_nps", "type": "nps", "label": "How likely are you to recommend us?", "props": { "low_label": "Not at all likely", "high_label": "Extremely likely" } },
+        { "id": "f_quiz", "type": "quiz", "label": "What is the capital of France?", "choices": [ { "value": "paris", "label": "Paris" }, { "value": "lyon", "label": "Lyon" } ], "scoring": { "correct": ["paris"], "points": 2, "feedback_correct": "Right.", "feedback_incorrect": "Not quite." } }
+      ]
+    },
+    {
+      "id": "page_3",
+      "title": "Dates and advanced",
+      "items": [
+        { "id": "f_date", "type": "date", "label": "Start date", "smart_default": "today() + 7", "validation": { "min": "2026-01-01", "max": "2027-12-31" } },
+        { "id": "f_time", "type": "time", "label": "Time", "props": { "step": 15 } },
+        { "id": "f_datetime", "type": "datetime", "label": "When" },
+        { "id": "f_daterange", "type": "daterange", "label": "Dates away", "props": { "max_duration": 14 } },
+        { "id": "f_appointment", "type": "appointment", "label": "Book a time", "props": { "duration": 30, "buffer_time": 10 } },
+        { "id": "f_name", "type": "name", "label": "Your name", "required": true, "props": { "format": "first_last" } },
+        { "id": "f_address", "type": "address", "label": "Address", "props": { "autocomplete": true, "autocomplete_provider": "google_places", "autocomplete_countries": ["US", "CA"] } },
+        { "id": "f_fileupload", "type": "fileupload", "label": "Attach a file", "props": { "accept": ".pdf,.docx", "max_size": 10, "max_files": 3 } },
+        { "id": "f_signature", "type": "signature", "label": "Sign here", "props": { "allow_type": true } },
+        { "id": "f_typed_signature", "type": "typed_signature", "label": "Type your name to sign", "props": { "require_confirmation": true } },
+        { "id": "f_rich_text", "type": "rich_text", "label": "Your story", "props": { "max_chars": 5000 } },
+        { "id": "f_map", "type": "map", "label": "Where?", "props": { "map_provider": "leaflet", "default_zoom": 12 } },
+        { "id": "f_social", "type": "social", "label": "Social profiles", "props": { "networks": ["mastodon", "bluesky"] } },
+        { "id": "f_table", "type": "table", "label": "Household", "props": { "columns": [ { "label": "Name", "type": "text" }, { "label": "Age", "type": "number" } ], "max_rows": 8 } },
+        { "id": "f_captcha", "type": "captcha", "label": "Are you human?", "props": { "captcha_type": "math" } },
+        { "id": "f_repeater", "type": "repeater", "label": "Children", "props": { "min_rows": 1, "max_rows": 5 }, "items": [
+          { "id": "child_name", "type": "text", "label": "Child's name" },
+          { "id": "child_age", "type": "number", "label": "Age" }
+        ] },
+        { "id": "f_calculation", "type": "calculation", "label": "Subtotal", "calculation": "#f_quantity * #f_price", "props": { "format": "currency", "decimal_places": 2 } }
+      ]
+    },
+    {
+      "id": "page_4",
+      "title": "Payments, helpers and WordPress",
+      "items": [
+        { "id": "f_payment", "type": "payment", "label": "Pay", "props": { "amount_type": "field", "amount_field": "f_total", "currency": "USD" } },
+        { "id": "f_product", "type": "product", "label": "T-shirt", "choices": [ { "value": "s", "label": "Small", "price": 15 }, { "value": "l", "label": "Large", "price": 17.5 } ] },
+        { "id": "f_quantity", "type": "quantity", "label": "How many", "default": 1, "validation": { "min": 1, "max": 10 } },
+        { "id": "f_price", "type": "price", "label": "Price each", "props": { "base_price": 15 } },
+        { "id": "f_total", "type": "total", "label": "Total", "calculation": "#f_calculation - #f_coupon" },
+        { "id": "f_coupon", "type": "coupon", "label": "Coupon code", "props": { "case_sensitive_codes": false } },
+        { "id": "f_html", "type": "html", "props": { "content": "<p>Thanks for reading this far.</p>" } },
+        { "id": "f_progress", "type": "progress", "props": { "style": "steps" } },
+        { "id": "f_summary", "type": "summary", "label": "Check your answers", "props": { "allow_edit": true } },
+        { "id": "f_save", "type": "save", "label": "Save and finish later", "props": { "button_text": "Save my progress" } },
+        { "id": "f_post_title", "type": "post_title", "label": "Post title" },
+        { "id": "f_post_content", "type": "post_content", "label": "Post", "props": { "editor_type": "basic" } },
+        { "id": "f_post_excerpt", "type": "post_excerpt", "label": "Excerpt" },
+        { "id": "f_post_category", "type": "post_category", "label": "Category", "props": { "display_style": "dropdown" } },
+        { "id": "f_post_tags", "type": "post_tags", "label": "Tags", "props": { "max_tags": 5 } },
+        { "id": "f_post_image", "type": "post_image", "label": "Featured image" },
+        { "id": "f_post_custom", "type": "post_custom", "label": "Event venue", "props": { "meta_key": "venue" } },
+        { "id": "f_user_login", "type": "user_login", "label": "Username" },
+        { "id": "f_user_email", "type": "user_email", "label": "Account email" },
+        { "id": "f_user_password", "type": "user_password", "label": "Account password", "props": { "min_strength": "medium" } },
+        { "id": "f_submit", "type": "submit", "label": "Send", "props": { "button_style": "primary" } }
+      ]
+    }
+  ]
+}

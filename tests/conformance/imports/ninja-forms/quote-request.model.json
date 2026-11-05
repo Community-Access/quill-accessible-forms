@@ -1,0 +1,150 @@
+{
+    "version": 1,
+    "title": "Quote request",
+    "pages": [
+        {
+            "id": "page_1",
+            "items": [
+                {
+                    "id": "firstname",
+                    "type": "text",
+                    "label": "First name",
+                    "required": true,
+                    "props": {
+                        "autocomplete": "given-name"
+                    }
+                },
+                {
+                    "id": "lastname",
+                    "type": "text",
+                    "label": "Last name",
+                    "required": true,
+                    "props": {
+                        "autocomplete": "family-name"
+                    }
+                },
+                {
+                    "id": "email",
+                    "type": "email",
+                    "label": "Email",
+                    "required": true,
+                    "smart_default": "user(\"user_email\")"
+                },
+                {
+                    "id": "phone",
+                    "type": "phone",
+                    "label": "Phone",
+                    "mask": "(999) 999-9999"
+                },
+                {
+                    "id": "rooms_1",
+                    "type": "number",
+                    "label": "Rooms",
+                    "default": "2",
+                    "validation": {
+                        "min": 1,
+                        "max": 12
+                    },
+                    "props": {
+                        "step": 1
+                    }
+                },
+                {
+                    "id": "extras_2",
+                    "type": "checkbox",
+                    "label": "Extras",
+                    "choices": [
+                        {
+                            "value": "windows",
+                            "label": "Windows",
+                            "points": 40
+                        },
+                        {
+                            "value": "carpets",
+                            "label": "Carpets",
+                            "points": 60,
+                            "selected": true
+                        }
+                    ]
+                },
+                {
+                    "id": "country",
+                    "type": "select",
+                    "label": "Country",
+                    "choice_library": "countries"
+                },
+                {
+                    "id": "notes",
+                    "type": "textarea",
+                    "label": "Notes",
+                    "help": "Anything we should know?",
+                    "validation": {
+                        "max_length": 300
+                    }
+                },
+                {
+                    "id": "copy",
+                    "type": "checkbox",
+                    "label": "Email me a copy",
+                    "choices": [
+                        {
+                            "value": "yes",
+                            "label": "Yes"
+                        }
+                    ]
+                },
+                {
+                    "id": "hr",
+                    "type": "html",
+                    "props": {
+                        "content": "<hr>"
+                    }
+                },
+                {
+                    "id": "stars",
+                    "type": "rating",
+                    "label": "How was this form?",
+                    "props": {
+                        "max_rating": 5
+                    }
+                },
+                {
+                    "id": "spam",
+                    "type": "captcha",
+                    "label": "What is 2 + 3?"
+                },
+                {
+                    "id": "submit",
+                    "type": "submit",
+                    "label": "Get my quote",
+                    "props": {
+                        "processing_text": "Sending"
+                    }
+                },
+                {
+                    "id": "estimate",
+                    "type": "calculation",
+                    "label": "estimate",
+                    "calculation": "#rooms_1 * 120 + #extras_2"
+                }
+            ]
+        }
+    ],
+    "confirmations": [
+        {
+            "id": "confirmation_1",
+            "type": "message",
+            "message": "Thanks! We will send your quote soon."
+        }
+    ],
+    "notifications": [
+        {
+            "id": "notification_1",
+            "enabled": true,
+            "to": "{email}",
+            "from_name": "Cleaners",
+            "subject": "Your quote request",
+            "message": "{all_fields}"
+        }
+    ]
+}

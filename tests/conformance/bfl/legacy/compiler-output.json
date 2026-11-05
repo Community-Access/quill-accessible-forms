@@ -1,0 +1,62 @@
+{
+    "version": 1,
+    "title": "Contact Form",
+    "description": "Compiled by the older BFL compiler",
+    "settings": {
+        "enable_honeypot": true,
+        "ajax_submission": true,
+        "save_continue_enabled": true
+    },
+    "pages": [
+        {
+            "id": "page_1",
+            "title": "Contact Info",
+            "items": [
+                {
+                    "id": "name",
+                    "type": "text",
+                    "label": "Your Name",
+                    "placeholder": "Enter your name",
+                    "required": true
+                },
+                {
+                    "id": "field_2",
+                    "type": "section",
+                    "label": "Message",
+                    "help": "Tell us everything",
+                    "items": [
+                        {
+                            "id": "message",
+                            "type": "textarea",
+                            "label": "Message",
+                            "props": {
+                                "rows": 5
+                            }
+                        }
+                    ]
+                }
+            ]
+        },
+        {
+            "id": "page_2",
+            "title": "Choices",
+            "items": [
+                {
+                    "id": "topic",
+                    "type": "select",
+                    "label": "Topic",
+                    "choices": [
+                        {
+                            "value": "sales",
+                            "label": "Sales"
+                        },
+                        {
+                            "value": "sup",
+                            "label": "Support"
+                        }
+                    ]
+                }
+            ]
+        }
+    ]
+}

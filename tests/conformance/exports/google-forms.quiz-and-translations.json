@@ -1,0 +1,123 @@
+{
+    "info": {
+        "title": "Braille basics quiz",
+        "documentTitle": "Braille basics quiz"
+    },
+    "items": [
+        {
+            "itemId": "q1",
+            "title": "How many dots are in a braille cell?",
+            "questionItem": {
+                "question": {
+                    "choiceQuestion": {
+                        "type": "RADIO",
+                        "options": [
+                            {
+                                "value": "Four"
+                            },
+                            {
+                                "value": "Six"
+                            },
+                            {
+                                "value": "Eight"
+                            }
+                        ]
+                    },
+                    "grading": {
+                        "pointValue": 2,
+                        "correctAnswers": {
+                            "answers": [
+                                {
+                                    "value": "Six"
+                                }
+                            ]
+                        }
+                    }
+                }
+            }
+        },
+        {
+            "itemId": "q2",
+            "title": "Which are braille codes?",
+            "questionItem": {
+                "question": {
+                    "choiceQuestion": {
+                        "type": "CHECKBOX",
+                        "options": [
+                            {
+                                "value": "UEB"
+                            },
+                            {
+                                "value": "Nemeth"
+                            },
+                            {
+                                "value": "Morse"
+                            }
+                        ]
+                    },
+                    "grading": {
+                        "pointValue": 2,
+                        "correctAnswers": {
+                            "answers": [
+                                {
+                                    "value": "UEB"
+                                },
+                                {
+                                    "value": "Nemeth"
+                                }
+                            ]
+                        }
+                    }
+                }
+            }
+        },
+        {
+            "itemId": "q3",
+            "title": "Who invented braille? (surname)",
+            "questionItem": {
+                "question": {
+                    "textQuestion": {
+                        "paragraph": false
+                    },
+                    "grading": {
+                        "pointValue": 1,
+                        "correctAnswers": {
+                            "answers": [
+                                {
+                                    "value": "Braille"
+                                }
+                            ]
+                        }
+                    }
+                }
+            }
+        },
+        {
+            "itemId": "feel",
+            "title": "How confident do you feel?",
+            "questionItem": {
+                "question": {
+                    "choiceQuestion": {
+                        "type": "RADIO",
+                        "options": [
+                            {
+                                "value": "Not very"
+                            },
+                            {
+                                "value": "Fairly"
+                            },
+                            {
+                                "value": "Very"
+                            }
+                        ]
+                    }
+                }
+            }
+        }
+    ],
+    "settings": {
+        "quizSettings": {
+            "isQuiz": true
+        }
+    }
+}
