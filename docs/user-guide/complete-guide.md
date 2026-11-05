@@ -3343,4 +3343,4 @@ For detailed documentation on specific features, see these dedicated guides:
 
 BAF is developed with accessibility as a first-class citizen.
 
-Licensed under GPL v2 or later.
+Licensed under the MIT License.

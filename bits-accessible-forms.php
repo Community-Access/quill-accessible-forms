@@ -5,7 +5,7 @@
  * @package           BAF
  * @author            Blind Information Technology Solutions
  * @copyright         2026 BITS
- * @license           GPL-2.0-or-later
+ * @license           MIT
  *
  * @wordpress-plugin
  * Plugin Name:       BITS Accessible Forms
@@ -18,8 +18,8 @@
  * Author URI:        https://bitsolutions.org
  * Text Domain:       bits-accessible-forms
  * Domain Path:       /languages
- * License:           GPL v2 or later
- * License URI:       https://www.gnu.org/licenses/gpl-2.0.html
+ * License:           MIT
+ * License URI:       https://opensource.org/licenses/MIT
  */
 
 // Prevent direct access

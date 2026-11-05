@@ -4,7 +4,7 @@ A fully accessible WordPress form builder plugin with WCAG 2.2 AA compliance, cu
 
 ![WordPress Version](https://img.shields.io/badge/WordPress-6.0%2B-blue)
 ![PHP Version](https://img.shields.io/badge/PHP-8.0%2B-purple)
-![License](https://img.shields.io/badge/License-GPL--2.0%2B-green)
+![License](https://img.shields.io/badge/License-MIT-green)
 
 ## Features
 
@@ -532,22 +532,9 @@ See [CHANGELOG.md](CHANGELOG.md) for version history.
 
 ## License
 
-This plugin is licensed under the GPL v2 or later.
-
-```text
-BITS Accessible Forms
-Copyright (C) 2024 BITS
-
-This program is free software; you can redistribute it and/or modify
-it under the terms of the GNU General Public License as published by
-the Free Software Foundation; either version 2 of the License, or
-(at your option) any later version.
-
-This program is distributed in the hope that it will be useful,
-but WITHOUT ANY WARRANTY; without even the implied warranty of
-MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
-GNU General Public License for more details.
-```
+This plugin is licensed under the MIT License; see [LICENSE](LICENSE).
+MIT is compatible with the GPL, so the plugin can be distributed through
+WordPress.org and used alongside GPL themes and plugins.
 
 ## Support
 

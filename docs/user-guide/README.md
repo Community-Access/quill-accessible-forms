@@ -92,4 +92,4 @@ BAF treats keyboard navigation as a **first-class citizen**:
 
 BAF is developed by BITS - Blind Information Technology Solutions.
 
-Licensed under GPL v2 or later.
+Licensed under the MIT License.
