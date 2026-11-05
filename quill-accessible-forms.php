@@ -255,7 +255,6 @@ final class QUILL_Accessible_Forms {
         // Import/Export
         require_once QAF_PLUGIN_DIR . 'includes/import/class-qaf-csv-importer.php';
         require_once QAF_PLUGIN_DIR . 'includes/import/class-qaf-form-importer.php';
-        require_once QAF_PLUGIN_DIR . 'includes/import/class-qaf-auto-form-generator.php';
         require_once QAF_PLUGIN_DIR . 'includes/import/class-qaf-csv-form-builder.php';
         
         // Field type converter (needed for both admin and public)
@@ -378,7 +377,7 @@ final class QUILL_Accessible_Forms {
      * Register public hooks
      */
     private function define_public_hooks() {
-        $this->public = new QAF_Public();
+        $this->public = new QAF_Public( 'quill-accessible-forms', QAF_VERSION );
 
         // Enqueue public assets
         $this->loader->add_action( 'wp_enqueue_scripts', $this->public, 'enqueue_styles' );

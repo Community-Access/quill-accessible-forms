@@ -54,7 +54,7 @@ class QAF_Integrations {
      * Constructor
      */
     private function __construct() {
-        $this->settings = new QAF_Settings();
+        $this->settings = QAF_Settings::get_instance();
         $this->register_default_integrations();
     }
 
@@ -274,7 +274,7 @@ abstract class QAF_Integration_Abstract {
      * Constructor
      */
     public function __construct() {
-        $this->settings = new QAF_Settings();
+        $this->settings = QAF_Settings::get_instance();
     }
 
     /**

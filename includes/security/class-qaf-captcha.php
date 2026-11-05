@@ -29,7 +29,7 @@ class QAF_Captcha {
      * Constructor
      */
     public function __construct() {
-        $this->settings = new QAF_Settings();
+        $this->settings = QAF_Settings::get_instance();
     }
 
     /**

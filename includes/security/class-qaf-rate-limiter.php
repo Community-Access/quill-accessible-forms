@@ -234,7 +234,7 @@ class QAF_Rate_Limiter {
      * @return bool True if whitelisted.
      */
     public function is_whitelisted( $ip_address ) {
-        $settings = new QAF_Settings();
+        $settings = QAF_Settings::get_instance();
         $whitelist = $settings->get( 'rate_limit_whitelist', array() );
 
         return in_array( $ip_address, $whitelist, true );
@@ -247,7 +247,7 @@ class QAF_Rate_Limiter {
      * @return bool True if blacklisted.
      */
     public function is_blacklisted( $ip_address ) {
-        $settings = new QAF_Settings();
+        $settings = QAF_Settings::get_instance();
         $blacklist = $settings->get( 'rate_limit_blacklist', array() );
 
         return in_array( $ip_address, $blacklist, true );
