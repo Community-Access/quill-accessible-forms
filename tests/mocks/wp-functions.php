@@ -85,8 +85,9 @@ if ( ! function_exists( 'apply_filters' ) ) {
 }
 
 if ( ! function_exists( 'do_action' ) ) {
-    function do_action( $tag ) {
-        // No-op
+    function do_action( $tag, ...$args ) {
+        // Recorded, so tests can count how often a hook fired.
+        $GLOBALS['qaf_test_actions'][] = array( $tag, $args );
     }
 }
 

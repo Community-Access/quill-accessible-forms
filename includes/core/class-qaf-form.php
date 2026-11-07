@@ -434,6 +434,18 @@ class QAF_Form {
         if ( $errors ) {
             return new WP_Error( 'qaf_invalid_model', __( 'The form model is not valid.', 'quill-accessible-forms' ), $errors );
         }
+        // Payment settings are checked on every way a model arrives (QUILL,
+        // the builder, an import), not only when someone pays.
+        if ( class_exists( 'QAF_Payment_Config' ) ) {
+            $payment_errors = QAF_Payment_Config::errors( $model );
+            if ( $payment_errors ) {
+                return new WP_Error(
+                    'qaf_invalid_payments',
+                    __( 'The form\'s payment settings are not valid.', 'quill-accessible-forms' ) . ' ' . $payment_errors[0]['message'],
+                    array( 'status' => 400, 'errors' => $payment_errors )
+                );
+            }
+        }
         $stored                       = QAF_Form_Model_Converter::to_legacy( $model );
         $this->title                  = $stored['title'];
         $this->description            = $stored['description'];

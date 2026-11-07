@@ -3111,6 +3111,12 @@ form "Support"
 
 Accept payments with Stripe and PayPal.
 
+For forms published from QUILL or QUILL Lite (payment contract version 1),
+read [Taking payments: a guide for site owners](../payments-admin-guide.md)
+first. It covers keys, webhooks, test and live mode, refunds, the payments
+report and the security rules the site follows. The examples below describe
+the older payment field settings.
+
 ### Stripe Integration
 
 ```bfl

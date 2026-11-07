@@ -307,10 +307,44 @@ Display form submissions in multiple layouts:
 - **Map View** - Geographic visualization for location data
 - **Calendar View** - Date-based entry display
 
+### Payments
+
+A form with a payment field takes money through Stripe, PayPal or both.
+This is the side of the payment contract (version 1) that QUILL and QUILL
+Lite publish to; the full guide for site owners is
+[docs/payments-admin-guide.md](docs/payments-admin-guide.md).
+
+- **Keys stay on the site.** You enter them under QAF Forms > Payments, or
+  in `wp-config.php`. The screen never shows a secret again, no REST route
+  returns one, and the payment page gets only the publishable key or client
+  ID.
+- **The site works out what is owed.** Fixed amounts, donations with a
+  smallest and largest gift, and totals made of products, quantities,
+  coupons, shipping and tax are all recomputed on the server from the form
+  itself, in whole cents rather than floating point. Nothing the browser
+  says about money is believed.
+- **Stripe Payment Intents and PayPal Orders v2,** created on the server
+  with idempotency keys, so a double click or a resent form cannot charge
+  twice.
+- **Signed webhooks.** Stripe's signatures are checked with the signing
+  secret, PayPal's with PayPal's verification call. Each event counts once,
+  must match the payment's environment, amount and currency, and can never
+  move a paid or refunded entry backwards.
+- **Test mode and live mode** for the whole site, with a check box to
+  confirm before going live. A test form never takes money on a live site,
+  and a live form is refused on a test site.
+- **Entry status** (waiting, authorized, paid, failed, cancelled, partly
+  refunded, refunded) in the entries REST reply and a payments report with
+  totals per currency.
+- **Accessible checkout:** labelled fields, errors tied to their field, a
+  heading that takes focus when the payment panel appears, one status
+  region and one alert, a keyboard-only flow, and nothing shown by colour
+  alone.
+- **Fulfilment hook:** `qaf_payment_paid` fires once per paid entry.
+
 ### Integrations
 
-- **Stripe** - Accept payments with 3D Secure/SCA support
-- **PayPal** - PayPal checkout integration
+- **Stripe** and **PayPal** - see Payments above
 - **Google Sheets** - Auto-sync entries to spreadsheets
 - **Webhooks** - Custom API integrations
 - **Email** - Notification and autoresponder emails
@@ -448,6 +482,12 @@ Each form has its own settings panel:
 | `/qaf/v1/entries` | POST | Create entry |
 | `/qaf/v1/bfl/parse` | POST | Parse QAF form language code |
 | `/qaf/v1/bfl/validate` | POST | Validate QAF form language code |
+| `/qaf/v1/payments/settings` | GET | Payment readiness (contract version 1); administrators only, never a key |
+| `/qaf/v1/payments/start` | POST | Checkout: start or resume a payment (needs the submission's token) |
+| `/qaf/v1/payments/finish` | POST | Checkout: capture an approved PayPal order (needs the token) |
+| `/qaf/v1/payments/status` | POST | Checkout: the site asks the provider and answers (needs the token) |
+| `/qaf/v1/payments/webhook/stripe` | POST | Stripe events, signature checked |
+| `/qaf/v1/payments/webhook/paypal` | POST | PayPal events, verified with PayPal |
 
 ### PHP Hooks
 
@@ -520,6 +560,12 @@ form.on('field:change', (field, value) => console.log(field, value));
 ```bash
 ./vendor/bin/phpunit
 ```
+
+The payment tests (`tests/unit/Payments/`) run without WordPress or a
+network: every Stripe and PayPal reply in them is written by hand from the
+providers' documented shapes and served by a fake transport, and the keys
+are placeholders. They never charge anything. Live sandbox checks are a
+separate, manual step (see the admin guide).
 
 ### Run JavaScript Tests
 

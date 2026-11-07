@@ -285,7 +285,10 @@ final class QUILL_Accessible_Forms {
         require_once QAF_PLUGIN_DIR . 'includes/views/class-qaf-view-list.php';
         require_once QAF_PLUGIN_DIR . 'includes/views/class-qaf-view-map.php';
         require_once QAF_PLUGIN_DIR . 'includes/views/class-qaf-view-calendar.php';
-        
+
+        // Payments (contract version 1 with QUILL): Stripe and PayPal.
+        require_once QAF_PLUGIN_DIR . 'includes/payments/class-qaf-payments.php';
+
         // Integrations
         require_once QAF_PLUGIN_DIR . 'includes/integrations/class-qaf-integrations.php';
         
@@ -408,6 +411,7 @@ final class QUILL_Accessible_Forms {
     private function define_api_hooks() {
         $api = new QAF_REST_API();
         $this->loader->add_action( 'rest_api_init', $api, 'register_routes' );
+        QAF_Payments::init();
     }
 
     /**

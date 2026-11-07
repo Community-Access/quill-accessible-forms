@@ -323,9 +323,10 @@
 
             this.announce(instanceId, message, 'assertive');
 
-            // Handle field-specific errors
-            if (result.errors) {
-                Object.entries(result.errors).forEach(([fieldId, error]) => {
+            // Handle field-specific errors (a REST error carries them in data)
+            const fieldErrors = result.errors || (result.data && result.data.errors);
+            if (fieldErrors && typeof fieldErrors === 'object' && !Array.isArray(fieldErrors)) {
+                Object.entries(fieldErrors).forEach(([fieldId, error]) => {
                     this.showFieldError(form, fieldId, error);
                 });
                 this.focusFirstError(form);

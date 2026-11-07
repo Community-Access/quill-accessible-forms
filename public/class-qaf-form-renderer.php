@@ -54,6 +54,14 @@ class QAF_Form_Renderer {
     private $has_model = false;
 
     /**
+     * The model of the form being drawn when it takes payment (contract
+     * version 1), else null.
+     *
+     * @var array|null
+     */
+    private $paid_model = null;
+
+    /**
      * Constructor
      */
     public function __construct() {
@@ -155,6 +163,14 @@ class QAF_Form_Renderer {
 
         // Honeypot fields
         echo $this->honeypot->render( $form_id );
+
+        // A paid form: one key per page load (so sending twice cannot make
+        // two entries or two charges), and the checkout script.
+        $this->paid_model = ( $model && class_exists( 'QAF_Payment_Config' ) && QAF_Payment_Config::applies( $model ) ) ? $model : null;
+        if ( $this->paid_model ) {
+            echo QAF_Payment_Checkout::submission_input(); // phpcs:ignore WordPress.Security.EscapeOutput.OutputNotEscaped -- escaped inside.
+            QAF_Payment_Checkout::enqueue( $this->paid_model );
+        }
 
         if ( $model ) {
             echo '<input type="hidden" name="qaf_lang" value="' . esc_attr( $lang ) . '" />';
@@ -340,6 +356,11 @@ class QAF_Form_Renderer {
         // Ensure ID exists for JS/submit mapping
         if ( empty( $field['id'] ) ) {
             $field['id'] = $field_id;
+        }
+
+        // A paid form's payment field says what is owed; the checkout comes after sending.
+        if ( 'payment' === $type && $this->paid_model ) {
+            return QAF_Payment_Checkout::render_field( $field, $this->paid_model );
         }
 
         // Create field instance using registry (fields render their own wrappers/labels/errors)

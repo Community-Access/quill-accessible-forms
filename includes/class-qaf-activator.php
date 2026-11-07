@@ -25,7 +25,11 @@ class QAF_Activator {
         self::create_default_options();
         self::create_upload_directories();
         self::set_capabilities();
-        
+
+        // Payment tables and the qaf_manage_payments capability.
+        require_once QAF_PLUGIN_DIR . 'includes/payments/class-qaf-payments.php';
+        QAF_Payments::install();
+
         // Flush rewrite rules
         flush_rewrite_rules();
         

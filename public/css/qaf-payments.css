@@ -1,0 +1,86 @@
+/*
+ * QUILL Accessible Forms: the payment field and the checkout.
+ * Nothing here carries meaning by colour alone: every state is also in words.
+ */
+
+.qaf-payment-v1 .qaf-payment-test-note,
+.qaf-checkout-test {
+	border-left: 4px solid currentColor;
+	padding: 0.25em 0.75em;
+	font-weight: 600;
+}
+
+.qaf-checkout {
+	margin-top: 1.5em;
+	padding: 1em;
+	border: 2px solid currentColor;
+	border-radius: 4px;
+}
+
+.qaf-checkout h3:focus {
+	outline: 3px solid;
+	outline-offset: 2px;
+}
+
+.qaf-checkout-choice {
+	border: 1px solid;
+	padding: 0.5em 1em 1em;
+	margin: 1em 0;
+}
+
+.qaf-checkout-option {
+	display: flex;
+	align-items: center;
+	gap: 0.5em;
+	min-height: 44px;
+}
+
+.qaf-checkout-option input {
+	width: 1.25em;
+	height: 1.25em;
+}
+
+.qaf-checkout-card {
+	margin: 1em 0;
+}
+
+.qaf-checkout-pay,
+.qaf-checkout-retry {
+	min-height: 44px;
+	min-width: 44px;
+	padding: 0.5em 1.25em;
+}
+
+.qaf-checkout-pay:focus-visible,
+.qaf-checkout-retry:focus-visible,
+.qaf-checkout-option input:focus-visible {
+	outline: 3px solid;
+	outline-offset: 2px;
+}
+
+.qaf-checkout-pay[disabled] {
+	cursor: wait;
+}
+
+.qaf-checkout-status:empty,
+.qaf-checkout-error:empty {
+	display: none;
+}
+
+.qaf-checkout-error {
+	font-weight: 600;
+}
+
+@media (forced-colors: active) {
+	.qaf-checkout,
+	.qaf-checkout-choice {
+		border-color: CanvasText;
+	}
+}
+
+@media (prefers-reduced-motion: reduce) {
+	.qaf-checkout * {
+		transition: none !important;
+		animation: none !important;
+	}
+}

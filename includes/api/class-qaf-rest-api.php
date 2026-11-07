@@ -495,6 +495,42 @@ class QAF_REST_API {
             $sanitized_values[ $field_id ] = $sanitizer->sanitize( $value, $field['type'] );
         }
 
+        // A paid form (payment contract version 1): check it again, work out
+        // the amount here from the model, and refuse before anything is saved
+        // if the site cannot take this payment. Nothing the page sends about
+        // money is used: only the visitor's own answers.
+        $model        = ( isset( $form->config['form_model'] ) && is_array( $form->config['form_model'] ) ) ? $form->config['form_model'] : null;
+        $payment_plan = null;
+        $submission   = '';
+        if ( $model && class_exists( 'QAF_Payment_Config' ) && QAF_Payment_Config::applies( $model ) ) {
+            $payments   = QAF_Payment_Service::instance();
+            $submission = (string) $request->get_param( 'qaf_submission' );
+            $existing   = $payments->existing( $form_id, $submission );
+            if ( $existing ) {
+                // The same page sent the same form again: the first entry and
+                // its payment stand, and nothing is charged twice.
+                return rest_ensure_response( array(
+                    'success'  => true,
+                    'message'  => __( 'Your answers were already saved.', 'quill-accessible-forms' ),
+                    'entry_id' => (int) $existing['entry_id'],
+                    'payment'  => $payments->for_page( $existing, $payments->reissue( $existing ), QAF_Payment_Config::get( $model ) ),
+                ) );
+            }
+            $paid_item = QAF_Payment_Config::payment_field( $model );
+            if ( $paid_item && isset( $field_values[ $paid_item['id'] ] ) && is_scalar( $field_values[ $paid_item['id'] ] ) ) {
+                $sanitized_values[ $paid_item['id'] ] = sanitize_text_field( (string) $field_values[ $paid_item['id'] ] );
+            }
+            $plan = $payments->prepare( $model, $sanitized_values, array( 'today' => wp_date( 'Y-m-d' ) ) );
+            if ( is_wp_error( $plan ) ) {
+                return $plan;
+            }
+            // Store the site's own totals, never the page's.
+            $sanitized_values = $plan['values'];
+            if ( $plan['due'] ) {
+                $payment_plan = $plan;
+            }
+        }
+
         $entry->set_field_values( $sanitized_values );
         $result = $entry->save();
 
@@ -516,8 +552,14 @@ class QAF_REST_API {
             'entry_id' => $entry->id,
         );
 
+        if ( $payment_plan ) {
+            $opened              = QAF_Payment_Service::instance()->open( $form_id, $entry->id, $payment_plan, $submission );
+            $response['payment'] = QAF_Payment_Service::instance()->for_page( $opened['attempt'], $opened['token'], $payment_plan['config'] );
+            /* translators: %s: amount with currency, such as 25.00 USD. */
+            $response['message'] = sprintf( __( 'Your answers are saved. To finish, pay %s below.', 'quill-accessible-forms' ), $response['payment']['spoken'] );
+        }
+
         // A quiz: the outcome is chosen here, so its answers never reach the page.
-        $model = ( isset( $form->config['form_model'] ) && is_array( $form->config['form_model'] ) ) ? $form->config['form_model'] : null;
         if ( $model ) {
             $lang    = QAF_Form_Runtime::language( $model, sanitize_key( (string) $request->get_param( 'qaf_lang' ) ) );
             $outcome = QAF_Form_Runtime::outcome( $model, $sanitized_values, $lang, array( 'today' => wp_date( 'Y-m-d' ) ) );
@@ -647,6 +689,25 @@ class QAF_REST_API {
      * @return array Response data.
      */
     private function prepare_entry_response( $entry ) {
+        $data = $this->entry_fields( $entry );
+        // Payment contract version 1: the entry's payment, when it has one.
+        // No payment object means unknown, never paid.
+        if ( class_exists( 'QAF_Payment_Service' ) ) {
+            $payment = QAF_Payment_Service::instance()->for_entry( (int) $entry->id );
+            if ( $payment ) {
+                $data['payment'] = $payment;
+            }
+        }
+        return $data;
+    }
+
+    /**
+     * An entry's own fields, for a reply.
+     *
+     * @param QAF_Entry $entry Entry object.
+     * @return array Fields.
+     */
+    private function entry_fields( $entry ) {
         return array(
             'id'          => $entry->id,
             'form_id'     => $entry->form_id,
