@@ -54,6 +54,14 @@ class QAF_Stripe_Gateway_Test extends QAF_Payment_Test_Case {
 		$this->assertCount( 0, $fake->to( '/payment_intents', 'POST' ) );
 	}
 
+	public function test_an_intent_already_paid_is_reported_not_replaced() {
+		$this->make_ready( 'stripe' );
+		$fake = ( new QAF_Fake_Provider() )->on( 'GET https://api.stripe.com/v1/payment_intents/pi_123', 200, self::pi( array( 'status' => 'succeeded' ) ) );
+		$out  = ( new QAF_Payment_Stripe( $fake->http() ) )->start( $this->attempt( array( 'provider_ref' => 'pi_123' ) ) );
+		$this->assertSame( 'paid', $out['status'] );
+		$this->assertCount( 0, $fake->to( '/payment_intents', 'POST' ), 'a paid webhook may still be on its way' );
+	}
+
 	public function test_an_intent_for_another_amount_or_environment_is_refused() {
 		$this->make_ready( 'stripe' );
 		$fake = ( new QAF_Fake_Provider() )->on( 'POST https://api.stripe.com/v1/payment_intents', 200, self::pi( array( 'amount' => 1 ) ) );

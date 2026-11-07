@@ -163,7 +163,9 @@ class QAF_Payment_Stripe {
 		if ( $attempt['provider_ref'] !== '' && strpos( $attempt['provider_ref'], 'pi_' ) === 0 ) {
 			$reply = $this->call( $env, 'GET', '/payment_intents/' . rawurlencode( $attempt['provider_ref'] ) );
 			$pi    = $reply['json'];
-			if ( $reply['status'] === 200 && is_array( $pi ) && ! in_array( $pi['status'] ?? '', array( 'canceled', 'succeeded' ), true ) ) {
+			// Anything but a cancelled intent is this attempt's payment, paid or
+			// not: never make a second one beside it.
+			if ( $reply['status'] === 200 && is_array( $pi ) && ( $pi['status'] ?? '' ) !== 'canceled' ) {
 				return $this->started( $pi, $attempt );
 			}
 		}
