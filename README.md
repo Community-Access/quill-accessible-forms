@@ -352,10 +352,12 @@ Lite publish to; the full guide for site owners is
 
 ### Security
 
+- **Hold, never drop** - A form any spam check doubts is kept as spam with the reason and score, and the visitor sees the same thank-you; mark it Not Spam to bring it back. Checks that judge how someone used the page can only hold, never refuse. See the [Spam guide](docs/user-guide/spam-guide.md)
+- **Quiet spam checks** - Honeypot, time to fill (never under three seconds), link count, code in answers, the site's Discussion word lists, rate limits and optional proof of work (ALTCHA format, self-hosted), all on the site
+- **Spam services** - Akismet and OOPSpam when you turn them on, told about Spam and Not Spam so they learn; CleanTalk and Shield Security detected (not yet asked)
+- **Text questions** - Asked only when the quiet checks are unsure, made fresh each visit, answered loosely, with Send Anyway after three tries
 - **CSRF Protection** - All forms protected against cross-site request forgery
-- **Honeypot Fields** - Invisible bot detection
-- **Rate Limiting** - Prevent form spam and abuse
-- **CAPTCHA Support** - reCAPTCHA v2/v3 and hCaptcha
+- **CAPTCHA Support** - reCAPTCHA v2/v3, hCaptcha and Turnstile
 - **Input Sanitization** - Comprehensive XSS and injection protection
 - **File Validation** - Secure file upload handling
 
@@ -453,6 +455,7 @@ Navigate to **QAF Forms → Settings** to configure:
 - Email notifications
 - Payment gateway credentials
 - reCAPTCHA keys
+- Spam checks, spam services and text questions (the Spam tab)
 - Integration API keys
 
 ### Form-Specific Settings
@@ -480,6 +483,10 @@ Each form has its own settings panel:
 | `/qaf/v1/entries` | GET | List entries |
 | `/qaf/v1/entries/{id}` | GET | Get single entry |
 | `/qaf/v1/entries` | POST | Create entry |
+| `/qaf/v1/entries/{id}/spam` | POST | Mark as spam; tells the spam services and fires `qaf_entry_marked` |
+| `/qaf/v1/entries/{id}/not-spam` | POST | Mark as not spam; restores it, tells the spam services, sends the notifications that waited |
+| `/qaf/v1/spam` | GET | Each spam check's state, limits and this week's question numbers; never a key |
+| `/qaf/v1/spam/pow` | GET | A proof-of-work challenge for a form page (when ALTCHA is on) |
 | `/qaf/v1/bfl/parse` | POST | Parse QAF form language code |
 | `/qaf/v1/bfl/validate` | POST | Validate QAF form language code |
 | `/qaf/v1/payments/settings` | GET | Payment readiness (contract version 1); administrators only, never a key |
@@ -505,6 +512,12 @@ do_action( 'qaf_before_entry_save', $data, $form_id );
 
 // After payment processed
 do_action( 'qaf_payment_completed', $entry_id, $payment_data );
+
+// A form was held as spam when it arrived (instead of qaf_form_submitted)
+do_action( 'qaf_entry_held', $entry, $form, $decision );
+
+// Someone marked an entry Spam ('spam') or Not Spam ('ham')
+do_action( 'qaf_entry_marked', $entry_id, $as, $submission, $entry );
 ```
 
 #### Filters
@@ -524,6 +537,17 @@ add_filter( 'qaf_validate_submission', function( $errors, $data, $form_id ) {
 add_filter( 'qaf_field_options', function( $options, $field, $form_id ) {
     return $options;
 }, 10, 3 );
+
+// Hold a form: add a verdict (it can hold, never refuse)
+add_filter( 'qaf_spam_check', function( $verdicts, $submission ) {
+    $verdicts[] = array( 'provider' => 'my_plugin', 'verdict' => 'unsure', 'reason' => 'Why.' );
+    return $verdicts;
+}, 10, 2 );
+
+// Add a spam provider (an object implementing QAF_Spam_Provider)
+add_filter( 'qaf_spam_providers', function( $providers, $settings ) {
+    return $providers;
+}, 10, 2 );
 
 // Customize email content
 add_filter( 'qaf_notification_email', function( $email, $entry, $form ) {

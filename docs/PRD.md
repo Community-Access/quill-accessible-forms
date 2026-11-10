@@ -1138,6 +1138,9 @@ class QAF_Rate_Limiter {
 
 **Accessibility Note:** All CAPTCHA implementations include accessible alternatives.
 
+reCAPTCHA v3 scores and Turnstile failures judge behaviour, so since
+2026-11 they hold a form for review rather than refusing it (see 7).
+
 #### 5. File Upload Security
 
 ```php
@@ -1164,6 +1167,69 @@ class QAF_Sanitizer {
     }
 }
 ```
+
+#### 7. Spam: hold, never drop
+
+Requirements from QUILL's WordPress Workbench plan (`docs/design/wordpress.md`
+in QUILL, section 13a; WP-R-026, WP-R-027, WP-R-028 and WP-R-039; decisions
+8, 9, 10 and 14, all accepted 2026-11-09).
+
+**The rule.** A form any check doubts is saved with status `spam`, the check
+that held it, a reason a person can read and the check's score
+(`spam_check`, `spam_reason`, `spam_score`, `spam_details` on
+`qaf_entries`, schema version 2). The visitor's confirmation is the same
+either way. A check that judges behaviour (time to fill, reCAPTCHA v3,
+Turnstile, Shield's silentCAPTCHA once wired) may only hold, never refuse.
+The one refusal is the flood ceiling (more than 100 sends from one address
+in a day), said plainly to the person. Held entries fire `qaf_entry_held`
+instead of `qaf_form_submitted`; notifications wait until a person releases
+them.
+
+**The interface.** `QAF_Spam_Provider` (`check()` returns a verdict with a
+reason and score; `mark_spam()` and `mark_ham()`), a registry that runs them
+in order, the `qaf_spam_providers` and `qaf_spam_check` filters and the
+`qaf_entry_marked` action. Code: `includes/spam/`.
+
+**Progress (2026-11-10, branch `feat/spam-hold-providers-challenges`).**
+
+- [x] Hold, never drop, with reason and score; schema version 2 applied on
+      `plugins_loaded` without reactivating
+- [x] Quiet checks: honeypot, time to fill (never under three seconds),
+      link count (default 3), code in answers, form token, rate limit, the
+      form's CAPTCHA (v3 and Turnstile only hold)
+- [x] The rate limiter counts again: it had been querying a column its
+      table never had; now `qaf_rate_events`, one row per send
+- [x] The site's Discussion lists: `disallowed_keys` holds as spam,
+      `moderation_keys` is a doubt
+- [x] Akismet through the Akismet plugin's own `Akismet::http_post`
+      (comment-check as a contact form, submit-spam, submit-ham)
+- [x] OOPSpam with QAF's own key and threshold (0 to 6), and its report
+      endpoint for Spam and Not Spam
+- [x] ALTCHA-format proof of work, self-hosted, with its own small solver
+      and `GET qaf/v1/spam/pow`; cost doubles with wrong answers
+- [x] Text questions (13a.6): four kinds plus maths (off) and the site's own
+      bank, the answer kept on the site, one-time ids for 15 minutes bound
+      to form, visit and browser, loose matching, Send Anyway after three
+      tries, Always, Never and Ask When Unsure per site and per form
+- [x] REST: `spam` object on every entry, `entries/{id}/spam`,
+      `entries/{id}/not-spam`, `GET spam`; the entries list accepts the
+      entry statuses
+- [x] Settings > Spam, labelled and grouped; the settings tabs now work
+- [x] Privacy text through `wp_add_privacy_policy_content`
+- [x] Tests: `tests/unit/Spam` (104 tests)
+- [ ] Verify integration points: CleanTalk and Shield Security are detected
+      by their plugin files but not asked anything until their public
+      functions or filters for third-party forms are confirmed with their
+      developers (`QAF_Spam_Detected_Plugin`)
+- [ ] Read the OOPSpam plugin's saved key and threshold once its option
+      names are confirmed (until then, `qaf_oopspam_plugin_settings`), and
+      confirm OOPSpam's report endpoint against a live account
+- [ ] Try the official ALTCHA widget against `GET spam/pow` in a browser;
+      QAF's own solver is checked against the PHP verifier
+- [ ] Check the question with JAWS and NVDA on a live form, and in QUILL's
+      fill window
+- [ ] Shield's address blocks, and an "allow this sender from now on" choice
+      on Not Spam (13a.5)
 
 ---
 
@@ -1460,6 +1526,10 @@ CREATE TABLE {prefix}qaf_entries (
     source_url VARCHAR(2000),
     payment_status VARCHAR(50),
     payment_amount DECIMAL(10,2),
+    spam_check VARCHAR(50),       -- the check that held it (schema version 2)
+    spam_reason VARCHAR(255),     -- "6 links (the limit is 3)."
+    spam_score DECIMAL(10,3),     -- the check's own score
+    spam_details LONGTEXT,        -- every doubt, notes, and who marked it what
     created_at DATETIME NOT NULL,
     updated_at DATETIME NOT NULL,
     PRIMARY KEY (id),

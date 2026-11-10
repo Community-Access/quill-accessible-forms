@@ -134,6 +134,12 @@ These settings control how QAF communicates with assistive technology:
 - **reCAPTCHA**: Optional Google reCAPTCHA integration
 - **hCaptcha**: Privacy-focused CAPTCHA alternative
 
+#### Spam Settings
+
+Which spam checks run, their limits, the spam services you already use
+(Akismet, OOPSpam), text questions and your own question bank. See the
+[Spam guide](spam-guide.md).
+
 #### Payment Settings
 
 - **Stripe API Keys**: For credit card processing
@@ -3152,6 +3158,18 @@ product "Plan"
 ---
 
 ## Security & Spam Prevention
+
+QAF never throws a form away because a check doubted it. It keeps it as spam
+with the reason ("6 links (the limit is 3)"), shows the visitor the same
+thank-you, and lets you mark it Not Spam to bring it back. Checks that judge
+how someone used the page (reCAPTCHA v3 scores, Turnstile, time to fill) can
+only hold a form, never refuse it, because keyboard, screen reader, switch
+and voice users look unusual to them. When the quiet checks are unsure, a
+short question in words may be asked, with Send Anyway after three tries.
+
+Everything about it, including Akismet, OOPSpam, proof of work, the text
+questions and the REST routes, is in the [Spam guide](spam-guide.md). The
+settings are in **QAF Forms > Settings > Spam**.
 
 ### Honeypot
 
