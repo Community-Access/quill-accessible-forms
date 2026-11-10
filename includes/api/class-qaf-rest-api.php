@@ -102,6 +102,19 @@ class QAF_REST_API {
             ),
         ) );
 
+        // Spam and Not Spam (QUILL's wordpress.md 13a.5): the entry's status
+        // changes, the spam providers are told, and qaf_entry_marked fires.
+        register_rest_route( self::NAMESPACE, '/entries/(?P<id>[\d]+)/spam', array(
+            'methods'             => WP_REST_Server::CREATABLE,
+            'callback'            => array( $this, 'mark_entry_spam' ),
+            'permission_callback' => array( $this, 'update_entry_permissions_check' ),
+        ) );
+        register_rest_route( self::NAMESPACE, '/entries/(?P<id>[\d]+)/not-spam', array(
+            'methods'             => WP_REST_Server::CREATABLE,
+            'callback'            => array( $this, 'mark_entry_not_spam' ),
+            'permission_callback' => array( $this, 'update_entry_permissions_check' ),
+        ) );
+
         // Form submission endpoint (public)
         register_rest_route( self::NAMESPACE, '/submit/(?P<form_id>[\d]+)', array(
             'methods'             => WP_REST_Server::CREATABLE,
@@ -337,7 +350,7 @@ class QAF_REST_API {
         );
 
         $entries = QAF_Entry::get_for_form( $form_id, $args );
-        $total = QAF_Entry::count_for_form( $form_id, $args['status'] );
+        $total = QAF_Entry::count_for_form( $form_id, '*' === $args['status'] ? '' : $args['status'] );
 
         $data = array();
         foreach ( $entries as $entry ) {
@@ -450,6 +463,55 @@ class QAF_REST_API {
         }
 
         return rest_ensure_response( $this->prepare_entry_response( $entry ) );
+    }
+
+    /**
+     * Mark an entry as spam.
+     *
+     * @param WP_REST_Request $request Request object.
+     * @return WP_REST_Response|WP_Error Response.
+     */
+    public function mark_entry_spam( $request ) {
+        return $this->mark_entry( $request, 'spam' );
+    }
+
+    /**
+     * Mark an entry as not spam: it goes back to the form's entries.
+     *
+     * @param WP_REST_Request $request Request object.
+     * @return WP_REST_Response|WP_Error Response.
+     */
+    public function mark_entry_not_spam( $request ) {
+        return $this->mark_entry( $request, 'ham' );
+    }
+
+    /**
+     * Spam or Not Spam.
+     *
+     * @param WP_REST_Request $request Request object.
+     * @param string          $as      spam or ham.
+     * @param object|null     $entry   The entry (tests), else read by id.
+     * @return WP_REST_Response|WP_Error|array Response.
+     */
+    public function mark_entry( $request, $as, $entry = null ) {
+        $entry = $entry ?: new QAF_Entry( $request->get_param( 'id' ) );
+
+        if ( ! $entry->id ) {
+            return new WP_Error( 'rest_entry_not_found', __( 'Entry not found.', 'quill-accessible-forms' ), array( 'status' => 404 ) );
+        }
+        if ( 'trash' === $entry->status ) {
+            return new WP_Error( 'rest_entry_in_trash', __( 'This entry is in the trash. Restore it first.', 'quill-accessible-forms' ), array( 'status' => 409 ) );
+        }
+
+        $marked = QAF_Spam::mark_entry( $entry, $as );
+        if ( isset( $marked['error'] ) ) {
+            return $marked['error'];
+        }
+
+        $data             = $this->prepare_entry_response( $entry );
+        $data['told']     = $marked['told'];
+        $data['released'] = $marked['released'];
+        return rest_ensure_response( $data );
     }
 
     /**
@@ -795,6 +857,9 @@ class QAF_REST_API {
             'status'      => $entry->status,
             'is_starred'  => $entry->is_starred,
             'is_read'     => $entry->is_read,
+            // Why the spam checks doubted it, and what people decided; null
+            // when nothing ever doubted it (QUILL's wordpress.md 13a.2 rule 4).
+            'spam'        => QAF_Spam::entry_view( $entry ),
             'fields'      => $entry->get_field_values(),
             'created_at'  => $entry->created_at,
             'updated_at'  => $entry->updated_at,
@@ -932,6 +997,12 @@ class QAF_REST_API {
             ),
             'starred' => array(
                 'type'    => 'boolean',
+            ),
+            // Entries have their own statuses; the forms' draft, active and
+            // inactive left spam unreachable through this route.
+            'status'  => array(
+                'type' => 'string',
+                'enum' => array( 'active', 'trash', 'spam', 'pending', 'approved', 'rejected', '*' ),
             ),
         ) );
     }

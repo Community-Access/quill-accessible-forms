@@ -29,6 +29,9 @@ $settings = QAF_Settings::get_instance();
                 <button type="button" role="tab" aria-selected="false" aria-controls="qaf-tab-security" id="qaf-tab-btn-security" class="qaf-tab-btn">
                     <?php esc_html_e( 'Security', 'quill-accessible-forms' ); ?>
                 </button>
+                <button type="button" role="tab" aria-selected="false" aria-controls="qaf-tab-spam" id="qaf-tab-btn-spam" class="qaf-tab-btn">
+                    <?php esc_html_e( 'Spam', 'quill-accessible-forms' ); ?>
+                </button>
                 <button type="button" role="tab" aria-selected="false" aria-controls="qaf-tab-integrations" id="qaf-tab-btn-integrations" class="qaf-tab-btn">
                     <?php esc_html_e( 'Integrations', 'quill-accessible-forms' ); ?>
                 </button>
@@ -124,6 +127,21 @@ $settings = QAF_Settings::get_instance();
                 </table>
             </div>
             
+            <div id="qaf-tab-spam" role="tabpanel" aria-labelledby="qaf-tab-btn-spam" class="qaf-tab-panel" hidden>
+                <?php
+                $qaf_spam_settings = new QAF_Spam_Settings();
+                $qaf_spam_store    = new QAF_Spam_Transient_Store();
+                $qaf_spam_values   = $qaf_spam_settings->all();
+                $qaf_spam_states   = QAF_Spam::registry( $qaf_spam_settings, $qaf_spam_store )->states();
+                $qaf_spam_week     = ( new QAF_Text_Challenge( $qaf_spam_settings, $qaf_spam_store, new QAF_Spam_Failures( $qaf_spam_store ) ) )->stats();
+                $qaf_spam_forms    = array();
+                foreach ( QAF_Form::get_all( array( 'orderby' => 'title', 'order' => 'ASC' ) ) as $qaf_spam_form ) {
+                    $qaf_spam_forms[ (int) $qaf_spam_form->id ] = $qaf_spam_form->title;
+                }
+                include QAF_PLUGIN_DIR . 'admin/partials/settings-spam.php';
+                ?>
+            </div>
+
             <div id="qaf-tab-integrations" role="tabpanel" aria-labelledby="qaf-tab-btn-integrations" class="qaf-tab-panel" hidden>
                 <h2><?php esc_html_e( 'Integrations', 'quill-accessible-forms' ); ?></h2>
                 <p><?php esc_html_e( 'Configure third-party service integrations.', 'quill-accessible-forms' ); ?></p>

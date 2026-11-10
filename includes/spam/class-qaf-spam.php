@@ -86,6 +86,84 @@ class QAF_Spam {
 	}
 
 	/**
+	 * An entry's spam story, for the REST reply and the Workbench: which
+	 * check held it, why, its score, every doubt, and what people decided.
+	 * Null when no check ever doubted it and nobody marked it.
+	 *
+	 * @param object $entry QAF_Entry.
+	 * @return array|null check, reason, score, score_max, held_at_submit, checks, notes, marks.
+	 */
+	public static function entry_view( $entry ) {
+		$details = method_exists( $entry, 'get_spam_details' ) ? $entry->get_spam_details() : array();
+		if ( ! $entry->spam_check && ! $entry->spam_reason && ! $details ) {
+			return null;
+		}
+		return array(
+			'check'          => $entry->spam_check ?: null,
+			'reason'         => $entry->spam_reason ?: null,
+			'score'          => null === $entry->spam_score ? null : (float) $entry->spam_score,
+			'score_max'      => isset( $details['score_max'] ) && null !== $details['score_max'] ? (float) $details['score_max'] : null,
+			'held_at_submit' => ! empty( $details['held_at_submit'] ),
+			'checks'         => isset( $details['checks'] ) ? (array) $details['checks'] : array(),
+			'notes'          => isset( $details['notes'] ) ? (array) $details['notes'] : array(),
+			'marks'          => isset( $details['marks'] ) ? (array) $details['marks'] : array(),
+		);
+	}
+
+	/**
+	 * Spam or Not Spam, as a person decided (13a.5): the entry's status
+	 * changes, every running provider is told (Akismet and OOPSpam learn),
+	 * qaf_entry_marked fires, and an entry released from a hold it was given
+	 * when it arrived is submitted at last, once (qaf_form_submitted), so the
+	 * notifications that waited go out.
+	 *
+	 * @param object                 $entry    QAF_Entry.
+	 * @param string                 $as       spam or ham.
+	 * @param QAF_Spam_Registry|null $registry Registry (tests), else the site's.
+	 * @return array told (provider ids), released (bool).
+	 */
+	public static function mark_entry( $entry, $as, $registry = null ) {
+		$as       = 'spam' === $as ? 'spam' : 'ham';
+		$registry = $registry ?: self::guard()->registry();
+		$was      = $entry->status;
+		$details  = $entry->get_spam_details();
+
+		if ( 'spam' === $as ) {
+			$entry->status = 'spam';
+			if ( ! $entry->spam_check ) {
+				$entry->spam_check  = 'person';
+				$entry->spam_reason = __( 'Marked as spam by a person.', 'quill-accessible-forms' );
+			}
+		} elseif ( 'spam' === $was ) {
+			$entry->status = 'active';
+		}
+
+		$details['marks'][] = array(
+			'as' => $as,
+			'by' => function_exists( 'get_current_user_id' ) ? (int) get_current_user_id() : 0,
+			'at' => gmdate( 'Y-m-d H:i:s' ),
+		);
+		$released = 'ham' === $as && 'spam' === $was && ! empty( $details['held_at_submit'] ) && empty( $details['released_once'] );
+		if ( $released ) {
+			$details['released_once'] = true;
+		}
+		$entry->set_spam_details( $details );
+		$saved = $entry->save();
+		if ( is_wp_error( $saved ) ) {
+			return array( 'error' => $saved, 'told' => array(), 'released' => false );
+		}
+
+		$form = method_exists( $entry, 'get_form' ) ? $entry->get_form() : null;
+		$told = $registry->mark( QAF_Spam_Submission::from_entry( $entry, $form && ! empty( $form->id ) ? $form : null ), $as, $entry );
+
+		if ( $released ) {
+			/** This action is documented in includes/api/class-qaf-rest-api.php */
+			do_action( 'qaf_form_submitted', $entry, $form );
+		}
+		return array( 'told' => $told, 'released' => $released );
+	}
+
+	/**
 	 * Hook everything in. Called once from the main plugin class.
 	 */
 	public static function init() {

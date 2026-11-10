@@ -179,6 +179,28 @@ class QAF_Spam_Settings {
 		return hash_hmac( 'sha256', 'time|' . (int) $form_id . '|' . (int) $loaded, self::secret() );
 	}
 
+	/**
+	 * The sanitize callback register_setting() uses. From the settings page
+	 * (which sends a _from_page marker) a check box that was not sent is off,
+	 * and an empty OOPSpam key field keeps the saved key unless "Remove the
+	 * saved key" is checked, so the key is never written back into the page.
+	 *
+	 * @param mixed $in Input.
+	 * @return array
+	 */
+	public static function sanitize_option( $in ) {
+		if ( ! is_array( $in ) || empty( $in['_from_page'] ) ) {
+			return self::sanitize( $in );
+		}
+		$saved = self::sanitize( get_option( self::OPTION, array() ) );
+		if ( ( ! isset( $in['oopspam_api_key'] ) || '' === trim( (string) $in['oopspam_api_key'] ) ) && empty( $in['oopspam_api_key_clear'] ) ) {
+			$in['oopspam_api_key'] = $saved['oopspam_api_key'];
+		} elseif ( ! empty( $in['oopspam_api_key_clear'] ) ) {
+			$in['oopspam_api_key'] = '';
+		}
+		return self::sanitize( $in, true );
+	}
+
 	/** @return string[] */
 	public static function modes() {
 		return array( self::ASK_WHEN_UNSURE, self::ASK_ALWAYS, self::ASK_NEVER );

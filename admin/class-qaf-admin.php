@@ -30,6 +30,17 @@ class QAF_Admin {
                 'default'           => QAF_Settings::get_instance()->get_defaults(),
             )
         );
+
+        // Spam (Settings > Spam): saved in the same form, as its own option.
+        register_setting(
+            'qaf_settings',
+            QAF_Spam_Settings::OPTION,
+            array(
+                'type'              => 'array',
+                'sanitize_callback' => array( 'QAF_Spam_Settings', 'sanitize_option' ),
+                'default'           => QAF_Spam_Settings::defaults(),
+            )
+        );
     }
 
     /**
@@ -514,6 +525,8 @@ class QAF_Admin {
      * Render settings page
      */
     public function render_settings_page() {
+        // The settings page's tabs: arrow keys, Home and End, as a tab list should.
+        wp_enqueue_script( 'qaf-settings-tabs', QAF_PLUGIN_URL . 'admin/js/qaf-settings-tabs.js', array(), QAF_VERSION, true );
         include QAF_PLUGIN_DIR . 'admin/partials/settings-page.php';
     }
 
