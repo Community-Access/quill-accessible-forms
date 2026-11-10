@@ -207,6 +207,11 @@
             this.announce(instanceId, qafPublic.i18n.submitting, 'polite');
 
             try {
+                // Proof of work (when the site uses it) is solved in the
+                // background from page load; wait a little for it.
+                if (window.QAFSpam) {
+                    await window.QAFSpam.ready(form);
+                }
                 const data = this.collectValues(form);
                 // The spam checks read these; collectValues leaves out
                 // names that start with an underscore.
@@ -247,6 +252,10 @@
                     message: qafPublic.i18n.networkError
                 });
             } finally {
+                // A proof of work counts once: start the next one.
+                if (window.QAFSpam) {
+                    window.QAFSpam.refresh(form, null);
+                }
                 form.classList.remove('qaf-form-submitting');
                 if (submitBtn) {
                     submitBtn.disabled = false;

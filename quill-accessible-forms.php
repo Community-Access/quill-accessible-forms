@@ -415,6 +415,7 @@ final class QUILL_Accessible_Forms {
         $api = new QAF_REST_API();
         $this->loader->add_action( 'rest_api_init', $api, 'register_routes' );
         QAF_Payments::init();
+        QAF_Spam::init();
     }
 
     /**

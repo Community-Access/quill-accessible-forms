@@ -147,6 +147,12 @@ class QAF_Form_Renderer {
             'aria-describedby' => $options['show_description'] ? $instance_id . '-desc' : '',
             'data-form-id'    => $form_id,
         );
+        // Spam checks: the proof-of-work address, when ALTCHA is on.
+        $spam_attrs = QAF_Spam::form_attributes( $form_id );
+        $form_attrs = array_merge( $form_attrs, $spam_attrs );
+        if ( $spam_attrs && function_exists( 'wp_enqueue_script' ) ) {
+            wp_enqueue_script( 'quill-accessible-forms-spam', QAF_PLUGIN_URL . 'public/js/qaf-spam.js', array(), QAF_VERSION, true );
+        }
         if ( $model ) {
             $form_attrs['data-qaf-model'] = '1';
             if ( $lang !== '' ) {
@@ -166,6 +172,9 @@ class QAF_Form_Renderer {
         echo '<input type="hidden" name="_qaf_form_loaded" value="' . esc_attr( $loaded ) . '" />';
         echo '<input type="hidden" name="_qaf_form_sig" value="' . esc_attr( QAF_Spam_Settings::sign_time( $form_id, $loaded ) ) . '" />';
         echo '<input type="hidden" name="qaf_visit" value="" />';
+        if ( $spam_attrs ) {
+            echo '<input type="hidden" name="qaf_pow" value="" />';
+        }
 
         // Honeypot fields
         echo $this->honeypot->render( $form_id );
