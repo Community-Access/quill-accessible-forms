@@ -241,6 +241,13 @@
 
                 const result = await response.json();
 
+                // A question from the spam checks: nothing was saved yet,
+                // and the answers stay on the page.
+                if (response.ok && result && result.challenge) {
+                    this.showChallenge(form, result);
+                    return;
+                }
+
                 if (response.ok && result.success) {
                     this.handleSuccess(form, result);
                 } else {
@@ -273,8 +280,9 @@
             const wrapper = form.closest('.qaf-form-wrapper');
             const messagesDiv = wrapper?.querySelector('.qaf-messages');
 
-            // Clear form
+            // Clear form, and any question the spam checks asked
             form.reset();
+            form.querySelectorAll('.qaf-challenge').forEach((el) => el.remove());
 
             // Show success message
             let message = result.message || qafPublic.i18n.successMessage;
@@ -322,6 +330,62 @@
             form.dispatchEvent(new CustomEvent('qaf:submitted', {
                 detail: result
             }));
+        },
+
+        /**
+         * Show a question from the spam checks, as a field like any other:
+         * the site builds the markup (a label, the question as its
+         * description or as the legend of radio buttons, a polite error
+         * region); this puts it before the submit button, moves focus to
+         * it, and wires Send Anyway when it is offered.
+         * @param {HTMLFormElement} form
+         * @param {Object} result
+         */
+        showChallenge: function(form, result) {
+            const instanceId = form.id;
+            form.querySelectorAll('.qaf-challenge').forEach((el) => el.remove());
+
+            const holder = document.createElement('div');
+            holder.innerHTML = result.challenge.html;
+            const block = holder.firstElementChild;
+            if (!block) {
+                return;
+            }
+            const submitWrapper = form.querySelector('.qaf-submit-wrapper');
+            form.insertBefore(block, submitWrapper || null);
+
+            const anyway = block.querySelector('[data-qaf-send-anyway]');
+            if (anyway) {
+                anyway.addEventListener('click', () => {
+                    const field = block.querySelector('input[name="qaf_send_anyway"]');
+                    if (field) {
+                        field.value = anyway.dataset.qafSendAnyway;
+                    }
+                    if (typeof form.requestSubmit === 'function') {
+                        form.requestSubmit();
+                    } else {
+                        this.handleSubmit(form);
+                    }
+                });
+            }
+
+            const first = block.querySelector('input[name="qaf_challenge_answer"]');
+            if (first) {
+                first.focus();
+            }
+
+            // Said once: a wrong answer through the question's own error
+            // region (filled after the block is in place, so it is
+            // announced), anything else through the form's announcer.
+            const error = block.dataset.qafError;
+            const region = block.querySelector('.qaf-challenge-error');
+            if (error && region) {
+                setTimeout(() => {
+                    region.textContent = result.message || error;
+                }, 150);
+            } else {
+                this.announce(instanceId, result.message || '', 'polite');
+            }
         },
 
         /**

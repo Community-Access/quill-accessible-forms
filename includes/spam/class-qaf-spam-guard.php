@@ -96,9 +96,13 @@ class QAF_Spam_Guard {
 	/** @var QAF_Spam_Settings */
 	protected $settings;
 
-	public function __construct( QAF_Spam_Registry $registry, QAF_Spam_Settings $settings ) {
-		$this->registry = $registry;
-		$this->settings = $settings;
+	/** @var QAF_Text_Challenge|null */
+	protected $challenge;
+
+	public function __construct( QAF_Spam_Registry $registry, QAF_Spam_Settings $settings, $challenge = null ) {
+		$this->registry  = $registry;
+		$this->settings  = $settings;
+		$this->challenge = $challenge;
 	}
 
 	/** @return QAF_Spam_Registry */
@@ -106,16 +110,91 @@ class QAF_Spam_Guard {
 		return $this->registry;
 	}
 
+	/** @return QAF_Text_Challenge|null */
+	public function challenge() {
+		return $this->challenge;
+	}
+
 	/**
 	 * Decide what happens to a submission.
+	 *
+	 * Risk first, question second (13a.6): the quiet checks run; when one is
+	 * sure, the entry is held without asking anything; when they are only
+	 * unsure, a question is asked (if the form asks); a right answer saves
+	 * it, a wrong one asks again, and after three tries Send Anyway holds it.
 	 *
 	 * @param QAF_Spam_Submission $s       Submission.
 	 * @param bool                $can_ask False where nobody can answer a question (an API client).
 	 * @return QAF_Spam_Decision
 	 */
 	public function decide( QAF_Spam_Submission $s, $can_ask = true ) {
+		$challenge = $can_ask ? $this->challenge : null;
+
+		// Send Anyway, offered after three tries: always held, never lost.
+		$anyway = $s->param( 'qaf_send_anyway' );
+		if ( $challenge && is_string( $anyway ) && '' !== $anyway ) {
+			$tries = $challenge->redeem_send_anyway( $anyway, $s );
+			if ( false !== $tries ) {
+				$s->is_answer = true;
+				$result       = $this->registry->run( $s, array( 'challenge' ) );
+				if ( $result->refusal() ) {
+					return $this->settle( $result );
+				}
+				/* translators: %d: how many questions were tried. */
+				$lead    = QAF_Spam_Verdict::unsure( 'challenge', sprintf( _n( 'Sent anyway after %d question.', 'Sent anyway after %d questions.', $tries, 'quill-accessible-forms' ), $tries ) );
+				$result->add( $lead );
+				$d       = new QAF_Spam_Decision( QAF_Spam_Decision::HOLD, $result );
+				$d->lead = $lead;
+				return $d;
+			}
+		}
+
+		// An answer to a question this site asked on this visit.
+		$answered = null;
+		$id       = $s->param( 'qaf_challenge_id' );
+		if ( $challenge && is_string( $id ) && '' !== $id ) {
+			$answered = $challenge->verify( $id, $s->param( 'qaf_challenge_answer' ), $s );
+			if ( 'unknown' !== $answered ) {
+				$s->is_answer = true;
+			} else {
+				$answered = null;
+			}
+		}
+
 		$result = $this->registry->run( $s, array( 'challenge' ) );
-		return $this->settle( $result );
+		$d      = $this->settle( $result );
+		if ( ! $d->saves() || $result->is_spam() ) {
+			return $d; // Refused, a CAPTCHA to finish, or sure: held without a question.
+		}
+
+		$mode  = $this->settings->challenge_mode( $s->form_id, $s->form_settings );
+		$wants = $challenge && ( QAF_Spam_Settings::ASK_ALWAYS === $mode || ( QAF_Spam_Settings::ASK_WHEN_UNSURE === $mode && $result->is_unsure() ) );
+		if ( ! $wants ) {
+			return $d; // Unsure and no question: held. Nothing doubtful: saved.
+		}
+
+		if ( 'pass' === $answered ) {
+			$d          = new QAF_Spam_Decision( QAF_Spam_Decision::SAVE, $result );
+			$d->notes[] = __( 'Answered the question.', 'quill-accessible-forms' );
+			return $d;
+		}
+
+		$errors = array(
+			'fail'    => __( 'That answer did not match. Here is another question; take as long as you like.', 'quill-accessible-forms' ),
+			'empty'   => __( 'Please answer the question below.', 'quill-accessible-forms' ),
+			'expired' => __( 'That question was replaced to keep the form safe. Here is a new one.', 'quill-accessible-forms' ),
+		);
+		if ( 'fail' === $answered ) {
+			$challenge->record_failure( $s );
+		}
+		$error        = ( $answered && isset( $errors[ $answered ] ) ) ? $errors[ $answered ] : '';
+		$d            = new QAF_Spam_Decision( QAF_Spam_Decision::ASK, $result );
+		$d->challenge = $challenge->issue( $s, $error );
+		$d->message   = $error ?: __( 'One more question before this is sent.', 'quill-accessible-forms' );
+		if ( ! empty( $d->challenge['send_anyway'] ) ) {
+			$d->message .= ' ' . __( 'You can also send it as it is: a person will read it first.', 'quill-accessible-forms' );
+		}
+		return $d;
 	}
 
 	/**

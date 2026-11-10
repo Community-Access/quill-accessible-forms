@@ -9,37 +9,6 @@
 
 require_once QAF_TESTS_DIR . 'spam-test-helpers.php';
 
-/**
- * A provider that says whatever the test tells it to.
- */
-class QAF_Scripted_Check extends QAF_Spam_Provider_Base {
-	public $name;
-	public $verdict;
-	public $calls = 0;
-
-	public function __construct( QAF_Spam_Settings $settings, $name, $verdict ) {
-		parent::__construct( $settings );
-		$this->name    = $name;
-		$this->verdict = $verdict;
-	}
-
-	public function id() {
-		return $this->name;
-	}
-
-	public function label() {
-		return $this->name;
-	}
-
-	public function check( QAF_Spam_Submission $s ) {
-		$this->calls++;
-		if ( $this->verdict instanceof Throwable ) {
-			throw $this->verdict;
-		}
-		return $this->verdict;
-	}
-}
-
 class QAF_Spam_Hold_Rule_Test extends QAF_Spam_Test_Case {
 
 	private function guard( $providers ) {

@@ -15,6 +15,37 @@ require_once QAF_PLUGIN_DIR . 'includes/spam/class-qaf-spam.php';
 require_once __DIR__ . '/mocks/spam-mocks.php';
 
 /**
+ * A provider that says whatever the test tells it to.
+ */
+class QAF_Scripted_Check extends QAF_Spam_Provider_Base {
+	public $name;
+	public $verdict;
+	public $calls = 0;
+
+	public function __construct( QAF_Spam_Settings $settings, $name, $verdict ) {
+		parent::__construct( $settings );
+		$this->name    = $name;
+		$this->verdict = $verdict;
+	}
+
+	public function id() {
+		return $this->name;
+	}
+
+	public function label() {
+		return $this->name;
+	}
+
+	public function check( QAF_Spam_Submission $s ) {
+		$this->calls++;
+		if ( $this->verdict instanceof Throwable ) {
+			throw $this->verdict;
+		}
+		return $this->verdict;
+	}
+}
+
+/**
  * Base class for the spam tests.
  */
 abstract class QAF_Spam_Test_Case extends QAF_Unit_Test_Case {

@@ -23,6 +23,7 @@ require_once __DIR__ . '/providers/class-qaf-spam-quiet-checks.php';
 require_once __DIR__ . '/providers/class-qaf-spam-blocklist-check.php';
 require_once __DIR__ . '/providers/class-qaf-spam-services.php';
 require_once __DIR__ . '/providers/class-qaf-altcha.php';
+require_once __DIR__ . '/class-qaf-text-challenge.php';
 require_once __DIR__ . '/class-qaf-spam-rest.php';
 
 /**
@@ -51,7 +52,7 @@ class QAF_Spam {
 		if ( null === self::$guard ) {
 			$settings    = new QAF_Spam_Settings();
 			$store       = new QAF_Spam_Transient_Store();
-			self::$guard = new QAF_Spam_Guard( self::registry( $settings, $store ), $settings );
+			self::$guard = new QAF_Spam_Guard( self::registry( $settings, $store ), $settings, new QAF_Text_Challenge( $settings, $store, new QAF_Spam_Failures( $store ) ) );
 		}
 		return self::$guard;
 	}
@@ -80,6 +81,7 @@ class QAF_Spam {
 			new QAF_Spam_Akismet_Check( $settings ),
 			new QAF_Spam_OOPSpam_Check( $settings ),
 			new QAF_Spam_CleanTalk_Check( $settings ),
+			new QAF_Spam_Challenge_Check( $settings ),
 		) );
 	}
 

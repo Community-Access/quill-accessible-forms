@@ -628,6 +628,16 @@ class QAF_REST_API {
         if ( QAF_Spam_Decision::INCOMPLETE === $decision->action ) {
             return new WP_Error( 'captcha_missing', $decision->message, array( 'status' => 400 ) );
         }
+        if ( QAF_Spam_Decision::ASK === $decision->action ) {
+            // A question (13a.6). Nothing is saved yet and nothing is lost:
+            // the answers stay on the page, and the next send carries the
+            // question's id and the answer.
+            return rest_ensure_response( array(
+                'success'   => false,
+                'message'   => $decision->message,
+                'challenge' => $decision->challenge,
+            ) );
+        }
         return null;
     }
 
