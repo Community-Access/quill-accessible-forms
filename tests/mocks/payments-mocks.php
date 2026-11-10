@@ -155,6 +155,9 @@ if ( ! class_exists( 'WP_REST_Request' ) ) {
 		public function get_param( $k ) {
 			return $this->params[ $k ] ?? null;
 		}
+		public function get_params() {
+			return $this->params;
+		}
 		public function has_param( $k ) {
 			return array_key_exists( $k, $this->params );
 		}

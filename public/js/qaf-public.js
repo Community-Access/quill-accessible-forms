@@ -60,10 +60,14 @@
             // A form saved with a model runs the model's rules
             this.initModel(form);
 
-            // Mark form as loaded (for honeypot timing)
-            const loadedField = form.querySelector('input[name="_qaf_form_loaded"]');
-            if (loadedField) {
-                loadedField.value = Math.floor(Date.now() / 1000);
+            // A visit id for this page load: a question the site asks
+            // (spam checks) is tied to it. The start time stays as the
+            // server signed it, for the time to fill check.
+            const visitField = form.querySelector('input[name="qaf_visit"]');
+            if (visitField && !visitField.value) {
+                visitField.value = (window.crypto && crypto.randomUUID)
+                    ? crypto.randomUUID()
+                    : String(Date.now()) + '-' + String(Math.random()).slice(2);
             }
         },
 
@@ -204,15 +208,26 @@
 
             try {
                 const data = this.collectValues(form);
-                // Get nonce
-                const nonce = form.querySelector('input[name="_qaf_token"]')?.value;
+                // The spam checks read these; collectValues leaves out
+                // names that start with an underscore.
+                ['_qaf_token', '_qaf_form_loaded', '_qaf_form_sig'].forEach((name) => {
+                    const input = form.querySelector('input[name="' + name + '"]');
+                    if (input) {
+                        data[name] = input.value;
+                    }
+                });
+
+                // The REST nonce identifies a signed-in person. It is the
+                // wp_rest nonce, never the form token, which WordPress would
+                // refuse; and a visitor who is not signed in sends none.
+                const headers = { 'Content-Type': 'application/json' };
+                if (qafPublic.loggedIn && qafPublic.nonce) {
+                    headers['X-WP-Nonce'] = qafPublic.nonce;
+                }
 
                 const response = await fetch(form.action, {
                     method: 'POST',
-                    headers: {
-                        'Content-Type': 'application/json',
-                        'X-WP-Nonce': nonce
-                    },
+                    headers: headers,
                     body: JSON.stringify({
                         ...data,
                         form_id: formId

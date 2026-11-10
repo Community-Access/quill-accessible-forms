@@ -50,6 +50,12 @@ class QAF_Security {
     /**
      * Validate a form submission
      *
+     * Deprecated: QAF's own submit path no longer calls this. It refuses on
+     * every doubt, which the hold-never-drop rule forbids; the checks now run
+     * as providers through QAF_Spam_Guard (includes/spam), which keeps a
+     * doubtful entry with status spam and its reason. Kept for any code
+     * outside QAF that still calls it.
+     *
      * @param QAF_Form        $form    Form object.
      * @param WP_REST_Request $request Request object.
      * @return true|WP_Error True on success, WP_Error on failure.

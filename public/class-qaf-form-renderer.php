@@ -159,7 +159,13 @@ class QAF_Form_Renderer {
         // Hidden fields
         wp_nonce_field( 'qaf_submit_form_' . $form_id, '_qaf_token' );
         echo '<input type="hidden" name="form_id" value="' . esc_attr( $form_id ) . '" />';
-        echo '<input type="hidden" name="_qaf_form_loaded" value="' . esc_attr( time() ) . '" />';
+        // The start time, signed so it cannot be moved back, for the time
+        // to fill check; and a visit id the page script fills in, which ties
+        // a question (13a.6) to this visit.
+        $loaded = time();
+        echo '<input type="hidden" name="_qaf_form_loaded" value="' . esc_attr( $loaded ) . '" />';
+        echo '<input type="hidden" name="_qaf_form_sig" value="' . esc_attr( QAF_Spam_Settings::sign_time( $form_id, $loaded ) ) . '" />';
+        echo '<input type="hidden" name="qaf_visit" value="" />';
 
         // Honeypot fields
         echo $this->honeypot->render( $form_id );

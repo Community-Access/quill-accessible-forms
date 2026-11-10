@@ -286,6 +286,9 @@ final class QUILL_Accessible_Forms {
         require_once QAF_PLUGIN_DIR . 'includes/views/class-qaf-view-map.php';
         require_once QAF_PLUGIN_DIR . 'includes/views/class-qaf-view-calendar.php';
 
+        // Spam: hold, never drop (QUILL's wordpress.md 13a).
+        require_once QAF_PLUGIN_DIR . 'includes/spam/class-qaf-spam.php';
+
         // Payments (contract version 1 with QUILL): Stripe and PayPal.
         require_once QAF_PLUGIN_DIR . 'includes/payments/class-qaf-payments.php';
 
@@ -487,6 +490,14 @@ add_action( 'plugins_loaded', function () {
         QAF_Legacy_REST::init();
     }
 } );
+/**
+ * Tables up to the current schema on a site whose files were replaced
+ * without activating again (QAF_Activator::SCHEMA_VERSION).
+ */
+add_action( 'plugins_loaded', function () {
+    require_once QAF_PLUGIN_DIR . 'includes/class-qaf-activator.php';
+    QAF_Activator::maybe_upgrade();
+}, 5 );
 add_action( 'admin_init', function () {
     if ( class_exists( 'QAF_Migrator' ) && current_user_can( 'activate_plugins' ) ) {
         QAF_Migrator::maybe_run();

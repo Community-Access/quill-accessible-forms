@@ -33,258 +33,127 @@ class QAF_Captcha {
     }
 
     /**
-     * Validate CAPTCHA response
+     * Validate CAPTCHA response (the old shape: true or WP_Error).
+     *
+     * QAF's own submit path uses assess() instead, through
+     * QAF_Spam_Captcha_Check, so a failed behavioural check holds the entry
+     * rather than refusing it.
      *
      * @param WP_REST_Request $request Request object.
      * @return true|WP_Error True if valid, WP_Error if invalid.
      */
     public function validate( $request ) {
+        $a = $this->assess( $request );
+        if ( in_array( $a['outcome'], array( 'pass', 'none' ), true ) ) {
+            return true;
+        }
+        $codes = array(
+            'missing'     => array( 'captcha_missing', 400 ),
+            'wrong'       => array( 'captcha_invalid', 400 ),
+            'failed'      => array( 'captcha_invalid', 400 ),
+            'low_score'   => array( 'captcha_invalid', 400 ),
+            'unreachable' => array( 'captcha_error', 500 ),
+        );
+        $c = isset( $codes[ $a['outcome'] ] ) ? $codes[ $a['outcome'] ] : array( 'captcha_invalid', 400 );
+        return new WP_Error( $c[0], $a['message'], array( 'status' => $c[1] ) );
+    }
+
+    /**
+     * What the CAPTCHA says, without deciding anything.
+     *
+     * @param WP_REST_Request $request Request object.
+     * @return array provider, outcome (pass, none, missing, wrong, failed,
+     *               low_score, unreachable), message, and for reCAPTCHA v3
+     *               score and threshold.
+     */
+    public function assess( $request ) {
         $provider = $this->settings->get( 'captcha_provider', 'recaptcha_v2' );
+        $out      = array( 'provider' => $provider, 'outcome' => 'none', 'message' => '' );
 
-        switch ( $provider ) {
-            case 'recaptcha_v2':
-                return $this->validate_recaptcha_v2( $request );
+        $services = array(
+            'recaptcha_v2' => array( 'g-recaptcha-response', 'recaptcha_secret_key', 'https://www.google.com/recaptcha/api/siteverify' ),
+            'recaptcha_v3' => array( 'g-recaptcha-response', 'recaptcha_v3_secret_key', 'https://www.google.com/recaptcha/api/siteverify' ),
+            'hcaptcha'     => array( 'h-captcha-response', 'hcaptcha_secret_key', 'https://hcaptcha.com/siteverify' ),
+            'turnstile'    => array( 'cf-turnstile-response', 'turnstile_secret_key', 'https://challenges.cloudflare.com/turnstile/v0/siteverify' ),
+        );
 
-            case 'recaptcha_v3':
-                return $this->validate_recaptcha_v3( $request );
-
-            case 'hcaptcha':
-                return $this->validate_hcaptcha( $request );
-
-            case 'turnstile':
-                return $this->validate_turnstile( $request );
-
-            case 'math':
-                return $this->validate_math_captcha( $request );
-
-            default:
-                return true;
+        if ( 'math' === $provider ) {
+            return array_merge( $out, $this->assess_math_captcha( $request ) );
         }
-    }
+        if ( ! isset( $services[ $provider ] ) ) {
+            return $out;
+        }
 
-    /**
-     * Validate reCAPTCHA v2
-     *
-     * @param WP_REST_Request $request Request object.
-     * @return true|WP_Error Validation result.
-     */
-    private function validate_recaptcha_v2( $request ) {
-        $response_token = $request->get_param( 'g-recaptcha-response' );
+        list( $param, $secret_setting, $url ) = $services[ $provider ];
+        $response_token = $request->get_param( $param );
 
         if ( empty( $response_token ) ) {
-            return new WP_Error(
-                'captcha_missing',
-                __( 'Please complete the CAPTCHA.', 'quill-accessible-forms' ),
-                array( 'status' => 400 )
-            );
+            $out['outcome'] = 'missing';
+            $out['message'] = 'turnstile' === $provider || 'recaptcha_v3' === $provider
+                ? __( 'Security token missing.', 'quill-accessible-forms' )
+                : __( 'Please complete the CAPTCHA.', 'quill-accessible-forms' );
+            return $out;
         }
 
-        $secret_key = $this->settings->get( 'recaptcha_secret_key' );
-
-        $response = wp_remote_post( 'https://www.google.com/recaptcha/api/siteverify', array(
+        $response = wp_remote_post( $url, array(
             'body' => array(
-                'secret'   => $secret_key,
+                'secret'   => $this->settings->get( $secret_setting ),
                 'response' => $response_token,
                 'remoteip' => $this->get_client_ip(),
             ),
         ) );
 
         if ( is_wp_error( $response ) ) {
-            return new WP_Error(
-                'captcha_error',
-                __( 'CAPTCHA verification failed. Please try again.', 'quill-accessible-forms' ),
-                array( 'status' => 500 )
-            );
+            $out['outcome'] = 'unreachable';
+            $out['message'] = __( 'CAPTCHA verification failed. Please try again.', 'quill-accessible-forms' );
+            return $out;
         }
 
         $body = json_decode( wp_remote_retrieve_body( $response ), true );
 
         if ( empty( $body['success'] ) ) {
-            return new WP_Error(
-                'captcha_invalid',
-                __( 'CAPTCHA verification failed.', 'quill-accessible-forms' ),
-                array( 'status' => 400 )
-            );
+            $out['outcome'] = 'failed';
+            $out['message'] = __( 'CAPTCHA verification failed.', 'quill-accessible-forms' );
+            return $out;
         }
 
-        return true;
+        if ( 'recaptcha_v3' === $provider ) {
+            $threshold        = (float) $this->settings->get( 'recaptcha_v3_threshold', 0.5 );
+            $score            = isset( $body['score'] ) ? (float) $body['score'] : 0.0;
+            $out['score']     = $score;
+            $out['threshold'] = $threshold;
+            if ( $score < $threshold ) {
+                $out['outcome'] = 'low_score';
+                $out['message'] = __( 'Security verification failed.', 'quill-accessible-forms' );
+                return $out;
+            }
+        }
+
+        $out['outcome'] = 'pass';
+        return $out;
     }
 
     /**
-     * Validate reCAPTCHA v3
+     * The maths question's answer.
      *
      * @param WP_REST_Request $request Request object.
-     * @return true|WP_Error Validation result.
+     * @return array outcome and message.
      */
-    private function validate_recaptcha_v3( $request ) {
-        $response_token = $request->get_param( 'g-recaptcha-response' );
-
-        if ( empty( $response_token ) ) {
-            return new WP_Error(
-                'captcha_missing',
-                __( 'Security token missing.', 'quill-accessible-forms' ),
-                array( 'status' => 400 )
-            );
-        }
-
-        $secret_key = $this->settings->get( 'recaptcha_v3_secret_key' );
-        $threshold = $this->settings->get( 'recaptcha_v3_threshold', 0.5 );
-
-        $response = wp_remote_post( 'https://www.google.com/recaptcha/api/siteverify', array(
-            'body' => array(
-                'secret'   => $secret_key,
-                'response' => $response_token,
-                'remoteip' => $this->get_client_ip(),
-            ),
-        ) );
-
-        if ( is_wp_error( $response ) ) {
-            return new WP_Error(
-                'captcha_error',
-                __( 'Security verification failed. Please try again.', 'quill-accessible-forms' ),
-                array( 'status' => 500 )
-            );
-        }
-
-        $body = json_decode( wp_remote_retrieve_body( $response ), true );
-
-        if ( empty( $body['success'] ) || $body['score'] < $threshold ) {
-            return new WP_Error(
-                'captcha_invalid',
-                __( 'Security verification failed.', 'quill-accessible-forms' ),
-                array( 'status' => 400 )
-            );
-        }
-
-        return true;
-    }
-
-    /**
-     * Validate hCaptcha
-     *
-     * @param WP_REST_Request $request Request object.
-     * @return true|WP_Error Validation result.
-     */
-    private function validate_hcaptcha( $request ) {
-        $response_token = $request->get_param( 'h-captcha-response' );
-
-        if ( empty( $response_token ) ) {
-            return new WP_Error(
-                'captcha_missing',
-                __( 'Please complete the CAPTCHA.', 'quill-accessible-forms' ),
-                array( 'status' => 400 )
-            );
-        }
-
-        $secret_key = $this->settings->get( 'hcaptcha_secret_key' );
-
-        $response = wp_remote_post( 'https://hcaptcha.com/siteverify', array(
-            'body' => array(
-                'secret'   => $secret_key,
-                'response' => $response_token,
-                'remoteip' => $this->get_client_ip(),
-            ),
-        ) );
-
-        if ( is_wp_error( $response ) ) {
-            return new WP_Error(
-                'captcha_error',
-                __( 'CAPTCHA verification failed. Please try again.', 'quill-accessible-forms' ),
-                array( 'status' => 500 )
-            );
-        }
-
-        $body = json_decode( wp_remote_retrieve_body( $response ), true );
-
-        if ( empty( $body['success'] ) ) {
-            return new WP_Error(
-                'captcha_invalid',
-                __( 'CAPTCHA verification failed.', 'quill-accessible-forms' ),
-                array( 'status' => 400 )
-            );
-        }
-
-        return true;
-    }
-
-    /**
-     * Validate Cloudflare Turnstile
-     *
-     * @param WP_REST_Request $request Request object.
-     * @return true|WP_Error Validation result.
-     */
-    private function validate_turnstile( $request ) {
-        $response_token = $request->get_param( 'cf-turnstile-response' );
-
-        if ( empty( $response_token ) ) {
-            return new WP_Error(
-                'captcha_missing',
-                __( 'Please complete the security check.', 'quill-accessible-forms' ),
-                array( 'status' => 400 )
-            );
-        }
-
-        $secret_key = $this->settings->get( 'turnstile_secret_key' );
-
-        $response = wp_remote_post( 'https://challenges.cloudflare.com/turnstile/v0/siteverify', array(
-            'body' => array(
-                'secret'   => $secret_key,
-                'response' => $response_token,
-                'remoteip' => $this->get_client_ip(),
-            ),
-        ) );
-
-        if ( is_wp_error( $response ) ) {
-            return new WP_Error(
-                'captcha_error',
-                __( 'Security verification failed. Please try again.', 'quill-accessible-forms' ),
-                array( 'status' => 500 )
-            );
-        }
-
-        $body = json_decode( wp_remote_retrieve_body( $response ), true );
-
-        if ( empty( $body['success'] ) ) {
-            return new WP_Error(
-                'captcha_invalid',
-                __( 'Security verification failed.', 'quill-accessible-forms' ),
-                array( 'status' => 400 )
-            );
-        }
-
-        return true;
-    }
-
-    /**
-     * Validate math CAPTCHA
-     *
-     * @param WP_REST_Request $request Request object.
-     * @return true|WP_Error Validation result.
-     */
-    private function validate_math_captcha( $request ) {
+    private function assess_math_captcha( $request ) {
         $answer = $request->get_param( 'qaf_math_answer' );
         $expected_hash = $request->get_param( 'qaf_math_hash' );
 
         if ( empty( $answer ) || empty( $expected_hash ) ) {
-            return new WP_Error(
-                'captcha_missing',
-                __( 'Please solve the math problem.', 'quill-accessible-forms' ),
-                array( 'status' => 400 )
-            );
+            return array( 'outcome' => 'missing', 'message' => __( 'Please solve the math problem.', 'quill-accessible-forms' ) );
         }
 
-        // Verify answer matches hash
-        $calculated_hash = wp_hash( $answer . wp_salt() );
+        $calculated_hash = wp_hash( trim( (string) $answer ) . wp_salt() );
 
-        if ( ! hash_equals( $expected_hash, $calculated_hash ) ) {
-            return new WP_Error(
-                'captcha_invalid',
-                __( 'Incorrect answer. Please try again.', 'quill-accessible-forms' ),
-                array( 'status' => 400 )
-            );
+        if ( ! hash_equals( (string) $expected_hash, $calculated_hash ) ) {
+            return array( 'outcome' => 'wrong', 'message' => __( 'Incorrect answer. Please try again.', 'quill-accessible-forms' ) );
         }
 
-        return true;
+        return array( 'outcome' => 'pass', 'message' => '' );
     }
 
     /**

@@ -191,6 +191,7 @@ class QAF_Public {
         wp_localize_script( $this->plugin_name, 'qafPublic', array(
             'ajaxUrl'  => rest_url( 'qaf/v1/' ),
             'nonce'    => wp_create_nonce( 'wp_rest' ),
+            'loggedIn' => function_exists( 'is_user_logged_in' ) && is_user_logged_in(),
             'google'   => array(
                 'mapsApiKey' => $settings->get( 'google_maps_api_key', '' ),
             ),
