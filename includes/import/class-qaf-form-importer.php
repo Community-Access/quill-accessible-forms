@@ -109,6 +109,16 @@ class QAF_Form_Importer {
     }
 
     /**
+     * A saved form's text with BAF's key names made QAF's.
+     *
+     * @param string $content File content.
+     * @return string
+     */
+    public static function renamed_keys( $content ) {
+        return str_replace( '"baf_legacy"', '"qaf_legacy"', $content );
+    }
+
+    /**
      * Import from file
      *
      * @param string $file File path.
@@ -119,7 +129,9 @@ class QAF_Form_Importer {
             return new WP_Error( 'file_not_found', __( 'File not found or not readable.', 'quill-accessible-forms' ) );
         }
 
-        $content = file_get_contents( $file );
+        // A form saved by BAF kept what it could not place under
+        // extensions.baf_legacy; QAF keeps it under qaf_legacy (QAF_Migrator).
+        $content = self::renamed_keys( (string) file_get_contents( $file ) );
         $extension = strtolower( pathinfo( $file, PATHINFO_EXTENSION ) );
 
         switch ( $extension ) {
@@ -127,7 +139,8 @@ class QAF_Form_Importer {
                 return $this->import_json( $content );
 
             case 'qaf': // Saved forms; the first line is "bfl 1", the language's version.
-            case 'bfl': // Files saved before the rename read the same.
+            case 'bfl': // Files saved before the rename read the same,
+            case 'baf': // under either of the names they were given then.
                 return $this->import_bfl( $content );
 
             default:

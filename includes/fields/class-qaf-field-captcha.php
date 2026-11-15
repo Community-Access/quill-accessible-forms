@@ -441,7 +441,12 @@ class QAF_Field_Captcha extends QAF_Field {
      *
      * @return bool True if valid.
      */
-    public function validate() {
+    public function validate( $value = null ) {
+        // QAF_Field::validate() takes the value; honour it when the caller passes one.
+        if ( func_num_args() > 0 ) {
+            $this->set_value( $value );
+        }
+
         $captcha_type = $this->config['captcha_type'] ?? 'math';
         $name = 'qaf_field_' . $this->get_id();
 

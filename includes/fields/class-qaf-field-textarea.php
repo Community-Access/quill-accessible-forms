@@ -12,6 +12,8 @@ if ( ! defined( 'ABSPATH' ) ) {
 
 /**
  * QAF_Field_Textarea class
+ *
+ * Multi-line text (Paragraph) field with WCAG 2.2 AA compliance.
  */
 class QAF_Field_Textarea extends QAF_Field {
 
@@ -23,130 +25,230 @@ class QAF_Field_Textarea extends QAF_Field {
     protected $type = 'textarea';
 
     /**
-     * Get default settings
+     * Field category
      *
-     * @return array Default settings.
+     * @var string
      */
-    protected function get_default_settings() {
+    protected $category = 'standard';
+
+    /**
+     * Get default configuration
+     *
+     * @return array Default configuration.
+     */
+    public function get_default_config() {
+        return array_merge( parent::get_default_config(), array(
+            'rows'         => 5,
+            'cols'         => 50,
+            'min_length'   => '',
+            'max_length'   => '',
+            'show_counter' => false,
+            'resize'       => 'vertical', // vertical, horizontal, both, none
+            'rich_editor'  => false,
+            'allowed_tags' => 'basic', // basic, post
+            'autocomplete' => '',
+        ) );
+    }
+
+    /**
+     * Get field settings for admin UI
+     *
+     * QAF_Field declares this abstract; without it, loading this class is a
+     * PHP fatal error on any page that uses a paragraph field.
+     *
+     * @return array Settings configuration.
+     */
+    public function get_field_settings() {
         return array(
-            'rows'            => 5,
-            'cols'            => 50,
-            'min_length'      => 0,
-            'max_length'      => 0,
-            'show_counter'    => false,
-            'resize'          => 'vertical',
-            'rich_editor'     => false,
-            'allowed_tags'    => 'basic',
+            'general' => array(
+                'label'         => array(
+                    'type'  => 'text',
+                    'label' => __( 'Label', 'quill-accessible-forms' ),
+                ),
+                'description'   => array(
+                    'type'  => 'textarea',
+                    'label' => __( 'Description', 'quill-accessible-forms' ),
+                ),
+                'placeholder'   => array(
+                    'type'  => 'text',
+                    'label' => __( 'Placeholder', 'quill-accessible-forms' ),
+                ),
+                'default_value' => array(
+                    'type'  => 'textarea',
+                    'label' => __( 'Default Value', 'quill-accessible-forms' ),
+                ),
+                'required'      => array(
+                    'type'  => 'toggle',
+                    'label' => __( 'Required', 'quill-accessible-forms' ),
+                ),
+            ),
+            'appearance' => array(
+                'rows'      => array(
+                    'type'  => 'number',
+                    'label' => __( 'Rows', 'quill-accessible-forms' ),
+                    'min'   => 1,
+                ),
+                'resize'    => array(
+                    'type'    => 'select',
+                    'label'   => __( 'Resize', 'quill-accessible-forms' ),
+                    'options' => array(
+                        'vertical'   => __( 'Vertical', 'quill-accessible-forms' ),
+                        'horizontal' => __( 'Horizontal', 'quill-accessible-forms' ),
+                        'both'       => __( 'Both', 'quill-accessible-forms' ),
+                        'none'       => __( 'None', 'quill-accessible-forms' ),
+                    ),
+                ),
+                'css_class' => array(
+                    'type'  => 'text',
+                    'label' => __( 'CSS Class', 'quill-accessible-forms' ),
+                ),
+            ),
+            'validation' => array(
+                'min_length'   => array(
+                    'type'  => 'number',
+                    'label' => __( 'Minimum Length', 'quill-accessible-forms' ),
+                    'min'   => 0,
+                ),
+                'max_length'   => array(
+                    'type'  => 'number',
+                    'label' => __( 'Maximum Length', 'quill-accessible-forms' ),
+                    'min'   => 0,
+                ),
+                'show_counter' => array(
+                    'type'  => 'toggle',
+                    'label' => __( 'Show Character Counter', 'quill-accessible-forms' ),
+                ),
+            ),
+            'advanced' => array(
+                'rich_editor' => array(
+                    'type'  => 'toggle',
+                    'label' => __( 'Rich Text Editor', 'quill-accessible-forms' ),
+                ),
+            ),
         );
     }
 
     /**
-     * Render field HTML
+     * Is the WordPress rich editor in use for this field?
      *
-     * @param mixed $value Field value.
-     * @return string Field HTML.
+     * @return bool True when rich_editor is on and wp_editor() is available.
      */
-    public function render( $value = null ) {
-        $value = $value ?? $this->get_setting( 'default_value', '' );
-        $id    = $this->get_id();
-        $name  = $this->get_name();
+    protected function uses_rich_editor() {
+        return ! empty( $this->config['rich_editor'] ) && function_exists( 'wp_editor' );
+    }
 
-        $aria = $this->get_aria_attributes();
+    /**
+     * The wp_editor() ID for this field (lowercase letters, digits and underscores only).
+     *
+     * @return string Editor ID.
+     */
+    protected function get_editor_id() {
+        return strtolower( preg_replace( '/[^A-Za-z0-9_]/', '_', $this->get_html_id() ) );
+    }
+
+    /**
+     * Render the field
+     *
+     * @return string Rendered HTML.
+     */
+    public function render() {
+        $value = (string) $this->get_value();
+
+        if ( $this->uses_rich_editor() ) {
+            return $this->render_wrapper( $this->render_rich_editor( $value ) );
+        }
 
         $attrs = array(
-            'id'          => esc_attr( $id ),
-            'name'        => esc_attr( $name ),
-            'rows'        => absint( $this->get_setting( 'rows', 5 ) ),
-            'cols'        => absint( $this->get_setting( 'cols', 50 ) ),
-            'class'       => 'qaf-field-textarea',
-            'aria-label'  => esc_attr( $aria['aria-label'] ),
+            'id'          => $this->get_html_id(),
+            'name'        => $this->get_input_name(),
+            'rows'        => max( 1, absint( $this->config['rows'] ) ),
+            'cols'        => max( 1, absint( $this->config['cols'] ) ),
+            'class'       => 'qaf-input qaf-input-textarea',
+            'placeholder' => $this->config['placeholder'],
         );
 
-        if ( $aria['aria-describedby'] ) {
-            $attrs['aria-describedby'] = esc_attr( $aria['aria-describedby'] );
+        $max_length = absint( $this->config['max_length'] );
+        $min_length = absint( $this->config['min_length'] );
+
+        if ( $max_length > 0 ) {
+            $attrs['maxlength'] = $max_length;
+            // qaf-public.js builds and updates a polite live-region counter for [data-counter].
+            $attrs['data-counter'] = 'true';
         }
 
-        if ( $aria['aria-required'] ) {
-            $attrs['aria-required'] = 'true';
-            $attrs['required']      = 'required';
+        if ( $min_length > 0 ) {
+            $attrs['minlength'] = $min_length;
         }
 
-        if ( $aria['aria-invalid'] ) {
-            $attrs['aria-invalid'] = 'true';
+        if ( ! empty( $this->config['autocomplete'] ) ) {
+            $attrs['autocomplete'] = $this->config['autocomplete'];
         }
 
-        if ( $this->get_setting( 'placeholder' ) ) {
-            $attrs['placeholder'] = esc_attr( $this->get_setting( 'placeholder' ) );
+        if ( ! empty( $this->config['read_only'] ) ) {
+            $attrs['readonly'] = true;
         }
 
-        if ( $this->get_setting( 'max_length' ) > 0 ) {
-            $attrs['maxlength'] = absint( $this->get_setting( 'max_length' ) );
+        if ( ! empty( $this->config['disabled'] ) ) {
+            $attrs['disabled'] = true;
         }
 
-        if ( $this->get_setting( 'min_length' ) > 0 ) {
-            $attrs['minlength'] = absint( $this->get_setting( 'min_length' ) );
+        $resize = $this->config['resize'];
+        if ( in_array( $resize, array( 'vertical', 'horizontal', 'none' ), true ) ) {
+            $attrs['style'] = 'resize: ' . $resize . ';';
         }
 
-        if ( $this->get_setting( 'read_only' ) ) {
-            $attrs['readonly'] = 'readonly';
+        // ARIA attributes (required, describedby, invalid, label, readonly, disabled).
+        $attrs = array_merge( $attrs, $this->get_aria_attributes() );
+
+        // HTML5 attributes (autofocus, spellcheck, inputmode, enterkeyhint). A textarea has no pattern attribute.
+        $html5 = $this->get_html5_attributes();
+        unset( $html5['pattern'] );
+        $attrs = array_merge( $attrs, $html5 );
+
+        $input = '<textarea ' . $this->build_attributes( $attrs ) . '>' . esc_textarea( $value ) . '</textarea>';
+
+        // With no maximum the script has nothing to count down from, so show the count server-side.
+        if ( $max_length === 0 && ! empty( $this->config['show_counter'] ) ) {
+            $input .= $this->render_character_counter( $value );
         }
 
-        if ( $this->get_setting( 'disabled' ) ) {
-            $attrs['disabled'] = 'disabled';
-        }
+        return $this->render_wrapper( $input );
+    }
 
-        // Resize style
-        $resize = $this->get_setting( 'resize', 'vertical' );
-        if ( $resize !== 'both' ) {
-            $attrs['style'] = 'resize: ' . esc_attr( $resize ) . ';';
-        }
+    /**
+     * Render the label, pointing it at the wp_editor() textarea in rich mode
+     *
+     * @return string Label HTML.
+     */
+    protected function render_label() {
+        $html = parent::render_label();
 
-        // Build attributes string
-        $attr_string = '';
-        foreach ( $attrs as $key => $val ) {
-            $attr_string .= sprintf( ' %s="%s"', $key, $val );
-        }
-
-        $html = $this->render_wrapper_start();
-
-        // Rich text editor mode
-        if ( $this->get_setting( 'rich_editor' ) ) {
-            $html .= $this->render_rich_editor( $value, $attrs );
-        } else {
-            $html .= sprintf(
-                '<textarea%s>%s</textarea>',
-                $attr_string,
-                esc_textarea( $value )
+        if ( $html !== '' && $this->uses_rich_editor() ) {
+            $html = str_replace(
+                'for="' . esc_attr( $this->get_html_id() ) . '"',
+                'for="' . esc_attr( $this->get_editor_id() ) . '"',
+                $html
             );
         }
-
-        // Character counter
-        if ( $this->get_setting( 'show_counter' ) || $this->get_setting( 'max_length' ) > 0 ) {
-            $html .= $this->render_character_counter( $value );
-        }
-
-        $html .= $this->render_wrapper_end();
 
         return $html;
     }
 
     /**
-     * Render rich text editor
+     * Render the WordPress rich text editor
      *
-     * @param string $value  Field value.
-     * @param array  $attrs  Attributes array.
+     * @param string $value Field value.
      * @return string Editor HTML.
      */
-    protected function render_rich_editor( $value, $attrs ) {
-        ob_start();
-
-        $editor_id = str_replace( '-', '_', $attrs['id'] );
+    protected function render_rich_editor( $value ) {
+        $editor_id = $this->get_editor_id();
+        $title     = $this->config['aria_label'] ?: $this->get_label();
 
         $settings = array(
-            'textarea_name' => $attrs['name'],
-            'textarea_rows' => $attrs['rows'],
+            'textarea_name' => $this->get_input_name(),
+            'textarea_rows' => max( 1, absint( $this->config['rows'] ) ),
             'media_buttons' => false,
-            'teeny'         => ( $this->get_setting( 'allowed_tags' ) === 'basic' ),
+            'teeny'         => ( $this->config['allowed_tags'] === 'basic' ),
             'quicktags'     => true,
             'tinymce'       => array(
                 'toolbar1' => 'bold,italic,underline,|,bullist,numlist,|,link,unlink,|,undo,redo',
@@ -154,109 +256,106 @@ class QAF_Field_Textarea extends QAF_Field {
             ),
         );
 
-        // Add accessibility attributes to TinyMCE
-        add_filter( 'tiny_mce_before_init', function( $init ) use ( $attrs ) {
-            $init['init_instance_callback'] = 'function(ed) {
-                ed.on("init", function() {
-                    var iframe = ed.iframeElement;
-                    if (iframe) {
-                        iframe.setAttribute("title", "' . esc_js( $attrs['aria-label'] ) . '");
-                    }
-                });
-            }';
+        // Give this editor's iframe an accessible name. Scoped to this editor ID and removed afterwards.
+        $title_filter = function ( $init, $id = '' ) use ( $editor_id, $title ) {
+            if ( $id === $editor_id && $title !== '' ) {
+                $init['init_instance_callback'] = 'function(ed){var f=ed.iframeElement;if(f){f.setAttribute("title",' . wp_json_encode( $title ) . ');}}';
+            }
             return $init;
-        });
+        };
 
+        add_filter( 'tiny_mce_before_init', $title_filter, 10, 2 );
+        add_filter( 'teeny_mce_before_init', $title_filter, 10, 2 );
+
+        ob_start();
         wp_editor( $value, $editor_id, $settings );
+        $html = ob_get_clean();
 
-        return ob_get_clean();
-    }
+        remove_filter( 'tiny_mce_before_init', $title_filter, 10 );
+        remove_filter( 'teeny_mce_before_init', $title_filter, 10 );
 
-    /**
-     * Render character counter
-     *
-     * @param string $value Current value.
-     * @return string Counter HTML.
-     */
-    protected function render_character_counter( $value ) {
-        $max    = $this->get_setting( 'max_length', 0 );
-        $length = mb_strlen( $value );
+        // Carry the field's ARIA state onto the underlying textarea (used by the Text tab and without JS).
+        // The label's for= is pointed at this textarea by render_label(), so no aria-label is added here.
+        $aria_string = $this->build_attributes( $this->get_aria_attributes() );
 
-        $html = sprintf(
-            '<div class="qaf-character-counter" aria-live="polite" aria-atomic="true">
-                <span class="qaf-counter-current">%d</span>',
-            $length
-        );
-
-        if ( $max > 0 ) {
-            $html .= sprintf(
-                '<span class="qaf-counter-separator">/</span>
-                <span class="qaf-counter-max">%d</span>
-                <span class="qaf-sr-only">%s</span>',
-                $max,
-                /* translators: %1$d: current count, %2$d: maximum count */
-                sprintf( __( '%1$d of %2$d characters used', 'quill-accessible-forms' ), $length, $max )
-            );
-        } else {
-            $html .= sprintf(
-                '<span class="qaf-sr-only">%s</span>',
-                /* translators: %d: character count */
-                sprintf( __( '%d characters entered', 'quill-accessible-forms' ), $length )
+        if ( $aria_string !== '' ) {
+            $html = preg_replace(
+                '/(<textarea\b[^>]*\bid="' . preg_quote( $editor_id, '/' ) . '")/',
+                '$1 ' . str_replace( array( '\\', '$' ), array( '\\\\', '\\$' ), $aria_string ),
+                $html,
+                1
             );
         }
-
-        $html .= '</div>';
 
         return $html;
     }
 
     /**
-     * Validate field value
+     * Render a static character count (used when there is no maximum)
+     *
+     * @param string $value Current value.
+     * @return string Counter HTML.
+     */
+    protected function render_character_counter( $value ) {
+        $length = function_exists( 'mb_strlen' ) ? mb_strlen( $value ) : strlen( $value );
+
+        return sprintf(
+            '<div class="qaf-char-counter" id="%1$s" aria-live="polite" aria-atomic="true">%2$s</div>',
+            esc_attr( $this->get_html_id() . '-counter' ),
+            esc_html( sprintf(
+                /* translators: %d: character count */
+                _n( '%d character entered', '%d characters entered', $length, 'quill-accessible-forms' ),
+                $length
+            ) )
+        );
+    }
+
+    /**
+     * Length of a value as the user sees it (tags stripped in rich mode)
+     *
+     * @param string $value Value.
+     * @return int Character count.
+     */
+    protected function value_length( $value ) {
+        $value = (string) $value;
+
+        if ( ! empty( $this->config['rich_editor'] ) ) {
+            $value = wp_strip_all_tags( $value );
+        }
+
+        return function_exists( 'mb_strlen' ) ? mb_strlen( $value ) : strlen( $value );
+    }
+
+    /**
+     * Field-specific validation
      *
      * @param mixed $value Value to validate.
-     * @return true|\WP_Error True on success, WP_Error on failure.
      */
-    public function validate( $value ) {
-        // Parent validation (required check)
-        $result = parent::validate( $value );
-        if ( is_wp_error( $result ) ) {
-            return $result;
+    protected function validate_value( $value ) {
+        if ( is_array( $value ) ) {
+            $this->add_error( __( 'Please enter a valid value.', 'quill-accessible-forms' ) );
+            return;
         }
 
-        if ( empty( $value ) ) {
-            return true;
+        $length = $this->value_length( $value );
+
+        $min = absint( $this->config['min_length'] );
+        if ( $min > 0 && $length < $min ) {
+            $this->add_error( sprintf(
+                /* translators: %d: minimum character count */
+                __( 'Please enter at least %d characters.', 'quill-accessible-forms' ),
+                $min
+            ) );
         }
 
-        $value  = (string) $value;
-        $length = mb_strlen( $value );
-
-        // Min length
-        $min_length = $this->get_setting( 'min_length', 0 );
-        if ( $min_length > 0 && $length < $min_length ) {
-            return new \WP_Error(
-                'min_length',
-                sprintf(
-                    /* translators: %d: minimum character count */
-                    __( 'Please enter at least %d characters.', 'quill-accessible-forms' ),
-                    $min_length
-                )
-            );
+        $max = absint( $this->config['max_length'] );
+        if ( $max > 0 && $length > $max ) {
+            $this->add_error( sprintf(
+                /* translators: %d: maximum character count */
+                __( 'Please enter no more than %d characters.', 'quill-accessible-forms' ),
+                $max
+            ) );
         }
-
-        // Max length
-        $max_length = $this->get_setting( 'max_length', 0 );
-        if ( $max_length > 0 && $length > $max_length ) {
-            return new \WP_Error(
-                'max_length',
-                sprintf(
-                    /* translators: %d: maximum character count */
-                    __( 'Please enter no more than %d characters.', 'quill-accessible-forms' ),
-                    $max_length
-                )
-            );
-        }
-
-        return true;
     }
 
     /**
@@ -266,23 +365,27 @@ class QAF_Field_Textarea extends QAF_Field {
      * @return string Sanitized value.
      */
     public function sanitize( $value ) {
-        if ( $this->get_setting( 'rich_editor' ) ) {
-            $allowed_tags = $this->get_setting( 'allowed_tags', 'basic' );
+        if ( is_array( $value ) ) {
+            return '';
+        }
 
-            if ( $allowed_tags === 'basic' ) {
-                $allowed = array(
+        $value = (string) $value;
+
+        if ( ! empty( $this->config['rich_editor'] ) ) {
+            if ( $this->config['allowed_tags'] === 'basic' ) {
+                return wp_kses( $value, array(
                     'a'      => array( 'href' => true, 'title' => true ),
                     'br'     => array(),
                     'em'     => array(),
                     'strong' => array(),
                     'b'      => array(),
                     'i'      => array(),
+                    'u'      => array(),
                     'p'      => array(),
                     'ul'     => array(),
                     'ol'     => array(),
                     'li'     => array(),
-                );
-                return wp_kses( $value, $allowed );
+                ) );
             }
 
             return wp_kses_post( $value );
@@ -292,116 +395,157 @@ class QAF_Field_Textarea extends QAF_Field {
     }
 
     /**
-     * Get display value
+     * Format value for display, keeping line breaks
+     *
+     * @param mixed $value Raw value.
+     * @return string Formatted value.
+     */
+    public function format_display( $value ) {
+        if ( is_array( $value ) ) {
+            return parent::format_display( $value );
+        }
+
+        if ( ! empty( $this->config['rich_editor'] ) ) {
+            return wp_kses_post( (string) $value );
+        }
+
+        return nl2br( esc_html( (string) $value ) );
+    }
+
+    /**
+     * Format value for export (no HTML line breaks or markup)
+     *
+     * @param mixed $value Raw value.
+     * @return string Export value.
+     */
+    public function format_export( $value ) {
+        if ( is_array( $value ) ) {
+            return parent::format_export( $value );
+        }
+
+        $value = (string) $value;
+
+        if ( ! empty( $this->config['rich_editor'] ) ) {
+            $value = wp_strip_all_tags( $value );
+        }
+
+        return esc_html( $value );
+    }
+
+    /**
+     * Get display value (alias kept for callers of the older API)
      *
      * @param mixed $value Raw value.
      * @return string Display value.
      */
     public function get_display_value( $value ) {
-        if ( $this->get_setting( 'rich_editor' ) ) {
-            return wp_kses_post( $value );
-        }
-        return nl2br( esc_html( $value ) );
+        return $this->format_display( $value );
     }
 
     /**
      * Get field schema for JSON export
      *
+     * QAF_Field defines no base schema, so this one is self-contained.
+     *
      * @return array Field schema.
      */
     public function get_schema() {
-        $schema = parent::get_schema();
-
-        $schema['properties']['rows'] = array(
-            'type'    => 'integer',
-            'default' => 5,
-            'minimum' => 1,
-            'maximum' => 50,
+        return array(
+            'type'       => 'object',
+            'properties' => array(
+                'rows'         => array(
+                    'type'    => 'integer',
+                    'default' => 5,
+                    'minimum' => 1,
+                    'maximum' => 50,
+                ),
+                'cols'         => array(
+                    'type'    => 'integer',
+                    'default' => 50,
+                    'minimum' => 10,
+                    'maximum' => 200,
+                ),
+                'min_length'   => array(
+                    'type'    => 'integer',
+                    'default' => 0,
+                    'minimum' => 0,
+                ),
+                'max_length'   => array(
+                    'type'    => 'integer',
+                    'default' => 0,
+                    'minimum' => 0,
+                ),
+                'show_counter' => array(
+                    'type'    => 'boolean',
+                    'default' => false,
+                ),
+                'resize'       => array(
+                    'type'    => 'string',
+                    'enum'    => array( 'none', 'vertical', 'horizontal', 'both' ),
+                    'default' => 'vertical',
+                ),
+                'rich_editor'  => array(
+                    'type'    => 'boolean',
+                    'default' => false,
+                ),
+            ),
         );
-
-        $schema['properties']['cols'] = array(
-            'type'    => 'integer',
-            'default' => 50,
-            'minimum' => 10,
-            'maximum' => 200,
-        );
-
-        $schema['properties']['min_length'] = array(
-            'type'    => 'integer',
-            'default' => 0,
-            'minimum' => 0,
-        );
-
-        $schema['properties']['max_length'] = array(
-            'type'    => 'integer',
-            'default' => 0,
-            'minimum' => 0,
-        );
-
-        $schema['properties']['show_counter'] = array(
-            'type'    => 'boolean',
-            'default' => false,
-        );
-
-        $schema['properties']['resize'] = array(
-            'type'    => 'string',
-            'enum'    => array( 'none', 'vertical', 'horizontal', 'both' ),
-            'default' => 'vertical',
-        );
-
-        $schema['properties']['rich_editor'] = array(
-            'type'    => 'boolean',
-            'default' => false,
-        );
-
-        return $schema;
     }
 
     /**
-     * Convert to BFL
+     * Get BFL representation
      *
-     * @return string BFL representation.
+     * @return string BFL code for this field.
      */
     public function to_bfl() {
         $bfl = 'textarea';
 
-        if ( $this->id !== 'field_' . $this->get_setting( 'field_number', '' ) ) {
-            $bfl .= ' #' . $this->id;
+        if ( $this->get_id() ) {
+            $bfl .= ' #' . $this->get_id();
         }
 
-        if ( $this->get_setting( 'label' ) ) {
-            $bfl .= ' "' . $this->get_setting( 'label' ) . '"';
+        if ( $this->get_label() ) {
+            $bfl .= ' "' . addslashes( $this->get_label() ) . '"';
         }
 
-        // Modifiers
         $modifiers = array();
 
-        if ( $this->get_setting( 'required' ) ) {
+        if ( $this->is_required() ) {
             $modifiers[] = '@required';
         }
 
-        if ( $this->get_setting( 'placeholder' ) ) {
-            $modifiers[] = '@placeholder "' . $this->get_setting( 'placeholder' ) . '"';
+        if ( ! empty( $this->config['placeholder'] ) ) {
+            $modifiers[] = '@placeholder "' . addslashes( $this->config['placeholder'] ) . '"';
         }
 
-        if ( $this->get_setting( 'rows', 5 ) !== 5 ) {
-            $modifiers[] = '@rows ' . $this->get_setting( 'rows' );
+        $rows = absint( $this->config['rows'] );
+        if ( $rows > 0 && $rows !== 5 ) {
+            $modifiers[] = '@rows ' . $rows;
         }
 
-        if ( $this->get_setting( 'min_length', 0 ) > 0 ) {
-            $modifiers[] = '@minlength ' . $this->get_setting( 'min_length' );
+        $cols = absint( $this->config['cols'] );
+        if ( $cols > 0 && $cols !== 50 ) {
+            $modifiers[] = '@cols ' . $cols;
         }
 
-        if ( $this->get_setting( 'max_length', 0 ) > 0 ) {
-            $modifiers[] = '@maxlength ' . $this->get_setting( 'max_length' );
+        if ( absint( $this->config['min_length'] ) > 0 ) {
+            $modifiers[] = '@minlength ' . absint( $this->config['min_length'] );
         }
 
-        if ( $this->get_setting( 'description' ) ) {
-            $modifiers[] = '@description "' . $this->get_setting( 'description' ) . '"';
+        if ( absint( $this->config['max_length'] ) > 0 ) {
+            $modifiers[] = '@maxlength ' . absint( $this->config['max_length'] );
+        }
+
+        if ( ! empty( $this->config['default_value'] ) ) {
+            $modifiers[] = '@default "' . addslashes( $this->config['default_value'] ) . '"';
+        }
+
+        if ( $this->get_description() ) {
+            $modifiers[] = '@description "' . addslashes( $this->get_description() ) . '"';
         }
 
         if ( ! empty( $modifiers ) ) {
-            $bfl .= "\n    " . implode( "\n    ", $modifiers );
+            $bfl .= "\n  " . implode( "\n  ", $modifiers );
         }
 
         return $bfl;

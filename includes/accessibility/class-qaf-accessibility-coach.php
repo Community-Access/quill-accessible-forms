@@ -73,6 +73,137 @@ class QAF_Accessibility_Coach {
         );
     }
 
+    /** Model types that take no label: nothing is typed or chosen in them. */
+    const UNLABELLED_TYPES = array( 'html', 'hidden', 'submit', 'save', 'progress', 'summary', 'captcha', 'page' );
+
+    /**
+     * Check a form model (the builder's own form) and name, for every
+     * problem, the question it concerns: its ID, its label and its page, so
+     * the editor can list each one with a way to go to that question's card.
+     * The form's own problems (validate()'s) are included, joined to the
+     * item their JSON pointer is inside.
+     *
+     * @param array $model Form model.
+     * @return array Like analyze(): issues (each with field_id, field_label, page_id), summary, score, categories.
+     */
+    public function analyze_model( $model ) {
+        $issues  = array();
+        $entries = class_exists( 'QAF_Form_Model' ) ? QAF_Form_Model::items( $model ) : array();
+        $labels  = array();
+        $pages   = array();
+        $where   = array(); // JSON pointer => item ID.
+        $count   = 0;
+        $has_section = false;
+
+        foreach ( $entries as $index => $e ) {
+            $item = $e['item'];
+            $id   = (string) ( $item['id'] ?? '' );
+            $type = (string) ( $item['type'] ?? '' );
+            $labels[ $id ] = (string) ( $item['label'] ?? '' );
+            $pages[ $id ]  = (string) ( $e['page'] ?? '' );
+            $where[ $e['path'] ] = $id;
+
+            if ( $type === 'section' ) {
+                $has_section = true;
+                if ( trim( (string) ( $item['label'] ?? '' ) ) === '' ) {
+                    $issues[] = $this->create_issue(
+                        self::SEVERITY_WARNING,
+                        self::CATEGORY_STRUCTURE,
+                        $id,
+                        __( 'Section without a heading', 'quill-accessible-forms' ),
+                        __( 'A section is announced by its heading. Without one, a screen reader user hears a group with no name and cannot jump to it by heading.', 'quill-accessible-forms' ),
+                        __( 'Give the section a short heading that says what its questions are about.', 'quill-accessible-forms' )
+                    );
+                }
+                continue;
+            }
+            if ( $type === 'columns' || in_array( $type, self::UNLABELLED_TYPES, true ) ) {
+                continue;
+            }
+            $count++;
+
+            // The model's names for the coach's: help is the description, and
+            // QAF always shows the required indicator.
+            $field = $item;
+            $field['description']        = $item['help'] ?? '';
+            $field['required_indicator'] = true;
+            if ( ! isset( $field['choices'] ) && ( isset( $item['choice_library'] ) || isset( $item['cascade'] ) ) ) {
+                $lib              = $item['choice_library'] ?? '';
+                $field['choices'] = $model['choice_libraries'][ $lib ] ?? array( 'library', 'library' );
+            }
+            $issues = array_merge( $issues, $this->analyze_field( $field, $index ) );
+        }
+
+        if ( trim( (string) ( $model['title'] ?? '' ) ) === '' ) {
+            $issues[] = $this->create_issue(
+                self::SEVERITY_WARNING,
+                self::CATEGORY_STRUCTURE,
+                'form',
+                __( 'Missing form title', 'quill-accessible-forms' ),
+                __( 'Forms should have a clear title to help users understand the purpose.', 'quill-accessible-forms' ),
+                __( 'Add a descriptive form title.', 'quill-accessible-forms' )
+            );
+        }
+        if ( $count > 10 && ! $has_section && count( $model['pages'] ?? array() ) < 2 ) {
+            $issues[] = $this->create_issue(
+                self::SEVERITY_INFO,
+                self::CATEGORY_STRUCTURE,
+                'form',
+                __( 'Consider organizing into sections', 'quill-accessible-forms' ),
+                /* translators: %d: number of questions */
+                sprintf( __( 'This form has %d questions. Long forms are easier to complete when organized into logical sections.', 'quill-accessible-forms' ), $count ),
+                __( 'Add a section, and move related questions into it.', 'quill-accessible-forms' )
+            );
+        }
+        if ( count( $model['pages'] ?? array() ) > 1 ) {
+            $issues = array_merge( $issues, $this->analyze_pages( $model['pages'] ) );
+        }
+
+        // The model's own problems, each joined to the deepest item its pointer is in.
+        if ( class_exists( 'QAF_Form_Model' ) ) {
+            foreach ( QAF_Form_Model::validate( $model ) as $problem ) {
+                $path = (string) ( $problem['path'] ?? '' );
+                $id   = 'form';
+                $best = -1;
+                foreach ( $where as $pointer => $item_id ) {
+                    if ( ( $path === $pointer || strpos( $path, $pointer . '/' ) === 0 ) && strlen( $pointer ) > $best ) {
+                        $best = strlen( $pointer );
+                        $id   = $item_id;
+                    }
+                }
+                $issues[] = $this->create_issue(
+                    self::SEVERITY_ERROR,
+                    self::CATEGORY_STRUCTURE,
+                    $id,
+                    __( 'The form cannot be saved like this', 'quill-accessible-forms' ),
+                    (string) ( $problem['message'] ?? '' ),
+                    ''
+                );
+            }
+        }
+
+        foreach ( $issues as $k => $issue ) {
+            $fid                         = (string) $issue['field_id'];
+            $issues[ $k ]['field_label'] = $labels[ $fid ] ?? '';
+            $issues[ $k ]['page_id']     = $pages[ $fid ] ?? ( $fid !== 'form' && isset( $model['pages'] ) && in_array( $fid, array_column( $model['pages'], 'id' ), true ) ? $fid : '' );
+        }
+
+        // Errors first, then warnings, then suggestions; within each, form order.
+        $order = array( self::SEVERITY_ERROR => 0, self::SEVERITY_WARNING => 1, self::SEVERITY_INFO => 2 );
+        $keys  = array_keys( $issues );
+        usort( $keys, function ( $a, $b ) use ( $issues, $order ) {
+            return array( $order[ $issues[ $a ]['severity'] ] ?? 99, $a ) <=> array( $order[ $issues[ $b ]['severity'] ] ?? 99, $b );
+        } );
+        $issues = array_map( function ( $k ) use ( $issues ) { return $issues[ $k ]; }, $keys );
+
+        return array(
+            'issues'     => $issues,
+            'summary'    => $this->generate_summary( $issues ),
+            'score'      => $this->calculate_score( $issues ),
+            'categories' => $this->group_by_category( $issues ),
+        );
+    }
+
     /**
      * Analyze a single field
      *

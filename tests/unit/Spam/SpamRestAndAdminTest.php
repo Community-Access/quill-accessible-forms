@@ -130,7 +130,9 @@ class QAF_Spam_Rest_And_Admin_Test extends QAF_Spam_Test_Case {
 	public function test_the_spam_state_for_the_workbench_carries_no_key() {
 		$s     = $this->settings( array( 'oopspam_api_key' => 'secret-key-999' ) );
 		$state = ( new QAF_Spam_REST( $s, new QAF_Spam_Memory_Store() ) )->state( new WP_REST_Request( 'GET' ) );
-		$this->assertSame( array( 'providers', 'limits', 'questions', 'oopspam_key_saved' ), array_keys( $state ) );
+		$this->assertSame( array( 'providers', 'limits', 'questions', 'oopspam_key_saved', 'revision', 'can_edit' ), array_keys( $state ) );
+		$this->assertFalse( $state['can_edit'], 'nobody signed in may change them' );
+		$this->assertSame( 3, $state['questions']['send_anyway_after'] );
 		$this->assertTrue( $state['oopspam_key_saved'] );
 		$this->assertStringNotContainsString( 'secret-key-999', json_encode( $state ) );
 		$this->assertSame( 3, $state['limits']['max_links'] );

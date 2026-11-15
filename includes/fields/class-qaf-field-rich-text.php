@@ -168,8 +168,13 @@ class QAF_Field_Rich_Text extends QAF_Field {
         $field .= ' data-field-id="' . esc_attr( $this->get_id() ) . '"';
         $field .= ' data-max-chars="' . esc_attr( $max_chars ) . '">';
 
-        // Label
-        $field .= $this->render_label();
+        // Label. The box people type in is the editable area, not the
+        // textarea that carries the value, so the label is given the ID the
+        // area's aria-labelledby names (and no for, which only a form
+        // control can take).
+        $label = $this->render_label();
+        $label = preg_replace( '/^<label for="[^"]*"/', '<label id="' . esc_attr( $html_id ) . '-label"', $label, 1 );
+        $field .= $label;
 
         // Description above
         if ( $this->get_description_placement() === 'above' ) {
@@ -191,6 +196,9 @@ class QAF_Field_Rich_Text extends QAF_Field {
         $field .= 'role="textbox" ';
         $field .= 'aria-multiline="true" ';
         $field .= 'aria-labelledby="' . esc_attr( $html_id ) . '-label" ';
+        if ( $this->is_required() ) {
+            $field .= 'aria-required="true" ';
+        }
         if ( $placeholder ) {
             $field .= 'data-placeholder="' . esc_attr( $placeholder ) . '" ';
         }
@@ -199,7 +207,9 @@ class QAF_Field_Rich_Text extends QAF_Field {
         $field .= '</div>';
 
         // Hidden textarea for form submission
-        $field .= '<textarea id="' . esc_attr( $html_id ) . '" name="' . esc_attr( $name ) . '" class="qaf-rich-text-value screen-reader-text" aria-hidden="true">';
+        // (named qaf_field_<id>, like every field; the page script copies the
+        // editable area into it). Out of the tab order: it is not typed in.
+        $field .= '<textarea id="' . esc_attr( $html_id ) . '" name="' . esc_attr( $name ) . '" class="qaf-rich-text-value screen-reader-text" aria-hidden="true" tabindex="-1">';
         $field .= esc_textarea( $value );
         $field .= '</textarea>';
 

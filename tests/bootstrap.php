@@ -14,7 +14,9 @@ if ( file_exists( $autoloader ) ) {
 // Test constants
 define( 'QAF_PLUGIN_DIR', dirname( __DIR__ ) . '/' );
 define( 'QAF_TESTS_DIR', __DIR__ . '/' );
-define( 'QAF_TESTING', true );
+if ( ! defined( 'QAF_TESTING' ) ) {
+    define( 'QAF_TESTING', true ); // phpunit.xml also sets it.
+}
 
 // Find WordPress test suite
 $_tests_dir = getenv( 'WP_TESTS_DIR' );

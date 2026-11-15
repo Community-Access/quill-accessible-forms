@@ -2,211 +2,148 @@
 /**
  * Table View Tests
  *
+ * The table renderer is checked through render(), the markup a visitor's
+ * screen reader gets: scoped headers, labelled checkboxes, named buttons.
+ *
  * @package QAF
  */
 
+require_once QAF_TESTS_DIR . 'views-test-helpers.php';
+
 class QAF_View_Table_Test extends QAF_Unit_Test_Case {
 
-    /**
-     * @var QAF_View_Table
-     */
-    private $view;
-
-    protected function setUp(): void {
-        parent::setUp();
-        
-        require_once QAF_PLUGIN_DIR . 'includes/core/class-qaf-view.php';
-        require_once QAF_PLUGIN_DIR . 'includes/views/class-qaf-view-table.php';
-        
-        $this->view = new QAF_View_Table( array(
-            'id'      => 1,
-            'form_id' => 1,
-            'title'   => 'Entries Table',
+    private function table( $config = array() ) {
+        return new QAF_View_Table( array_merge( array(
             'columns' => array(
-                array( 'field' => 'name', 'label' => 'Name' ),
-                array( 'field' => 'email', 'label' => 'Email' ),
-                array( 'field' => 'status', 'label' => 'Status' ),
+                'name'   => array( 'label' => 'Name', 'sortable' => true ),
+                'email'  => array( 'label' => 'Email', 'sortable' => false ),
+                'status' => array( 'label' => 'Status' ),
             ),
-        ) );
+        ), $config ) );
+    }
+
+    private function entries() {
+        return array(
+            new QAF_Test_View_Entry( 1, array( 'name' => 'Ada', 'email' => 'ada@example.com' ) ),
+            new QAF_Test_View_Entry( 2, array( 'name' => 'Grace', 'email' => 'grace@example.com' ), array( 'is_read' => false, 'is_starred' => true ) ),
+        );
     }
 
     public function test_view_type() {
-        $this->assertEquals( 'table', $this->view->get_type() );
+        $html = $this->table()->render( $this->entries() );
+        $this->assertStringContainsString( 'qaf-view qaf-view-table', $html );
     }
 
     public function test_column_headers() {
-        $headers = $this->view->get_column_headers();
-        
-        $this->assertCount( 3, $headers );
-        $this->assertEquals( 'Name', $headers['name'] );
+        $html = $this->table()->render( $this->entries() );
+
+        $this->assertStringContainsString( '<thead>', $html );
+        $this->assertSame( 5, substr_count( $html, '<th scope="col"' ) ); // checkbox + 3 data + actions
+        $this->assertStringContainsString( '>Email</th>', $html );
     }
 
     public function test_sortable_columns() {
-        $view = new QAF_View_Table( array(
-            'id'      => 1,
-            'form_id' => 1,
-            'columns' => array(
-                array( 'field' => 'name', 'label' => 'Name', 'sortable' => true ),
-                array( 'field' => 'email', 'label' => 'Email', 'sortable' => false ),
-            ),
-        ) );
-        
-        $sortable = $view->get_sortable_columns();
-        $this->assertContains( 'name', $sortable );
-        $this->assertNotContains( 'email', $sortable );
+        $html = $this->table()->render( $this->entries() );
+
+        $this->assertStringContainsString( 'aria-sort="none"', $html );
+        $this->assertStringContainsString( 'data-column="name"', $html );
+        $this->assertStringNotContainsString( 'data-column="email"', $html );
     }
 
     public function test_bulk_actions() {
-        $view = new QAF_View_Table( array(
-            'id'           => 1,
-            'form_id'      => 1,
-            'bulk_actions' => array(
-                array( 'action' => 'delete', 'label' => 'Delete Selected' ),
-                array( 'action' => 'export', 'label' => 'Export Selected' ),
-            ),
-        ) );
-        
-        $this->assertTrue( $view->has_bulk_actions() );
-        $actions = $view->get_bulk_actions();
-        $this->assertCount( 2, $actions );
+        $html = $this->table()->render( $this->entries() );
+        $this->assertStringContainsString( 'aria-label="Select all entries"', $html );
+        $this->assertStringContainsString( 'aria-label="Select entry 2"', $html );
+        $this->assertStringContainsString( '<option value="trash">Move to Trash</option>', $html );
+
+        $html = $this->table( array( 'bulk_actions' => false ) )->render( $this->entries() );
+        $this->assertStringNotContainsString( 'Select all entries', $html );
     }
 
     public function test_row_actions() {
-        $view = new QAF_View_Table( array(
-            'id'          => 1,
-            'form_id'     => 1,
-            'row_actions' => array(
-                array( 'action' => 'view', 'label' => 'View', 'icon' => 'eye' ),
-                array( 'action' => 'edit', 'label' => 'Edit', 'icon' => 'pencil' ),
-            ),
-        ) );
-        
-        $actions = $view->get_row_actions();
-        $this->assertCount( 2, $actions );
+        $html = $this->table()->render( $this->entries() );
+
+        $this->assertStringContainsString( 'aria-label="View entry 1"', $html );
+        $this->assertStringContainsString( 'aria-label="Edit entry 1"', $html );
+        $this->assertStringContainsString( 'aria-label="Delete entry 2"', $html );
+        // Star is a toggle and says which way it is set.
+        $this->assertStringContainsString( 'aria-label="Unstar entry 2" aria-pressed="true"', $html );
+        $this->assertStringContainsString( 'aria-label="Star entry 1" aria-pressed="false"', $html );
+
+        $html = $this->table( array( 'row_actions' => false ) )->render( $this->entries() );
+        $this->assertStringNotContainsString( 'qaf-row-actions', $html );
     }
 
-    public function test_column_width() {
-        $view = new QAF_View_Table( array(
-            'id'      => 1,
-            'form_id' => 1,
-            'columns' => array(
-                array( 'field' => 'name', 'label' => 'Name', 'width' => '200px' ),
-                array( 'field' => 'email', 'label' => 'Email', 'width' => 'auto' ),
-            ),
-        ) );
-        
-        $columns = $view->get_columns();
-        $this->assertEquals( '200px', $columns[0]['width'] );
+    public function test_cells_carry_column_labels() {
+        $html = $this->table()->render( $this->entries() );
+
+        // data-label lets the stacked (narrow screen) layout keep each value's name.
+        $this->assertStringContainsString( '<td class="qaf-col-name" data-label="Name">Ada</td>', $html );
     }
 
     public function test_sticky_header() {
-        $view = new QAF_View_Table( array(
-            'id'            => 1,
-            'form_id'       => 1,
-            'sticky_header' => true,
-        ) );
-        
-        $this->assertTrue( $view->has_sticky_header() );
+        $this->assertStringContainsString( 'qaf-sticky-header', $this->table()->render( $this->entries() ) );
+        $this->assertStringNotContainsString( 'qaf-sticky-header', $this->table( array( 'sticky_header' => false ) )->render( $this->entries() ) );
     }
 
     public function test_zebra_striping() {
-        $view = new QAF_View_Table( array(
-            'id'      => 1,
-            'form_id' => 1,
-            'zebra'   => true,
-        ) );
-        
-        $this->assertTrue( $view->is_zebra_striped() );
+        $this->assertStringContainsString( 'qaf-zebra', $this->table()->render( $this->entries() ) );
+        $this->assertStringNotContainsString( 'qaf-zebra', $this->table( array( 'zebra_striping' => false ) )->render( $this->entries() ) );
     }
 
-    public function test_responsive_mode() {
-        $view = new QAF_View_Table( array(
-            'id'         => 1,
-            'form_id'    => 1,
-            'responsive' => 'scroll',
-        ) );
-        
-        $this->assertEquals( 'scroll', $view->get_responsive_mode() );
+    public function test_unread_and_starred_rows() {
+        $html = $this->table()->render( $this->entries() );
+
+        $this->assertStringContainsString( 'class="qaf-entry-row qaf-unread qaf-starred" data-entry-id="2"', $html );
+        $this->assertStringContainsString( 'class="qaf-entry-row" data-entry-id="1"', $html );
     }
 
-    public function test_column_visibility() {
-        $view = new QAF_View_Table( array(
-            'id'      => 1,
-            'form_id' => 1,
-            'columns' => array(
-                array( 'field' => 'name', 'label' => 'Name', 'visible' => true ),
-                array( 'field' => 'id', 'label' => 'ID', 'visible' => false ),
-            ),
-        ) );
-        
-        $visible = $view->get_visible_columns();
-        $this->assertCount( 1, $visible );
-        $this->assertEquals( 'name', $visible[0]['field'] );
+    public function test_status_column() {
+        $html = $this->table()->render( $this->entries() );
+        $this->assertStringContainsString( '<span class="qaf-status qaf-status-active">Active</span>', $html );
     }
 
     public function test_accessibility_attributes() {
-        $attrs = $this->view->get_table_attributes();
-        
-        $this->assertArrayHasKey( 'role', $attrs );
-        $this->assertEquals( 'table', $attrs['role'] );
-        $this->assertArrayHasKey( 'aria-label', $attrs );
+        $html = $this->table()->render( $this->entries() );
+
+        // A scrollable region must be focusable and named so keyboard users can scroll it.
+        $this->assertStringContainsString( 'role="region" aria-label="Entries table" tabindex="0"', $html );
     }
 
-    public function test_caption() {
-        $view = new QAF_View_Table( array(
-            'id'      => 1,
-            'form_id' => 1,
-            'caption' => 'Form entries table showing submitted data',
-        ) );
-        
-        $this->assertEquals( 'Form entries table showing submitted data', $view->get_caption() );
+    public function test_html_in_values_is_escaped() {
+        $entries = array( new QAF_Test_View_Entry( 3, array( 'name' => '<img src=x onerror=alert(1)>' ) ) );
+        $html    = $this->table()->render( $entries );
+
+        $this->assertStringNotContainsString( '<img src=x', $html );
+        $this->assertStringContainsString( '&lt;img src=x', $html );
     }
 
-    public function test_column_alignment() {
-        $view = new QAF_View_Table( array(
-            'id'      => 1,
-            'form_id' => 1,
-            'columns' => array(
-                array( 'field' => 'name', 'label' => 'Name', 'align' => 'left' ),
-                array( 'field' => 'amount', 'label' => 'Amount', 'align' => 'right' ),
-            ),
-        ) );
-        
-        $columns = $view->get_columns();
-        $this->assertEquals( 'left', $columns[0]['align'] );
-        $this->assertEquals( 'right', $columns[1]['align'] );
+    public function test_array_values_are_joined() {
+        $entries = array( new QAF_Test_View_Entry( 4, array( 'name' => array( 'red', 'blue' ) ) ) );
+        $this->assertStringContainsString( '>red, blue</td>', $this->table()->render( $entries ) );
     }
 
     public function test_empty_state() {
-        $view = new QAF_View_Table( array(
-            'id'            => 1,
-            'form_id'       => 1,
-            'empty_message' => 'No entries found.',
-            'empty_icon'    => 'inbox',
-        ) );
-        
-        $this->assertEquals( 'No entries found.', $view->get_empty_message() );
+        $html = $this->table()->render( array() );
+
+        $this->assertStringContainsString( 'role="status"', $html );
+        $this->assertStringContainsString( 'No entries found.', $html );
+        $this->assertStringNotContainsString( '<table', $html );
+        $this->assertStringContainsString( '0 entries', $html );
     }
 
-    public function test_loading_state() {
-        $view = new QAF_View_Table( array(
-            'id'              => 1,
-            'form_id'         => 1,
-            'loading_message' => 'Loading entries...',
-        ) );
-        
-        $this->assertEquals( 'Loading entries...', $view->get_loading_message() );
-    }
+    public function test_pagination() {
+        $entries = array();
+        for ( $i = 1; $i <= 7; $i++ ) {
+            $entries[] = new QAF_Test_View_Entry( $i, array( 'name' => 'N' . $i ) );
+        }
 
-    public function test_inline_editing() {
-        $view = new QAF_View_Table( array(
-            'id'             => 1,
-            'form_id'        => 1,
-            'inline_editing' => true,
-            'editable_fields' => array( 'status', 'notes' ),
-        ) );
-        
-        $this->assertTrue( $view->supports_inline_editing() );
-        $this->assertContains( 'status', $view->get_editable_fields() );
+        $html = $this->table( array( 'pagination' => 3 ) )->render( $entries );
+        $this->assertStringContainsString( '<nav class="qaf-pagination" aria-label="Entry pagination">', $html );
+        $this->assertStringContainsString( 'aria-current="page" data-page="1"', $html );
+        $this->assertStringContainsString( 'data-page="3"', $html );
+
+        // One page: no pagination at all.
+        $this->assertStringNotContainsString( 'qaf-pagination', $this->table()->render( $this->entries() ) );
     }
 }

@@ -439,8 +439,9 @@ email #email "Email" @required';
         $this->assertEmpty( $result['errors'] );
         $this->assertCount( 3, $result['form']['pages'] ); // Default + 2 pages
         
-        $this->assertEquals( 'page_1', $result['form']['fields'][0]['page'] );
-        $this->assertEquals( 'page_2', $result['form']['fields'][1]['page'] );
+        // page_1 is the implicit first page; each "page" line opens the next one.
+        $this->assertEquals( 'page_2', $result['form']['fields'][0]['page'] );
+        $this->assertEquals( 'page_3', $result['form']['fields'][1]['page'] );
     }
 
     public function test_parse_sections() {

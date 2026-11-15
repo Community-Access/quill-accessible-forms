@@ -107,6 +107,94 @@ abstract class QAF_Field {
     }
 
     /**
+     * The one prefix every field's input is named with: qaf_field_<id>, plus
+     * [] for several values or [key] for a part (a name's first, an
+     * address's city). Pages rendered before this was made one name called
+     * text, email and textarea inputs qaf_fields[<id>]; QAF_Field::posted() and
+     * QAF_Field::submitted_values() still read that, for forms already open
+     * in someone's browser when the plugin was updated.
+     */
+    const INPUT_PREFIX = 'qaf_field_';
+
+    /**
+     * The name a field's input posts as.
+     *
+     * @param string $id     Field ID.
+     * @param string $suffix Added to the ID ("_confirm", "_other").
+     * @return string Input name.
+     */
+    public static function input_name_for( $id, $suffix = '' ) {
+        return self::INPUT_PREFIX . $id . $suffix;
+    }
+
+    /**
+     * This field's input name.
+     *
+     * @param string $suffix Added to the ID ("_confirm", "_other").
+     * @return string Input name.
+     */
+    public function get_input_name( $suffix = '' ) {
+        return self::input_name_for( $this->get_id(), $suffix );
+    }
+
+    /**
+     * A value the browser posted for a field (or one of its companions, such
+     * as "_confirm"): qaf_field_<id><suffix>, then the older
+     * qaf_fields[<id><suffix>], then fields[<id><suffix>] (what the page
+     * script sends). Unslashed, not sanitized.
+     *
+     * @param string     $id     Field ID.
+     * @param string     $suffix Companion suffix.
+     * @param array|null $post   Posted data (defaults to $_POST).
+     * @return mixed|null The value, or null when none was posted.
+     */
+    public static function posted( $id, $suffix = '', $post = null ) {
+        $post = is_array( $post ) ? $post : ( isset( $_POST ) && is_array( $_POST ) ? $_POST : array() );
+        $key  = $id . $suffix;
+        $raw  = null;
+        if ( array_key_exists( self::INPUT_PREFIX . $key, $post ) ) {
+            $raw = $post[ self::INPUT_PREFIX . $key ];
+        } elseif ( isset( $post['qaf_fields'] ) && is_array( $post['qaf_fields'] ) && array_key_exists( $key, $post['qaf_fields'] ) ) {
+            $raw = $post['qaf_fields'][ $key ];
+        } elseif ( isset( $post['fields'] ) && is_array( $post['fields'] ) && array_key_exists( $key, $post['fields'] ) ) {
+            $raw = $post['fields'][ $key ];
+        }
+        if ( $raw === null ) {
+            return null;
+        }
+        return function_exists( 'wp_unslash' ) ? wp_unslash( $raw ) : $raw;
+    }
+
+    /**
+     * The answers in a submission, keyed by field ID. The submission handler
+     * reads one array, fields[<id>], which is what the page script sends; a
+     * form posted without the script (or by a page rendered before the names
+     * were made one)
+     * carries qaf_field_<id> or qaf_fields[<id>] instead, and those are
+     * gathered here into the same shape. A value already in fields wins.
+     *
+     * @param array $params    The request's parameters.
+     * @param array $field_ids The form's field IDs.
+     * @return array Field ID => value.
+     */
+    public static function submitted_values( $params, $field_ids ) {
+        $params = is_array( $params ) ? $params : array();
+        $values = isset( $params['fields'] ) && is_array( $params['fields'] ) ? $params['fields'] : array();
+        foreach ( $field_ids as $id ) {
+            $id = (string) $id;
+            if ( $id === '' || array_key_exists( $id, $values ) ) {
+                continue;
+            }
+            if ( array_key_exists( self::INPUT_PREFIX . $id, $params ) ) {
+                $values[ $id ] = $params[ self::INPUT_PREFIX . $id ];
+            } elseif ( isset( $params['qaf_fields'] ) && is_array( $params['qaf_fields'] ) && array_key_exists( $id, $params['qaf_fields'] ) ) {
+                $values[ $id ] = $params['qaf_fields'][ $id ];
+            }
+        }
+        return $values;
+    }
+
+    /**
      * Get field label
      *
      * @return string Field label.
@@ -228,16 +316,18 @@ abstract class QAF_Field {
     }
 
     /**
-     * Render the field wrapper with WCAG compliance
+     * Get the CSS classes for the field wrapper
      *
-     * @param string $field_input The field input HTML.
-     * @return string Complete field HTML.
+     * Field types that build their own wrapper markup (toggle, time, rating
+     * and others) call this, so it must stay on the base class.
+     *
+     * @return array Wrapper CSS classes.
      */
-    protected function render_wrapper( $field_input ) {
+    protected function get_wrapper_classes() {
         $classes = array(
             'qaf-field',
             'qaf-field-' . $this->type,
-            'qaf-field-size-' . $this->config['size'],
+            'qaf-field-size-' . ( $this->config['size'] ?? 'medium' ),
         );
 
         if ( ! empty( $this->config['css_class'] ) ) {
@@ -251,6 +341,18 @@ abstract class QAF_Field {
         if ( ! empty( $this->errors ) ) {
             $classes[] = 'qaf-field-error';
         }
+
+        return $classes;
+    }
+
+    /**
+     * Render the field wrapper with WCAG compliance
+     *
+     * @param string $field_input The field input HTML.
+     * @return string Complete field HTML.
+     */
+    protected function render_wrapper( $field_input ) {
+        $classes = $this->get_wrapper_classes();
 
         $html = '<div class="' . esc_attr( implode( ' ', $classes ) ) . '" data-field-id="' . esc_attr( $this->get_id() ) . '">';
 

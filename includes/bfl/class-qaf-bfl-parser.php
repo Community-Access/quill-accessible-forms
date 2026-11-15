@@ -348,6 +348,7 @@ class QAF_BFL_Parser {
      * Parse columns layout
      */
     private function parse_columns() {
+        $header_indent = max( 0, $this->current_line_indent() );
         $this->advance(); // Skip 'columns' keyword
 
         $field = array(
@@ -361,6 +362,7 @@ class QAF_BFL_Parser {
             $field['column_count'] = (int) $this->advance()['value'];
         }
 
+        $before_block = $this->position;
         $this->skip_trivia();
 
         // Optional explicit block: columns 2 { ... } / columns 2 begin ... end
@@ -387,7 +389,7 @@ class QAF_BFL_Parser {
                         $this->consume_block_close_if_present();
                     } else {
                         // Get current indent for indentation-style parsing within explicit block
-                        $col_indent = $this->get_current_indent();
+                        $col_indent = max( 0, $this->line_indent_at( $this->position - 1 ) );
                         $column_fields = $this->parse_column_content( $col_indent );
                     }
 
@@ -403,21 +405,26 @@ class QAF_BFL_Parser {
             return;
         }
 
-        // Indentation-style block
+        // Indentation-style block. Undo skip_trivia(): it ate the next line's
+        // indentation, which is what tells us where this block ends.
+        $this->position = $before_block;
         $this->skip_to_next_line();
-        $base_indent = $this->get_current_indent();
 
         while ( ! $this->is_at_end() ) {
-            $this->skip_whitespace();
+            $this->skip_blank_lines();
 
-            if ( $this->is_block_close() ) {
+            if ( $this->is_at_end() || $this->is_block_close() ) {
                 break;
             }
 
-            $indent = $this->get_current_indent();
+            $indent = $this->current_line_indent();
 
-            if ( $indent <= $base_indent ) {
+            if ( $indent <= $header_indent ) {
                 break;
+            }
+
+            if ( $this->check( QAF_BFL_Lexer::TOKEN_INDENT ) ) {
+                $this->advance();
             }
 
             $token = $this->peek();
@@ -447,16 +454,23 @@ class QAF_BFL_Parser {
         $this->skip_to_next_line();
 
         while ( ! $this->is_at_end() ) {
-            $this->skip_whitespace();
+            $this->skip_blank_lines();
 
-            if ( $this->is_block_close() ) {
+            if ( $this->is_at_end() || $this->is_block_close() ) {
                 break;
             }
 
-            $indent = $this->get_current_indent();
+            $indent = $this->current_line_indent();
 
             if ( $indent <= $base_indent ) {
                 break;
+            }
+
+            if ( $this->check( QAF_BFL_Lexer::TOKEN_INDENT ) ) {
+                $this->advance();
+                if ( $this->is_block_close() ) {
+                    break;
+                }
             }
 
             $token = $this->peek();
@@ -510,10 +524,12 @@ class QAF_BFL_Parser {
      * Parse conditional block
      */
     private function parse_conditional() {
+        $header_indent = max( 0, $this->current_line_indent() );
         $this->advance(); // Skip 'if' or 'conditional'
 
         $condition = $this->parse_condition();
 
+        $before_block = $this->position;
         $this->skip_trivia();
 
         // Optional explicit block: if ... { ... } / if ... begin ... end
@@ -548,21 +564,26 @@ class QAF_BFL_Parser {
             return;
         }
 
-        // Indentation-style block
+        // Indentation-style block. Undo skip_trivia(): it ate the next line's
+        // indentation, which is what tells us where this block ends.
+        $this->position = $before_block;
         $this->skip_to_next_line();
-        $base_indent = $this->get_current_indent();
 
         while ( ! $this->is_at_end() ) {
-            $this->skip_whitespace();
+            $this->skip_blank_lines();
 
-            if ( $this->is_block_close() ) {
+            if ( $this->is_at_end() || $this->is_block_close() ) {
                 break;
             }
 
-            $indent = $this->get_current_indent();
+            $indent = $this->current_line_indent();
 
-            if ( $indent <= $base_indent ) {
+            if ( $indent <= $header_indent ) {
                 break;
+            }
+
+            if ( $this->check( QAF_BFL_Lexer::TOKEN_INDENT ) ) {
+                $this->advance();
             }
 
             $token = $this->peek();
@@ -580,7 +601,7 @@ class QAF_BFL_Parser {
                     $this->form['fields'][] = $field;
                 }
             } else {
-                $this->advance();
+                $this->skip_to_next_line();
             }
         }
     }
@@ -636,9 +657,11 @@ class QAF_BFL_Parser {
 
             // Get value
             $value = '';
-            $this->skip_whitespace();
 
+            // empty / filled take no value; skipping whitespace for them would
+            // cross the line break into the block's first indented line.
             if ( ! in_array( $operator, array( 'is_empty', 'is_not_empty' ), true ) ) {
+                $this->skip_whitespace();
                 if ( $this->check( QAF_BFL_Lexer::TOKEN_STRING ) ) {
                     $value = $this->advance()['value'];
                 } elseif ( $this->check( QAF_BFL_Lexer::TOKEN_NUMBER ) ) {
@@ -1176,6 +1199,7 @@ class QAF_BFL_Parser {
     private function parse_choices() {
         $choices = array();
 
+        $start = $this->position;
         $this->skip_whitespace();
 
         // Check for choice library reference
@@ -1234,8 +1258,19 @@ class QAF_BFL_Parser {
             return $choices;
         }
 
-        // Indentation-style choices
-        $this->skip_to_next_line();
+        // Indentation-style choices. skip_whitespace() above may already have
+        // crossed the line break after the label; skipping another line then
+        // dropped the first choice (and could swallow the next field).
+        $crossed_newline = false;
+        for ( $i = $start; $i < $this->position; $i++ ) {
+            if ( $this->tokens[ $i ]['type'] === QAF_BFL_Lexer::TOKEN_NEWLINE ) {
+                $crossed_newline = true;
+                break;
+            }
+        }
+        if ( ! $crossed_newline ) {
+            $this->skip_to_next_line();
+        }
 
         while ( $this->check( QAF_BFL_Lexer::TOKEN_CHOICE ) || $this->check( QAF_BFL_Lexer::TOKEN_INDENT ) || $this->check( QAF_BFL_Lexer::TOKEN_NEWLINE ) ) {
             if ( $this->check( QAF_BFL_Lexer::TOKEN_INDENT ) || $this->check( QAF_BFL_Lexer::TOKEN_NEWLINE ) ) {
@@ -1356,6 +1391,70 @@ class QAF_BFL_Parser {
             return $this->peek()['level'] ?? 0;
         }
         return 0;
+    }
+
+    /**
+     * Indentation of the line that the token at $index starts
+     *
+     * Works after the INDENT token has been consumed (parse_field_modifiers
+     * skips trivia past the end of its own line), by looking one token back.
+     *
+     * @param int $index Token index.
+     * @return int Indent level, or -1 when the token is not first on its line.
+     */
+    private function line_indent_at( $index ) {
+        if ( $index <= 0 ) {
+            return 0;
+        }
+
+        $prev = $this->tokens[ $index - 1 ];
+
+        if ( $prev['type'] === QAF_BFL_Lexer::TOKEN_INDENT ) {
+            return $prev['level'] ?? 0;
+        }
+
+        if ( $prev['type'] === QAF_BFL_Lexer::TOKEN_NEWLINE ) {
+            return 0;
+        }
+
+        return -1;
+    }
+
+    /**
+     * Indentation of the line at the current position
+     *
+     * @return int Indent level, or -1 when mid-line.
+     */
+    private function current_line_indent() {
+        if ( $this->check( QAF_BFL_Lexer::TOKEN_INDENT ) ) {
+            return $this->peek()['level'] ?? 0;
+        }
+
+        return $this->line_indent_at( $this->position );
+    }
+
+    /**
+     * Skip blank and comment-only lines, leaving the next line's INDENT in place
+     */
+    private function skip_blank_lines() {
+        while ( ! $this->is_at_end() ) {
+            $type = $this->peek()['type'];
+
+            if ( $type === QAF_BFL_Lexer::TOKEN_NEWLINE || $type === QAF_BFL_Lexer::TOKEN_COMMENT ) {
+                $this->advance();
+                continue;
+            }
+
+            if ( $type === QAF_BFL_Lexer::TOKEN_INDENT ) {
+                $next = $this->tokens[ $this->position + 1 ]['type'] ?? QAF_BFL_Lexer::TOKEN_EOF;
+                if ( in_array( $next, array( QAF_BFL_Lexer::TOKEN_NEWLINE, QAF_BFL_Lexer::TOKEN_COMMENT, QAF_BFL_Lexer::TOKEN_EOF ), true ) ) {
+                    $this->advance();
+                    continue;
+                }
+            }
+
+            break;
+        }
     }
 
     /**

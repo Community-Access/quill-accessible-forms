@@ -45,7 +45,13 @@ class QAF_Text_Challenge {
 	const TTL = 900;
 
 	/** After this many wrong answers, Send Anyway is offered. */
-	const SEND_ANYWAY_AFTER = 3;
+	const SEND_ANYWAY_AFTER = 3; // The default; a site may choose 1 to 10 (QAF_Spam_Settings, send_anyway_after).
+
+	/** How long a week's numbers are kept: a quarter and a little more, so twelve past weeks can be shown. */
+	const STATS_TTL_DAYS = 100;
+
+	/** The most weeks the weeks route gives, this one included. */
+	const HISTORY_MAX = 13;
 
 	/** @var QAF_Spam_Settings */
 	private $settings;
@@ -110,15 +116,66 @@ class QAF_Text_Challenge {
 	 */
 	public function site_questions() {
 		$out = array();
-		foreach ( preg_split( '/\r\n|\r|\n/', (string) $this->settings->get( 'challenge_bank' ) ) as $line ) {
+		foreach ( self::bank_items( (string) $this->settings->get( 'challenge_bank' ) ) as $item ) {
+			$out[] = array( 'question' => $item['question'], 'answers' => $item['answers'] );
+		}
+		return $out;
+	}
+
+	/**
+	 * The bank as items the REST routes can name: each question with its
+	 * answers and an id made from its words, so an edit or a delete names
+	 * the version of the question the writer read (a question changed since
+	 * has another id, and the route says it is not there). A line with no
+	 * answer is not a question and is left out, as site_questions() always
+	 * did; the same question twice is one question.
+	 *
+	 * @param string $bank The saved bank, one "Question | answer | another" per line.
+	 * @return array[] id, question, answers.
+	 */
+	public static function bank_items( $bank ) {
+		$out  = array();
+		$seen = array();
+		foreach ( preg_split( '/\r\n|\r|\n/', (string) $bank ) as $line ) {
 			$parts = array_map( 'trim', explode( '|', $line ) );
 			$q     = array_shift( $parts );
 			$parts = array_values( array_filter( $parts, 'strlen' ) );
-			if ( '' !== $q && $parts ) {
-				$out[] = array( 'question' => $q, 'answers' => $parts );
+			if ( '' === $q || ! $parts ) {
+				continue;
 			}
+			$id = self::bank_id( $q, $parts );
+			if ( isset( $seen[ $id ] ) ) {
+				continue;
+			}
+			$seen[ $id ] = true;
+			$out[]       = array( 'id' => $id, 'question' => $q, 'answers' => $parts );
 		}
 		return $out;
+	}
+
+	/**
+	 * A question's id: 12 hex characters from its words and answers.
+	 *
+	 * @param string   $question Question.
+	 * @param string[] $answers  Answers.
+	 * @return string
+	 */
+	public static function bank_id( $question, $answers ) {
+		return substr( sha1( $question . '|' . implode( '|', $answers ) ), 0, 12 );
+	}
+
+	/**
+	 * Items back to the saved form, one line each.
+	 *
+	 * @param array[] $items question, answers.
+	 * @return string
+	 */
+	public static function bank_text( $items ) {
+		$lines = array();
+		foreach ( $items as $item ) {
+			$lines[] = $item['question'] . ' | ' . implode( ' | ', $item['answers'] );
+		}
+		return implode( "\n", $lines );
 	}
 
 	/**
@@ -473,7 +530,8 @@ class QAF_Text_Challenge {
 
 		$tries       = $this->tries( $s );
 		$send_anyway = null;
-		if ( $tries >= self::SEND_ANYWAY_AFTER ) {
+		$after = (int) $this->settings->get( 'send_anyway_after' );
+		if ( $tries >= ( $after > 0 ? $after : self::SEND_ANYWAY_AFTER ) ) {
 			$send_anyway = bin2hex( random_bytes( 16 ) );
 			$this->store->set( 'sa:' . $send_anyway, array( 'form_id' => (int) $s->form_id, 'binding' => $s->binding(), 'tries' => $tries ), self::TTL + 3600 );
 		}
@@ -547,15 +605,15 @@ class QAF_Text_Challenge {
 
 	// This week's numbers, for the Spam page in QAF and in QUILL's Workbench.
 
-	private function week() {
-		return gmdate( 'o-\WW', $this->now() );
+	private function week( $weeks_ago = 0 ) {
+		return gmdate( 'o-\WW', $this->now() - $weeks_ago * 7 * DAY_IN_SECONDS );
 	}
 
 	private function count( $what ) {
 		$key           = 'stats:' . $this->week();
 		$stats         = $this->stats();
 		$stats[ $what ] = ( isset( $stats[ $what ] ) ? $stats[ $what ] : 0 ) + 1;
-		$this->store->set( $key, $stats, 15 * DAY_IN_SECONDS );
+		$this->store->set( $key, $stats, self::STATS_TTL_DAYS * DAY_IN_SECONDS );
 	}
 
 	/**
@@ -563,9 +621,28 @@ class QAF_Text_Challenge {
 	 *
 	 * @return array
 	 */
-	public function stats() {
-		$stats = $this->store->get( 'stats:' . $this->week() );
-		return array_merge( array( 'week' => $this->week(), 'asked' => 0, 'passed' => 0, 'failed' => 0, 'sent_anyway' => 0 ), is_array( $stats ) ? $stats : array() );
+	public function stats( $weeks_ago = 0 ) {
+		$week  = $this->week( $weeks_ago );
+		$stats = $this->store->get( 'stats:' . $week );
+		return array_merge( array( 'week' => $week, 'asked' => 0, 'passed' => 0, 'failed' => 0, 'sent_anyway' => 0 ), is_array( $stats ) ? $stats : array() );
+	}
+
+	/**
+	 * This week and the ones before it, newest first. A week nobody was
+	 * asked anything in is there with noughts, so the list has no gaps.
+	 * Weeks older than STATS_TTL_DAYS are forgotten, and so are weeks a QAF
+	 * older than this list counted (it kept each week for 15 days).
+	 *
+	 * @param int $weeks How many weeks, this one included (1 to HISTORY_MAX).
+	 * @return array[] week, asked, passed, failed, sent_anyway.
+	 */
+	public function history( $weeks = 12 ) {
+		$weeks = max( 1, min( self::HISTORY_MAX, (int) $weeks ) );
+		$out   = array();
+		for ( $i = 0; $i < $weeks; $i++ ) {
+			$out[] = $this->stats( $i );
+		}
+		return $out;
 	}
 
 	// The question on the page.

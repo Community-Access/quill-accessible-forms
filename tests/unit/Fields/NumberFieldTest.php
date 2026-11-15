@@ -2,6 +2,8 @@
 /**
  * Number Field Tests
  *
+ * validate() returns a bool and leaves messages in get_errors().
+ *
  * @package QAF
  */
 
@@ -14,12 +16,12 @@ class QAF_Field_Number_Test extends QAF_Unit_Test_Case {
 
     protected function setUp(): void {
         parent::setUp();
-        
+
         require_once QAF_PLUGIN_DIR . 'includes/core/class-qaf-field.php';
         require_once QAF_PLUGIN_DIR . 'includes/fields/class-qaf-field-number.php';
-        
+
         $this->field = new QAF_Field_Number( array(
-            'name'  => 'quantity',
+            'id'    => 'quantity',
             'label' => 'Quantity',
         ) );
     }
@@ -29,129 +31,112 @@ class QAF_Field_Number_Test extends QAF_Unit_Test_Case {
     }
 
     public function test_valid_integer() {
-        $result = $this->field->validate( '42' );
-        $this->assertTrue( $result['valid'] );
+        $this->assertTrue( $this->field->validate( '42' ) );
     }
 
     public function test_valid_decimal() {
-        $result = $this->field->validate( '3.14' );
-        $this->assertTrue( $result['valid'] );
+        $this->assertTrue( $this->field->validate( '42.5' ) );
     }
 
     public function test_negative_number() {
-        $result = $this->field->validate( '-10' );
-        $this->assertTrue( $result['valid'] );
+        $this->assertTrue( $this->field->validate( '-10' ) );
     }
 
     public function test_invalid_number() {
-        $result = $this->field->validate( 'abc' );
-        $this->assertFalse( $result['valid'] );
+        $this->assertFalse( $this->field->validate( 'abc' ) );
+        $this->assertEquals( array( 'Please enter a valid number.' ), $this->field->get_errors() );
     }
 
     public function test_minimum_value() {
-        $field = new QAF_Field_Number( array(
-            'name' => 'qty',
-            'min'  => 1,
-        ) );
-        
-        $result = $field->validate( '0' );
-        $this->assertFalse( $result['valid'] );
-        
-        $result = $field->validate( '1' );
-        $this->assertTrue( $result['valid'] );
+        $field = new QAF_Field_Number( array( 'id' => 'age', 'min' => 18 ) );
+
+        $this->assertFalse( $field->validate( '17' ) );
+        $this->assertTrue( $field->validate( '18' ) );
     }
 
     public function test_maximum_value() {
-        $field = new QAF_Field_Number( array(
-            'name' => 'qty',
-            'max'  => 100,
-        ) );
-        
-        $result = $field->validate( '101' );
-        $this->assertFalse( $result['valid'] );
-        
-        $result = $field->validate( '100' );
-        $this->assertTrue( $result['valid'] );
+        $field = new QAF_Field_Number( array( 'id' => 'rating', 'max' => 10 ) );
+
+        $this->assertFalse( $field->validate( '11' ) );
+        $this->assertTrue( $field->validate( '10' ) );
     }
 
     public function test_step_validation() {
-        $field = new QAF_Field_Number( array(
-            'name' => 'qty',
-            'step' => 5,
-        ) );
-        
-        $result = $field->validate( '15' );
-        $this->assertTrue( $result['valid'] );
-        
-        $result = $field->validate( '17' );
-        $this->assertFalse( $result['valid'] );
+        $field = new QAF_Field_Number( array( 'id' => 'qty', 'step' => 5, 'min' => 1 ) );
+
+        // Steps count from min: 1, 6, 11...
+        $this->assertTrue( $field->validate( '11' ) );
+        $this->assertFalse( $field->validate( '10' ) );
+
+        $cents = new QAF_Field_Number( array( 'id' => 'price', 'step' => '0.01' ) );
+        $this->assertTrue( $cents->validate( '19.99' ) );
+        $this->assertFalse( $cents->validate( '19.995' ) );
+
+        // "any" is the HTML way of saying no step.
+        $any = new QAF_Field_Number( array( 'id' => 'x', 'step' => 'any' ) );
+        $this->assertTrue( $any->validate( '1.2345' ) );
     }
 
     public function test_integer_only() {
-        $field = new QAF_Field_Number( array(
-            'name'    => 'qty',
-            'integer' => true,
-        ) );
-        
-        $result = $field->validate( '5.5' );
-        $this->assertFalse( $result['valid'] );
-        
-        $result = $field->validate( '5' );
-        $this->assertTrue( $result['valid'] );
+        $field = new QAF_Field_Number( array( 'id' => 'count', 'format' => 'integer' ) );
+
+        $this->assertFalse( $field->validate( '5.5' ) );
+        $this->assertEquals( array( 'Please enter a whole number.' ), $field->get_errors() );
+        $this->assertTrue( $field->validate( '5' ) );
+        $this->assertSame( '5', $field->sanitize( '5.9' ) );
     }
 
     public function test_number_sanitization() {
-        $sanitized = $this->field->sanitize( ' 42.50 ' );
-        $this->assertEquals( 42.50, $sanitized );
+        $this->assertEquals( 42.50, $this->field->sanitize( ' 42.50 ' ) );
+        $this->assertSame( '', $this->field->sanitize( '' ) );
+        $this->assertEquals( 1234.5, $this->field->sanitize( '$1,234.50' ) );
     }
 
     public function test_currency_format() {
         $field = new QAF_Field_Number( array(
-            'name'   => 'price',
+            'id'     => 'price',
             'format' => 'currency',
+            'prefix' => '$',
         ) );
-        
-        $display = $field->format_value( 99.99 );
-        $this->assertStringContainsString( '99.99', $display );
+
+        $this->assertEquals( '$1,099.90', $field->format_display( 1099.9 ) );
     }
 
     public function test_input_attributes() {
         $field = new QAF_Field_Number( array(
-            'name' => 'qty',
+            'id'   => 'qty',
             'min'  => 0,
             'max'  => 100,
             'step' => 1,
-        ) );
-        
-        $attrs = $field->get_attributes();
-        $this->assertEquals( 'number', $attrs['type'] );
-        $this->assertEquals( 0, $attrs['min'] );
-        $this->assertEquals( 100, $attrs['max'] );
-        $this->assertEquals( 1, $attrs['step'] );
+        ), 4 );
+
+        $html = $field->render();
+        $this->assertStringContainsString( 'type="number"', $html );
+        $this->assertStringContainsString( 'min="0"', $html );
+        $this->assertStringContainsString( 'max="100"', $html );
+        $this->assertStringContainsString( 'step="1"', $html );
+        // The range hint is announced with the input.
+        $this->assertStringContainsString( 'aria-describedby="qaf-field-4-qty-range"', $html );
+        $this->assertStringContainsString( 'Enter a number between 0 and 100', $html );
     }
 
     public function test_empty_value_not_required() {
-        $result = $this->field->validate( '' );
-        $this->assertTrue( $result['valid'] );
+        $this->assertTrue( $this->field->validate( '' ) );
     }
 
     public function test_positive_only() {
-        $field = new QAF_Field_Number( array(
-            'name'     => 'qty',
-            'positive' => true,
-        ) );
-        
-        $result = $field->validate( '-5' );
-        $this->assertFalse( $result['valid'] );
+        // There is no "positive" switch: a minimum of 0 is how it is said.
+        $field = new QAF_Field_Number( array( 'id' => 'qty', 'min' => 0 ) );
+
+        $this->assertFalse( $field->validate( '-5' ) );
+        $this->assertTrue( $field->validate( '0' ) );
     }
 
     public function test_precision() {
-        $field = new QAF_Field_Number( array(
-            'name'      => 'price',
-            'precision' => 2,
-        ) );
-        
-        $sanitized = $field->sanitize( '99.999' );
-        $this->assertEquals( 100.00, $sanitized );
+        // "decimals" governs display; the stored value is kept as entered.
+        $field = new QAF_Field_Number( array( 'id' => 'price', 'decimals' => 2 ) );
+
+        $this->assertEquals( '100.00', $field->format_display( $field->sanitize( '99.999' ) ) );
+        $this->assertEquals( '99.999', $field->sanitize( '99.999' ) );
     }
 }

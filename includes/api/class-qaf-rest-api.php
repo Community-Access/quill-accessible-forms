@@ -560,8 +560,14 @@ class QAF_REST_API {
         $entry->user_agent = isset( $_SERVER['HTTP_USER_AGENT'] ) ? sanitize_text_field( $_SERVER['HTTP_USER_AGENT'] ) : '';
         $entry->source_url = wp_get_referer();
 
-        // Process and validate field values
-        $field_values = $request->get_param( 'fields' ) ?: array();
+        // Process and validate field values. The page script sends
+        // fields[<id>]; a form posted without it sends each input by its own
+        // name (qaf_field_<id>, or qaf_fields[<id>] from a page rendered
+        // before the names were made one). All three are read.
+        $field_values = QAF_Field::submitted_values(
+            method_exists( $request, 'get_params' ) ? $request->get_params() : array( 'fields' => $request->get_param( 'fields' ) ),
+            array_map( function ( $f ) { return $f['id'] ?? ''; }, $form->get_fields() )
+        );
         $sanitizer = new QAF_Sanitizer();
         $sanitized_values = array();
 

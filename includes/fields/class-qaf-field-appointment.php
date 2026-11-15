@@ -717,7 +717,11 @@ class QAF_Field_Appointment extends QAF_Field {
         }
 
         // Check if slot is still available
-        $parts = explode( ' ', $value );
+        $parts = explode( ' ', trim( (string) $value ) );
+        if ( count( $parts ) < 2 || '' === $parts[1] ) {
+            $this->add_error( __( 'Invalid date/time format.', 'quill-accessible-forms' ) );
+            return;
+        }
         $date = $parts[0];
         $time = $parts[1];
         

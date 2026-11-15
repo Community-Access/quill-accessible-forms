@@ -1215,6 +1215,9 @@ in order, the `qaf_spam_providers` and `qaf_spam_check` filters and the
       `entries/{id}/not-spam`, `GET spam`; the entries list accepts the
       entry statuses
 - [x] Settings > Spam, labelled and grouped; the settings tabs now work
+- [x] REST writes: `POST spam` (partial, validated, `if_revision` conflict
+      check, key write-only), the question bank (`spam/questions`), past
+      weeks (`spam/weeks`, kept 100 days); Send Anyway after 1 to 10 tries
 - [x] Privacy text through `wp_add_privacy_policy_content`
 - [x] Tests: `tests/unit/Spam` (104 tests)
 - [ ] Verify integration points: CleanTalk and Shield Security are detected

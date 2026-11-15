@@ -133,7 +133,9 @@ class QAF_Field_Repeater extends QAF_Field {
     public function render() {
         $html_id = $this->get_html_id();
         $name    = 'qaf_field_' . $this->get_id();
-        $values  = (array) $this->get_value();
+        // Rows already answered; an empty value is no rows ((array) '' is one).
+        $values  = $this->get_value();
+        $values  = is_array( $values ) ? array_values( array_filter( $values, 'is_array' ) ) : array();
         $fields  = $this->config['fields'] ?? array();
         $min     = (int) $this->config['min_rows'];
         $max     = (int) $this->config['max_rows'];
@@ -142,8 +144,8 @@ class QAF_Field_Repeater extends QAF_Field {
 
         // Ensure minimum rows
         $num_rows = max( count( $values ), $default, $min );
-        if ( empty( $values ) ) {
-            $values = array_fill( 0, $num_rows, array() );
+        while ( count( $values ) < $num_rows ) {
+            $values[] = array();
         }
 
         $wrapper_class = $this->get_wrapper_classes();
@@ -159,8 +161,8 @@ class QAF_Field_Repeater extends QAF_Field {
         $html .= ' data-min-rows="' . esc_attr( $min ) . '"';
         $html .= ' data-max-rows="' . esc_attr( $max ) . '">';
 
-        // Legend
-        $html .= '<legend class="qaf-fieldset-legend">';
+        // Legend (each entry's group is named by it and its own title)
+        $html .= '<legend class="qaf-fieldset-legend" id="' . esc_attr( $html_id ) . '-legend">';
         $html .= '<span class="qaf-legend-text">' . esc_html( $this->get_label() ) . '</span>';
         $html .= $this->render_required_indicator();
         $html .= '</legend>';
@@ -182,8 +184,8 @@ class QAF_Field_Repeater extends QAF_Field {
         }
         $html .= '</p>';
 
-        // Rows container
-        $html .= '<div class="qaf-repeater-rows" role="list" aria-describedby="' . esc_attr( $html_id ) . '-instructions">';
+        // Rows container: a list of entries, each a labelled group.
+        $html .= '<div class="qaf-repeater-rows" role="list" aria-labelledby="' . esc_attr( $html_id ) . '-legend" aria-describedby="' . esc_attr( $html_id ) . '-instructions">';
 
         // Row template (hidden, for JS cloning)
         $html .= '<template class="qaf-repeater-template">';
@@ -197,12 +199,13 @@ class QAF_Field_Repeater extends QAF_Field {
 
         $html .= '</div>';
 
-        // Add row button
+        // Add row button. When the group is full it says so rather than
+        // disappearing from the tab order: aria-disabled, not disabled.
         $can_add = count( $values ) < $max;
         $html .= '<button type="button" class="qaf-repeater-add qaf-button qaf-button-secondary"';
-        $html .= ' aria-label="' . esc_attr( $this->config['add_button_text'] ) . '"';
+        $html .= ' aria-describedby="' . esc_attr( $html_id ) . '-status"';
         if ( ! $can_add ) {
-            $html .= ' disabled aria-disabled="true"';
+            $html .= ' aria-disabled="true"';
         }
         $html .= '>';
         $html .= '<span class="qaf-icon-plus" aria-hidden="true"></span> ';
@@ -210,7 +213,7 @@ class QAF_Field_Repeater extends QAF_Field {
         $html .= '</button>';
 
         // Row count status
-        $html .= '<div class="qaf-repeater-status" role="status" aria-live="polite" aria-atomic="true">';
+        $html .= '<div id="' . esc_attr( $html_id ) . '-status" class="qaf-repeater-status" role="status" aria-live="polite" aria-atomic="true">';
         $html .= sprintf(
             esc_html__( '%1$d of %2$d rows maximum', 'quill-accessible-forms' ),
             count( $values ),
@@ -252,7 +255,15 @@ class QAF_Field_Repeater extends QAF_Field {
         $sortable = ! empty( $this->config['sortable'] );
         $min = (int) $this->config['min_rows'];
 
-        $html = '<div class="qaf-repeater-row" role="listitem" data-index="' . esc_attr( $index ) . '">';
+        $html_id = $this->get_html_id();
+        // The entry's number (the template's is filled in by the page script).
+        $row_num = is_numeric( $index ) ? (int) $index + 1 : '{{NUMBER}}';
+
+        // Each entry is a list item holding a group, named by the repeater's
+        // legend and the entry's own title ("Children Row 2"), so a screen
+        // reader says which entry a question belongs to as focus enters it.
+        $html  = '<div class="qaf-repeater-row" role="listitem" data-index="' . esc_attr( $index ) . '">';
+        $html .= '<div class="qaf-repeater-card" role="group" aria-labelledby="' . esc_attr( $html_id . '-legend ' . $row_id . '-title' ) . '">';
 
         // Row header
         $html .= '<div class="qaf-repeater-row-header">';
@@ -265,40 +276,39 @@ class QAF_Field_Repeater extends QAF_Field {
 
             $html .= '<span class="qaf-repeater-sort-buttons">';
             $html .= '<button type="button" class="qaf-repeater-move-up" ';
-            $html .= 'aria-label="' . esc_attr( sprintf( __( 'Move %s up', 'quill-accessible-forms' ), $row_label ) ) . '">';
+            $html .= 'aria-label="' . esc_attr( sprintf( __( 'Move %1$s %2$s up', 'quill-accessible-forms' ), $row_label, $row_num ) ) . '">';
             $html .= '<span class="qaf-icon-arrow-up" aria-hidden="true"></span>';
             $html .= '</button>';
             $html .= '<button type="button" class="qaf-repeater-move-down" ';
-            $html .= 'aria-label="' . esc_attr( sprintf( __( 'Move %s down', 'quill-accessible-forms' ), $row_label ) ) . '">';
+            $html .= 'aria-label="' . esc_attr( sprintf( __( 'Move %1$s %2$s down', 'quill-accessible-forms' ), $row_label, $row_num ) ) . '">';
             $html .= '<span class="qaf-icon-arrow-down" aria-hidden="true"></span>';
             $html .= '</button>';
             $html .= '</span>';
         }
 
         // Row label/title
-        $row_num = is_numeric( $index ) ? (int) $index + 1 : $index;
-        
+
         if ( $collapsible ) {
             $html .= '<button type="button" class="qaf-repeater-toggle" ';
             $html .= 'aria-expanded="true" ';
             $html .= 'aria-controls="' . esc_attr( $row_id ) . '-content">';
             $html .= '<span class="qaf-icon-chevron" aria-hidden="true"></span> ';
-            $html .= '<span class="qaf-repeater-row-title">' . esc_html( $row_label ) . ' ' . $row_num . '</span>';
+            $html .= '<span class="qaf-repeater-row-title" id="' . esc_attr( $row_id ) . '-title">' . esc_html( $row_label . ' ' . $row_num ) . '</span>';
             $html .= '</button>';
         } else {
-            $html .= '<span class="qaf-repeater-row-title">' . esc_html( $row_label ) . ' ' . $row_num . '</span>';
+            $html .= '<span class="qaf-repeater-row-title" id="' . esc_attr( $row_id ) . '-title">' . esc_html( $row_label . ' ' . $row_num ) . '</span>';
         }
 
         // Copy row button
         $html .= '<button type="button" class="qaf-repeater-copy" ';
-        $html .= 'aria-label="' . esc_attr( sprintf( __( 'Copy %s %s', 'quill-accessible-forms' ), $row_label, $row_num ) ) . '">';
+        $html .= 'aria-label="' . esc_attr( sprintf( __( 'Copy %1$s %2$s', 'quill-accessible-forms' ), $row_label, $row_num ) ) . '">';
         $html .= '<span class="qaf-icon-copy" aria-hidden="true"></span>';
         $html .= '<span class="qaf-copy-text">' . esc_html__( 'Copy', 'quill-accessible-forms' ) . '</span>';
         $html .= '</button>';
 
         // Remove button
         $html .= '<button type="button" class="qaf-repeater-remove" ';
-        $html .= 'aria-label="' . esc_attr( sprintf( __( 'Remove %s %s', 'quill-accessible-forms' ), $row_label, $row_num ) ) . '">';
+        $html .= 'aria-label="' . esc_attr( sprintf( __( 'Remove %1$s %2$s', 'quill-accessible-forms' ), $row_label, $row_num ) ) . '">';
         $html .= '<span class="qaf-icon-close" aria-hidden="true"></span>';
         $html .= '<span class="qaf-remove-text">' . esc_html( $this->config['remove_button_text'] ?? __( 'Remove', 'quill-accessible-forms' ) ) . '</span>';
         $html .= '</button>';
@@ -315,6 +325,7 @@ class QAF_Field_Repeater extends QAF_Field {
             $html .= $this->render_sub_field( $field_config, $field_name, $field_value, $index, $field_index );
         }
 
+        $html .= '</div>';
         $html .= '</div>';
         $html .= '</div>';
 
@@ -361,10 +372,11 @@ class QAF_Field_Repeater extends QAF_Field {
      * @return string|false Class name or false.
      */
     protected function get_field_class( $type ) {
-        $registry = QAF_Field_Registry::get_instance();
-        $fields = $registry->get_all_fields();
-        
-        return $fields[ $type ]['class'] ?? false;
+        // The registry has no get_all_fields(); calling it was a fatal error on
+        // every repeater with sub-fields.
+        $field_type = QAF_Field_Registry::get_instance()->get_field_type( $type );
+
+        return $field_type['class'] ?? false;
     }
 
     /**
@@ -450,9 +462,10 @@ class QAF_Field_Repeater extends QAF_Field {
                 }
 
                 $field = new $field_class( $field_config );
-                $field->set_value( $row_values[ $field_index ] ?? '' );
+                $row_value = $row_values[ $field_index ] ?? '';
+                $field->set_value( $row_value );
                 
-                if ( ! $field->validate() ) {
+                if ( ! $field->validate( $row_value ) ) {
                     foreach ( $field->get_errors() as $error ) {
                         $this->add_error( sprintf(
                             /* translators: 1: row number, 2: field label, 3: error message */

@@ -1,0 +1,7 @@
+# Composer: dependencies and a locally downloaded composer.phar stay out of git.
+/vendor/
+/composer.phar
+/.phpunit.result.cache
+
+# Editor local history.
+/.history/

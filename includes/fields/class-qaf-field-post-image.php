@@ -318,7 +318,12 @@ class QAF_Field_Post_Image extends QAF_Field {
      *
      * @return bool True if valid.
      */
-    public function validate() {
+    public function validate( $value = null ) {
+        // QAF_Field::validate() takes the value; honour it when the caller passes one.
+        if ( func_num_args() > 0 ) {
+            $this->set_value( $value );
+        }
+
         $value = $this->get_value();
 
         if ( ! empty( $this->config['required'] ) && empty( $value ) ) {

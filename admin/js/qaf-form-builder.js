@@ -153,6 +153,12 @@
         adoptForm: function(reply) {
             if (!reply.form_id || Number(reply.form_id) === this.getFormId()) return;
             data.formId = Number(reply.form_id);
+            // Preview needs a form to show: it appears once there is one.
+            const preview = document.getElementById('qaf-preview-btn');
+            if (preview) {
+                preview.href = (preview.getAttribute('data-preview-base') || '') + data.formId;
+                preview.hidden = false;
+            }
             if (window.qafModelEditor) window.qafModelEditor.formId = data.formId;
             $('#qaf-form-id').val(data.formId);
             if (reply.edit_url && window.history && window.history.replaceState) {
@@ -197,6 +203,14 @@
             $(document).on('submit', '#qaf-convert-dialog form', this.submitConvert.bind(this));
 
             // Save Draft and Publish
+            // Sections and columns: their own actions, and Add Section / Add Columns.
+            $(document).on('click', '.qaf-group-action', this.layoutAction.bind(this));
+            $(document).on('submit', '#qaf-add-section-form', this.addSection.bind(this));
+
+            // The Accessibility Coach, and its Go to buttons.
+            $(document).on('click', '#qaf-coach-run', this.runCoach.bind(this));
+            $(document).on('click', '.qaf-coach-goto', this.gotoCard.bind(this));
+
             $(document).on('click', '#qaf-save-draft-btn', (e) => this.saveStatus(e, 'draft'));
             $(document).on('click', '#qaf-publish-btn', (e) => this.saveStatus(e, 'active'));
 
@@ -608,6 +622,121 @@
             }, () => {
                 E.showProblems(document.getElementById('qaf-convert-dialog-summary'), this.convertFields(), [{ field: 'type', message: L('convertFailed', 'It could not be converted.') }]);
             });
+        },
+
+        // ------------------------------------------------------------------
+        // Sections and columns
+        // ------------------------------------------------------------------
+
+        /** The group card for an ID. */
+        groupFor: function(groupId) {
+            return $(this.dropzone).find('.qaf-group-card').filter(function() { return String($(this).data('group-id')) === String(groupId); }).first();
+        },
+
+        /**
+         * One action on a section or a set of columns. The server does it on
+         * the model, saves, and sends the canvas back with what to focus and
+         * a sentence to say. Focus stays with the thing acted on: the same
+         * button after a move, the copy's heading after a copy, the first of
+         * its questions after a remove.
+         */
+        layoutAction: function(e, extra) {
+            if (e && e.preventDefault) e.preventDefault();
+            const btn = e.currentTarget;
+            const $b = $(btn);
+            const op = String($b.data('op') || '');
+            if (!op || this.busy) return;
+            const fields = $.extend({
+                op: op,
+                group_id: String($b.data('group-id') || ''),
+                direction: String($b.data('direction') || ''),
+                column: $b.data('column') !== undefined ? String($b.data('column')) : '',
+                count: String($b.data('count') || ''),
+                title: $('#qaf-form-title').val() || ''
+            }, extra || {});
+            this.busy = true;
+            this.post('qaf_layout_action', fields).then((response) => {
+                this.busy = false;
+                if (!response.success) {
+                    this.announcer.announce(this.failure(response, L('layoutFailed', 'That change was not saved.')), 'assertive');
+                    btn.focus();
+                    return;
+                }
+                const d = response.data;
+                this.applyReply(d);
+                this.focusAfterLayout(op, d, fields);
+                if (d.message) this.announcer.announce(d.message, 'polite');
+            }, () => {
+                this.busy = false;
+                this.announcer.announce(L('layoutFailed', 'That change was not saved.'), 'assertive');
+                btn.focus();
+            });
+        },
+
+        /** Where focus goes after a section or column action. */
+        focusAfterLayout: function(op, d, sent) {
+            const $group = d.group_id ? this.groupFor(d.group_id) : $();
+            let $target = $();
+            if (op === 'move') {
+                $target = $group.find('> .qaf-group-actions .qaf-group-action[data-op="move"][data-direction="' + sent.direction + '"]');
+            } else if (op === 'move_column' && d.column !== null) {
+                $target = $group.find('.qaf-column-actions .qaf-group-action[data-op="move_column"][data-column="' + d.column + '"][data-direction="' + sent.direction + '"]');
+            } else if ((op === 'add_column' || op === 'remove_column') && d.column !== null) {
+                $target = $group.find('.qaf-column-label').eq(Number(d.column));
+            } else if (op === 'remove' && d.group_id) {
+                $target = this.cardFor(d.group_id).find('.qaf-field-edit');
+                if (!$target.length) $target = $group.find('> .qaf-group-label');
+            } else if ($group.length) {
+                $target = $group.find('> .qaf-group-label');
+            }
+            ($target.length ? $target : $('#qaf-add-field-btn')).first().focus();
+        },
+
+        /** Add Section: the heading typed beside it, or "New section". */
+        addSection: function(e) {
+            e.preventDefault();
+            const input = document.getElementById('qaf-add-section-label');
+            const label = input ? input.value : '';
+            this.layoutAction({ currentTarget: $('<button>').attr('data-op', 'add_section')[0] }, { label: label });
+            if (input) input.value = '';
+        },
+
+        // ------------------------------------------------------------------
+        // The Accessibility Coach
+        // ------------------------------------------------------------------
+
+        /**
+         * Check the form as saved. The findings are drawn by the server,
+         * each with a Go to button for its question; the summary is said in
+         * the coach's status region, and focus stays on the button.
+         */
+        runCoach: function(e) {
+            if (e && e.preventDefault) e.preventDefault();
+            const status = document.getElementById('qaf-coach-status');
+            setStatus(status, L('coachRunning', 'Checking the form.'));
+            this.post('qaf_coach_check', {}).then((response) => {
+                if (!response.success) {
+                    setStatus(status, this.failure(response, L('coachFailed', 'The Accessibility Coach could not check the form.')));
+                    return;
+                }
+                $('#qaf-coach-results').html(response.data.html);
+                setStatus(status, response.data.summary);
+            }, () => {
+                setStatus(status, L('coachFailed', 'The Accessibility Coach could not check the form.'));
+            });
+        },
+
+        /** Go to the question a finding concerns: its card's Edit button, or a group's heading. */
+        gotoCard: function(e) {
+            e.preventDefault();
+            const id = String($(e.currentTarget).data('card-id'));
+            let $target = this.cardFor(id).find('.qaf-field-edit');
+            if (!$target.length) $target = this.groupFor(id).find('> .qaf-group-label');
+            if ($target.length) {
+                $target.first().focus();
+            } else {
+                this.announcer.announce(L('coachGone', 'That question is no longer on the canvas. Check again.'), 'polite');
+            }
         },
 
         // ------------------------------------------------------------------

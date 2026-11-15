@@ -142,7 +142,9 @@ nothing is sent for a held form until you release it.
 
 In QUILL, the WordPress Workbench lists held forms under **Needs My
 Attention > Held as Spam**, with the reason, and offers Not Spam and Spam
-there.
+there. Its Spam page shows these settings, and changes them for a person
+who may change the site's settings. The README's "Spam settings over REST"
+has every route and value.
 
 ## For developers
 
@@ -154,11 +156,14 @@ REST routes, in `qaf/v1`:
 | `POST entries/{id}/spam` | Mark as spam (needs `qaf_edit_entries`) |
 | `POST entries/{id}/not-spam` | Mark as not spam (needs `qaf_edit_entries`) |
 | `GET spam` | Each check's state, the limits, question settings and this week's numbers; never a key (needs `qaf_view_entries`) |
+| `POST spam` | Change any of those settings; the OOPSpam key is write-only (needs `manage_options` or `qaf_manage_settings`) |
+| `GET spam/weeks` | This week's question numbers and up to twelve weeks before (needs `qaf_view_entries`) |
+| `GET`, `POST spam/questions`; `POST`, `DELETE spam/questions/{id}` | The site's own question bank (needs `manage_options` or `qaf_manage_settings`) |
 | `GET spam/pow` | A proof-of-work challenge for a form page, when ALTCHA is on |
 
 When the site asks a question, the submit route answers with `success`
 false, a `message` and a `challenge` (its id, question, markup, and a Send
-Anyway id after three tries). Send the form again with `qaf_challenge_id`
+Anyway id after three tries, or however many Settings > Spam says). Send the form again with `qaf_challenge_id`
 and `qaf_challenge_answer`, or with `qaf_send_anyway`.
 
 Hooks:

@@ -467,7 +467,9 @@ class QAF_CSV_Form_Builder {
             $child_idx = null;
 
             foreach ( $header_lower as $idx => $header ) {
-                if ( strpos( $header, $pattern[0] ) !== false ) {
+                // "Subcategory" contains "category": a header naming the child is
+                // never the parent, and the first parent match wins.
+                if ( $parent_idx === null && strpos( $header, $pattern[0] ) !== false && strpos( $header, $pattern[1] ) === false ) {
                     $parent_idx = $idx;
                 }
                 if ( strpos( $header, $pattern[1] ) !== false ) {

@@ -373,10 +373,12 @@ class QAF_Form_Builder {
     public function render_canvas( $model, $form_id = 0 ) {
         $tree  = QAF_Builder_Field_Ops::canvas_tree( $model );
         $count = 0;
-        foreach ( QAF_Form_Model::items( $model ) as $e ) {
+        $items = QAF_Form_Model::items( $model );
+        foreach ( $items as $e ) {
             $count += ( isset( $e['item']['type'] ) && ! in_array( $e['item']['type'], array( 'section', 'columns' ), true ) ) ? 1 : 0;
         }
-        if ( ! $count ) {
+        // An empty section or set of columns still has a card, with its actions.
+        if ( ! $count && ! $items ) {
             return '<div class="qaf-canvas-empty"><p>' . esc_html__( 'No questions yet. Add one from the palette, or with Add Field.', 'quill-accessible-forms' ) . '</p>'
                 . '<p class="qaf-canvas-hint">' . esc_html__( 'Tip: press F while in the canvas to add a question.', 'quill-accessible-forms' ) . '</p></div>';
         }
@@ -401,14 +403,16 @@ class QAF_Form_Builder {
                 $name = $n['kind'] === 'section'
                     ? sprintf( __( 'Section: %s', 'quill-accessible-forms' ), ( $item['label'] ?? '' ) !== '' ? $item['label'] : '#' . $item['id'] )
                     : sprintf( _n( 'Columns: %d column', 'Columns: %d columns', count( $n['columns'] ), 'quill-accessible-forms' ), count( $n['columns'] ) );
-                $out .= '<div class="qaf-group-card" role="listitem" data-group-id="' . esc_attr( $item['id'] ) . '">';
-                $out .= '<p class="qaf-group-label" id="' . esc_attr( $gid ) . '">' . esc_html( $name ) . '</p>';
+                $out .= '<div class="qaf-group-card" role="listitem" data-group-id="' . esc_attr( $item['id'] ) . '" data-group-kind="' . esc_attr( $n['kind'] ) . '">';
+                $out .= '<p class="qaf-group-label" id="' . esc_attr( $gid ) . '" tabindex="-1">' . esc_html( $name ) . '</p>';
+                $out .= $this->render_group_actions( $item['id'], $n['kind'], $name, $i + 1, $total, $n['kind'] === 'columns' ? count( $n['columns'] ) : 0 );
                 if ( $n['kind'] === 'section' ) {
                     $out .= $n['items'] ? $list( $n['items'], $gid ) : '<p class="qaf-group-empty">' . esc_html__( 'No questions in this section yet. Move one in with Structure mode.', 'quill-accessible-forms' ) . '</p>';
                 } else {
                     foreach ( $n['columns'] as $c => $col ) {
                         $cid  = $gid . '-' . ( $c + 1 );
-                        $out .= '<p class="qaf-group-label qaf-column-label" id="' . esc_attr( $cid ) . '">' . esc_html( sprintf( __( 'Column %1$d of %2$d', 'quill-accessible-forms' ), $c + 1, count( $n['columns'] ) ) ) . '</p>';
+                        $out .= '<p class="qaf-group-label qaf-column-label" id="' . esc_attr( $cid ) . '" tabindex="-1">' . esc_html( sprintf( __( 'Column %1$d of %2$d', 'quill-accessible-forms' ), $c + 1, count( $n['columns'] ) ) ) . '</p>';
+                        $out .= $this->render_column_actions( $item['id'], $c, count( $n['columns'] ) );
                         $out .= $col ? $list( $col, $cid ) : '<p class="qaf-group-empty">' . esc_html__( 'No questions in this column yet.', 'quill-accessible-forms' ) . '</p>';
                     }
                 }
@@ -426,6 +430,370 @@ class QAF_Form_Builder {
             $html .= $page['items'] ? $list( $page['items'], $label_id ) : '<p class="qaf-group-empty">' . esc_html__( 'No questions on this page yet.', 'quill-accessible-forms' ) . '</p>';
         }
         return $html;
+    }
+
+    /**
+     * A section's or a set of columns' own actions: move up and down among
+     * its neighbours, copy, remove (keeping its questions), and for columns,
+     * add a column. Each button says what it acts on; a move that cannot go
+     * further is aria-disabled, so it stays in the tab order and says why.
+     *
+     * @param string $id       Group ID.
+     * @param string $kind     section|columns.
+     * @param string $name     What the group is called on the canvas.
+     * @param int    $position Its position among its neighbours (1-based).
+     * @param int    $total    How many neighbours.
+     * @param int    $columns  How many columns (for a set of columns).
+     * @return string HTML.
+     */
+    public function render_group_actions( $id, $kind, $name, $position, $total, $columns = 0 ) {
+        $button = function ( $op, $text, $label, $extra = array() ) use ( $id ) {
+            $attrs = array_merge( array( 'type' => 'button', 'class' => 'qaf-action-btn qaf-group-action', 'data-op' => $op, 'data-group-id' => $id, 'aria-label' => $label ), $extra );
+            $html  = '<button';
+            foreach ( $attrs as $k => $v ) {
+                $html .= ' ' . $k . '="' . esc_attr( $v ) . '"';
+            }
+            return $html . '>' . esc_html( $text ) . '</button>';
+        };
+        $out  = '<div class="qaf-group-actions" role="group" aria-label="' . esc_attr( sprintf( __( 'Actions for %s', 'quill-accessible-forms' ), $name ) ) . '">';
+        /* translators: 1: the group's name, 2: position, 3: how many. */
+        $out .= $button( 'move', __( 'Move up', 'quill-accessible-forms' ), sprintf( __( 'Move up: %1$s, position %2$d of %3$d', 'quill-accessible-forms' ), $name, $position, $total ), array_merge( array( 'data-direction' => 'up' ), $position <= 1 ? array( 'aria-disabled' => 'true' ) : array() ) );
+        /* translators: 1: the group's name, 2: position, 3: how many. */
+        $out .= $button( 'move', __( 'Move down', 'quill-accessible-forms' ), sprintf( __( 'Move down: %1$s, position %2$d of %3$d', 'quill-accessible-forms' ), $name, $position, $total ), array_merge( array( 'data-direction' => 'down' ), $position >= $total ? array( 'aria-disabled' => 'true' ) : array() ) );
+        /* translators: %s: the group's name. */
+        $out .= $button( 'duplicate', __( 'Copy', 'quill-accessible-forms' ), sprintf( __( 'Copy %s, with copies of its questions', 'quill-accessible-forms' ), $name ) );
+        if ( $kind === 'columns' ) {
+            $full = $columns >= QAF_Builder_Layout_Ops::MAX_COLUMNS;
+            /* translators: %s: the group's name. */
+            $out .= $button( 'add_column', __( 'Add column', 'quill-accessible-forms' ), sprintf( __( 'Add column to %s', 'quill-accessible-forms' ), $name ), $full ? array( 'aria-disabled' => 'true' ) : array() );
+        }
+        $remove = $kind === 'section'
+            /* translators: %s: the group's name. */
+            ? sprintf( __( 'Remove %s; its questions stay, where it was', 'quill-accessible-forms' ), $name )
+            /* translators: %s: the group's name. */
+            : sprintf( __( 'Remove %s; its questions stay, in order, where they were', 'quill-accessible-forms' ), $name );
+        $out .= $button( 'remove', __( 'Remove', 'quill-accessible-forms' ), $remove );
+        return $out . '</div>';
+    }
+
+    /**
+     * One column's actions: move left and right, remove (its questions join
+     * the column beside it).
+     *
+     * @param string $id    Columns ID.
+     * @param int    $index Column index (0-based).
+     * @param int    $count How many columns.
+     * @return string HTML.
+     */
+    public function render_column_actions( $id, $index, $count ) {
+        $n    = $index + 1;
+        $base = array( 'type' => 'button', 'class' => 'qaf-action-btn qaf-group-action', 'data-group-id' => $id, 'data-column' => (string) $index );
+        $make = function ( $attrs, $text ) use ( $base ) {
+            $html = '<button';
+            foreach ( array_merge( $base, $attrs ) as $k => $v ) {
+                $html .= ' ' . $k . '="' . esc_attr( $v ) . '"';
+            }
+            return $html . '>' . esc_html( $text ) . '</button>';
+        };
+        /* translators: 1: column number, 2: how many. */
+        $name = sprintf( __( 'Column %1$d of %2$d', 'quill-accessible-forms' ), $n, $count );
+        $out  = '<div class="qaf-group-actions qaf-column-actions" role="group" aria-label="' . esc_attr( sprintf( __( 'Actions for %s', 'quill-accessible-forms' ), $name ) ) . '">';
+        /* translators: %s: Column 1 of 2. */
+        $out .= $make( array_merge( array( 'data-op' => 'move_column', 'data-direction' => 'left', 'aria-label' => sprintf( __( 'Move left: %s', 'quill-accessible-forms' ), $name ) ), $index === 0 ? array( 'aria-disabled' => 'true' ) : array() ), __( 'Move left', 'quill-accessible-forms' ) );
+        /* translators: %s: Column 1 of 2. */
+        $out .= $make( array_merge( array( 'data-op' => 'move_column', 'data-direction' => 'right', 'aria-label' => sprintf( __( 'Move right: %s', 'quill-accessible-forms' ), $name ) ), $n >= $count ? array( 'aria-disabled' => 'true' ) : array() ), __( 'Move right', 'quill-accessible-forms' ) );
+        /* translators: %s: Column 1 of 2. */
+        $out .= $make( array_merge( array( 'data-op' => 'remove_column', 'aria-label' => sprintf( __( 'Remove %s; its questions join the column beside it', 'quill-accessible-forms' ), $name ) ), $count < 2 ? array( 'aria-disabled' => 'true' ) : array() ), __( 'Remove column', 'quill-accessible-forms' ) );
+        return $out . '</div>';
+    }
+
+    /**
+     * AJAX: an action on a section or a set of columns (POST form_id, op,
+     * and group_id, direction, column, label, count as the op needs). Ops:
+     * add_section, add_columns (after group_id, or at the end), move,
+     * duplicate, remove, add_column, remove_column, move_column. Answers
+     * with the canvas, the group to focus, and a sentence that says what
+     * happened, for the page to speak.
+     */
+    public function ajax_layout_action() {
+        $op = sanitize_key( $_POST['op'] ?? '' );
+        list( $form, $model, $created ) = $this->card_form( in_array( $op, array( 'add_section', 'add_columns' ), true ) );
+        $id     = sanitize_text_field( wp_unslash( $_POST['group_id'] ?? '' ) );
+        $dir    = sanitize_key( $_POST['direction'] ?? '' );
+        $column = isset( $_POST['column'] ) ? absint( $_POST['column'] ) : 0;
+        $result = $this->layout_op( $model, $op, $id, $dir, $column, array(
+            'label' => sanitize_text_field( wp_unslash( $_POST['label'] ?? '' ) ),
+            'count' => isset( $_POST['count'] ) ? absint( $_POST['count'] ) : 2,
+            'after' => sanitize_text_field( wp_unslash( $_POST['after'] ?? '' ) ),
+        ) );
+        if ( isset( $result['error'] ) ) {
+            if ( $result['error'] === null ) {
+                $this->card_save( $form, null );
+            }
+            wp_send_json_error( array( 'message' => $result['error'] ) );
+        }
+        $this->card_save( $form, $result['model'] );
+        $this->card_reply( $form, $result['model'], $created, array(
+            'group_id' => $result['focus'],
+            'column'   => $result['column'],
+            'message'  => $result['message'],
+        ) );
+    }
+
+    /**
+     * Do one layout op on a model, and say what was done.
+     *
+     * @param array  $model  Model.
+     * @param string $op     Op.
+     * @param string $id     Group ID.
+     * @param string $dir    up|down|left|right.
+     * @param int    $column Column index.
+     * @param array  $args   label, count, after.
+     * @return array model, focus (group ID), column (index or null), message; or error (null when not found).
+     */
+    public function layout_op( $model, $op, $id, $dir, $column, $args = array() ) {
+        require_once QAF_PLUGIN_DIR . 'includes/model/class-qaf-builder-layout-ops.php';
+        $labels = QAF_Form_Model::labels( $model );
+        $name   = ( $labels[ $id ] ?? '' ) !== '' ? $labels[ $id ] : $id;
+        foreach ( QAF_Form_Model::items( $model ) as $e ) {
+            if ( ( $e['item']['id'] ?? '' ) === $id && ( $e['item']['type'] ?? '' ) === 'columns' ) {
+                $name = __( 'The set of columns', 'quill-accessible-forms' );
+            }
+        }
+        $out    = array( 'model' => null, 'focus' => $id, 'column' => null, 'message' => '' );
+        switch ( $op ) {
+            case 'add_section':
+                list( $out['model'], $out['focus'] ) = QAF_Builder_Layout_Ops::add_section( $model, $args['label'] ?? '', $args['after'] ?? '' );
+                /* translators: %s: the section's heading. */
+                $out['message'] = sprintf( __( 'Section %s added. Move questions into it in Structure mode.', 'quill-accessible-forms' ), QAF_Form_Model::labels( $out['model'] )[ $out['focus'] ] );
+                return $out;
+            case 'add_columns':
+                $count = max( 2, min( QAF_Builder_Layout_Ops::MAX_COLUMNS, (int) ( $args['count'] ?? 2 ) ) );
+                list( $out['model'], $out['focus'] ) = QAF_Builder_Layout_Ops::add_columns( $model, $count, $args['after'] ?? '' );
+                /* translators: %d: how many columns. */
+                $out['message'] = sprintf( __( 'A set of %d columns added.', 'quill-accessible-forms' ), $count );
+                return $out;
+            case 'move':
+                $r = QAF_Builder_Layout_Ops::move( $model, $id, $dir === 'up' ? 'up' : 'down' );
+                if ( $r === null ) {
+                    return array( 'error' => null );
+                }
+                $out['model'] = $r[0];
+                $moved        = $r[0] !== $model;
+                $out['message'] = $moved
+                    /* translators: 1: group, 2: position, 3: how many. */
+                    ? sprintf( __( '%1$s moved to position %2$d of %3$d.', 'quill-accessible-forms' ), $name, $r[1], $r[2] )
+                    /* translators: %s: group. */
+                    : ( $dir === 'up' ? sprintf( __( '%s is already first.', 'quill-accessible-forms' ), $name ) : sprintf( __( '%s is already last.', 'quill-accessible-forms' ), $name ) );
+                return $out;
+            case 'duplicate':
+                $r = QAF_Builder_Layout_Ops::duplicate( $model, $id, __( ' (copy)', 'quill-accessible-forms' ) );
+                break;
+            case 'remove':
+                $r = QAF_Builder_Layout_Ops::remove( $model, $id );
+                break;
+            case 'add_column':
+                $r = QAF_Builder_Layout_Ops::add_column( $model, $id );
+                break;
+            case 'remove_column':
+                $r = QAF_Builder_Layout_Ops::remove_column( $model, $id, $column );
+                break;
+            case 'move_column':
+                $r = QAF_Builder_Layout_Ops::move_column( $model, $id, $column, $dir === 'left' ? 'left' : 'right' );
+                break;
+            default:
+                return array( 'error' => __( 'That is not something the canvas can do.', 'quill-accessible-forms' ) );
+        }
+        if ( $r === null ) {
+            return array( 'error' => null );
+        }
+        $why = QAF_Builder_Field_Ops::refused( $r );
+        if ( $why !== null ) {
+            return array( 'error' => $why );
+        }
+        $out['model'] = $r[0];
+        switch ( $op ) {
+            case 'duplicate':
+                $out['focus'] = $r[1];
+                /* translators: %s: group. */
+                $out['message'] = sprintf( __( '%s copied, with copies of its questions, just after it.', 'quill-accessible-forms' ), $name );
+                break;
+            case 'remove':
+                // Focus goes to the first question it held, now where it was.
+                $out['focus'] = $r[3];
+                /* translators: 1: group, 2: how many questions. */
+                $out['message'] = trim( sprintf( _n( '%1$s removed. Its %2$d question stays where it was.', '%1$s removed. Its %2$d questions stay where they were.', $r[1], 'quill-accessible-forms' ), $name, $r[1] ) . ' ' . implode( ' ', $r[2] ) );
+                break;
+            case 'add_column':
+                $out['column'] = $r[1] - 1;
+                /* translators: %d: how many columns now. */
+                $out['message'] = sprintf( __( 'Column added. The set has %d columns.', 'quill-accessible-forms' ), $r[1] );
+                break;
+            case 'remove_column':
+                $out['column'] = $r[2] - 1;
+                /* translators: 1: how many questions, 2: the column they joined. */
+                $out['message'] = sprintf( _n( 'Column removed. Its %1$d question joined column %2$d.', 'Column removed. Its %1$d questions joined column %2$d.', $r[1], 'quill-accessible-forms' ), $r[1], $r[2] );
+                break;
+            case 'move_column':
+                $out['column'] = $r[1] - 1;
+                $out['message'] = $r[0] === $model
+                    ? __( 'That column cannot move further that way.', 'quill-accessible-forms' )
+                    /* translators: 1: position, 2: how many. */
+                    : sprintf( __( 'Column moved to position %1$d of %2$d.', 'quill-accessible-forms' ), $r[1], $r[2] );
+                break;
+        }
+        return $out;
+    }
+
+    /**
+     * AJAX: the Accessibility Coach for the form as saved (POST form_id).
+     * Answers with the results drawn as HTML, and a sentence to speak.
+     */
+    public function ajax_coach_check() {
+        list( $form, $model ) = $this->card_form();
+        $coach  = new QAF_Accessibility_Coach();
+        $result = $coach->analyze_model( $model );
+        wp_send_json_success( array(
+            'html'    => self::render_coach_results( $result, $model ),
+            'summary' => self::coach_summary( $result ),
+            'count'   => count( $result['issues'] ),
+        ) );
+    }
+
+    /**
+     * What the coach found, in one sentence.
+     *
+     * @param array $result analyze_model()'s result.
+     * @return string Sentence.
+     */
+    public static function coach_summary( $result ) {
+        $s = $result['summary'];
+        if ( ! $s['total'] ) {
+            return __( 'The Accessibility Coach found nothing to fix.', 'quill-accessible-forms' );
+        }
+        /* translators: 1: total, 2: errors, 3: warnings, 4: suggestions. */
+        return sprintf( _n( 'The Accessibility Coach found %1$d thing to look at: %2$d errors, %3$d warnings, %4$d suggestions. Each is listed with the question it concerns.', 'The Accessibility Coach found %1$d things to look at: %2$d errors, %3$d warnings, %4$d suggestions. Each is listed with the question it concerns.', $s['total'], 'quill-accessible-forms' ), $s['total'], $s['errors'], $s['warnings'], $s['info'] );
+    }
+
+    /**
+     * Item ID => the ID of the card that shows it on the canvas: itself, or
+     * for a question inside a repeating group, the group's card.
+     *
+     * @param array $model Model.
+     * @return array Map.
+     */
+    public static function card_ids( $model ) {
+        $map       = array();
+        $repeaters = array();
+        foreach ( QAF_Form_Model::items( $model ) as $e ) {
+            $id    = (string) ( $e['item']['id'] ?? '' );
+            $owner = $id;
+            foreach ( $repeaters as $prefix => $rid ) {
+                if ( strpos( $e['path'], $prefix ) === 0 ) {
+                    $owner = $rid;
+                    break;
+                }
+            }
+            $map[ $id ] = $owner;
+            if ( ( $e['item']['type'] ?? '' ) === 'repeater' && $owner === $id ) {
+                $repeaters[ $e['path'] . '/items/' ] = $id;
+            }
+        }
+        return $map;
+    }
+
+    /**
+     * The coach's results as a list: a heading per problem, what it is, how
+     * to fix it, and a button that goes to the question's card.
+     *
+     * @param array $result analyze_model()'s result.
+     * @param array $model  Model.
+     * @return string HTML.
+     */
+    public static function render_coach_results( $result, $model ) {
+        if ( empty( $result['issues'] ) ) {
+            return '<p class="qaf-coach-clear">' . esc_html__( 'Nothing to fix: every question has what a screen reader needs.', 'quill-accessible-forms' ) . '</p>';
+        }
+        $cards    = self::card_ids( $model );
+        $severity = array(
+            'error'   => __( 'Error', 'quill-accessible-forms' ),
+            'warning' => __( 'Warning', 'quill-accessible-forms' ),
+            'info'    => __( 'Suggestion', 'quill-accessible-forms' ),
+        );
+        $out = '<ol class="qaf-coach-list" aria-labelledby="qaf-coach-heading">';
+        foreach ( $result['issues'] as $n => $issue ) {
+            $hid   = 'qaf-coach-issue-' . ( $n + 1 );
+            $fid   = (string) $issue['field_id'];
+            $about = $fid === 'form'
+                ? __( 'the form', 'quill-accessible-forms' )
+                : ( ( $issue['field_label'] ?? '' ) !== '' ? $issue['field_label'] : '#' . $fid );
+            $out  .= '<li class="qaf-coach-issue qaf-coach-' . esc_attr( $issue['severity'] ) . '">';
+            /* translators: 1: Error, Warning or Suggestion, 2: the problem, 3: the question it concerns. */
+            $out  .= '<h4 id="' . esc_attr( $hid ) . '">' . esc_html( sprintf( __( '%1$s: %2$s, in %3$s', 'quill-accessible-forms' ), $severity[ $issue['severity'] ] ?? $issue['severity'], $issue['title'], $about ) ) . '</h4>';
+            $out  .= '<p>' . esc_html( $issue['message'] ) . '</p>';
+            if ( ! empty( $issue['suggestion'] ) ) {
+                $out .= '<p class="qaf-coach-fix">' . esc_html( $issue['suggestion'] ) . '</p>';
+            }
+            if ( $fid !== 'form' && isset( $cards[ $fid ] ) ) {
+                /* translators: %s: the question. */
+                $out .= '<button type="button" class="qaf-btn qaf-btn-secondary qaf-coach-goto" data-card-id="' . esc_attr( $cards[ $fid ] ) . '" aria-describedby="' . esc_attr( $hid ) . '">' . esc_html( sprintf( __( 'Go to %s', 'quill-accessible-forms' ), $about ) ) . '</button>';
+            }
+            $out .= '</li>';
+        }
+        return $out . '</ol>';
+    }
+
+    /**
+     * A rendered form, made safe to show in the admin as a preview: it
+     * posts nowhere (the address is "#" and the form's token is gone, so
+     * not even a form sent without the page script can be saved), and it
+     * carries data-qaf-preview, which the page script reads to check the
+     * answers and say that nothing was sent.
+     *
+     * @param string $html  The form as the renderer drew it.
+     * @return string HTML.
+     */
+    public static function preview_markup( $html ) {
+        $html = preg_replace_callback( '/<form\b[^>]*>/i', function ( $m ) {
+            $tag = preg_replace( '/\saction="[^"]*"/i', '', $m[0] );
+            return preg_replace( '/^<form\b/i', '<form action="#" data-qaf-preview="1"', $tag );
+        }, (string) $html );
+        // The form's token and the signed start time: without them nothing
+        // this page could send would be accepted, should it be sent anyway.
+        return preg_replace( '/<input[^>]*\sname="(_qaf_token|_qaf_form_sig|_wp_http_referer)"[^>]*>/i', '', $html );
+    }
+
+    /**
+     * The Preview screen: the form as a visitor sees it, drawn by the same
+     * renderer and running the same page script, inside the admin. Its
+     * status does not matter (a draft previews too), and nothing it sends is
+     * saved.
+     *
+     * @param int $form_id Form ID.
+     */
+    public function render_preview( $form_id ) {
+        if ( ! current_user_can( 'manage_options' ) ) {
+            wp_die( esc_html__( 'Permission denied.', 'quill-accessible-forms' ) );
+        }
+        $form = new QAF_Form( absint( $form_id ) );
+        echo '<div class="wrap qaf-wrap qaf-preview-wrap">';
+        if ( ! $form->id ) {
+            echo '<h1>' . esc_html__( 'Preview', 'quill-accessible-forms' ) . '</h1>';
+            echo '<p>' . esc_html__( 'Save the form first; then Preview shows it as a visitor sees it.', 'quill-accessible-forms' ) . '</p></div>';
+            return;
+        }
+        /* translators: %s: form title. */
+        echo '<h1>' . esc_html( sprintf( __( 'Preview: %s', 'quill-accessible-forms' ), $form->title ) ) . '</h1>';
+        echo '<p class="qaf-preview-notice" id="qaf-preview-notice">' . esc_html__( 'This is the form as a visitor sees it. Fill it in to try it: Submit checks your answers, and nothing is sent or saved.', 'quill-accessible-forms' ) . '</p>';
+        echo '<p><a href="' . esc_url( admin_url( 'admin.php?page=qaf-form-builder&form_id=' . absint( $form->id ) ) ) . '">' . esc_html__( 'Back to the builder', 'quill-accessible-forms' ) . '</a></p>';
+        if ( class_exists( 'QAF_Public' ) ) {
+            $public = new QAF_Public( 'quill-accessible-forms', QAF_VERSION );
+            $public->enqueue_styles();
+            $public->enqueue_scripts();
+        }
+        $renderer = new QAF_Form_Renderer();
+        echo self::preview_markup( $renderer->render( $form, array( 'ajax' => true ) ) ); // phpcs:ignore WordPress.Security.EscapeOutput -- the renderer escapes its own output.
+        echo '</div>';
     }
 
     /**

@@ -2,223 +2,115 @@
 /**
  * Cards View Tests
  *
+ * The cards renderer is checked through render(): a named list of article
+ * list items, a heading per card, and named buttons.
+ *
  * @package QAF
  */
 
+require_once QAF_TESTS_DIR . 'views-test-helpers.php';
+
 class QAF_View_Cards_Test extends QAF_Unit_Test_Case {
 
-    /**
-     * @var QAF_View_Cards
-     */
-    private $view;
+    private function cards( $config = array() ) {
+        return new QAF_View_Cards( array_merge( array(
+            'title_field'    => 'name',
+            'subtitle_field' => 'email',
+            'body_fields'    => array( 'message', 'city' ),
+        ), $config ) );
+    }
 
-    protected function setUp(): void {
-        parent::setUp();
-        
-        require_once QAF_PLUGIN_DIR . 'includes/core/class-qaf-view.php';
-        require_once QAF_PLUGIN_DIR . 'includes/views/class-qaf-view-cards.php';
-        
-        $this->view = new QAF_View_Cards( array(
-            'id'      => 1,
-            'form_id' => 1,
-            'title'   => 'Entries Cards',
-            'layout'  => array(
-                'title_field'   => 'name',
-                'subtitle_field' => 'email',
-                'image_field'   => 'photo',
-                'content_fields' => array( 'message', 'status' ),
-            ),
-        ) );
+    private function entries() {
+        return array(
+            new QAF_Test_View_Entry( 1, array( 'name' => 'Ada', 'email' => 'ada@example.com', 'message' => 'Hello', 'city' => '' ) ),
+            new QAF_Test_View_Entry( 2, array( 'name' => '', 'email' => '' ), array( 'is_starred' => true ) ),
+        );
     }
 
     public function test_view_type() {
-        $this->assertEquals( 'cards', $this->view->get_type() );
+        $this->assertStringContainsString( 'qaf-view qaf-view-cards', $this->cards()->render( $this->entries() ) );
     }
 
-    public function test_card_layout() {
-        $layout = $this->view->get_layout();
-        
-        $this->assertEquals( 'name', $layout['title_field'] );
-        $this->assertEquals( 'email', $layout['subtitle_field'] );
+    public function test_cards_are_a_named_list() {
+        $html = $this->cards()->render( $this->entries() );
+
+        $this->assertStringContainsString( 'role="list" aria-label="Form entries"', $html );
+        $this->assertSame( 2, substr_count( $html, 'role="listitem"' ) );
     }
 
-    public function test_columns_per_row() {
-        $view = new QAF_View_Cards( array(
-            'id'              => 1,
-            'form_id'         => 1,
-            'columns_per_row' => 3,
-        ) );
-        
-        $this->assertEquals( 3, $view->get_columns_per_row() );
+    public function test_card_title_is_a_heading() {
+        $html = $this->cards()->render( $this->entries() );
+
+        $this->assertStringContainsString( '<h3 class="qaf-card-title"><a href="#" class="qaf-entry-link" data-entry-id="1">Ada</a></h3>', $html );
+        // No title value: fall back to the entry number rather than an empty heading.
+        $this->assertStringContainsString( '>Entry #2</a></h3>', $html );
     }
 
-    public function test_card_size() {
-        $view = new QAF_View_Cards( array(
-            'id'        => 1,
-            'form_id'   => 1,
-            'card_size' => 'large',
-        ) );
-        
-        $this->assertEquals( 'large', $view->get_card_size() );
+    public function test_title_without_link_when_not_clickable() {
+        $html = $this->cards( array( 'clickable' => false ) )->render( $this->entries() );
+
+        $this->assertStringContainsString( '<h3 class="qaf-card-title">Ada</h3>', $html );
+        $this->assertStringNotContainsString( 'qaf-clickable', $html );
     }
 
-    public function test_image_aspect_ratio() {
-        $view = new QAF_View_Cards( array(
-            'id'          => 1,
-            'form_id'     => 1,
-            'image_ratio' => '16:9',
-        ) );
-        
-        $this->assertEquals( '16:9', $view->get_image_ratio() );
+    public function test_subtitle() {
+        $html = $this->cards()->render( $this->entries() );
+
+        $this->assertStringContainsString( '<p class="qaf-card-subtitle">ada@example.com</p>', $html );
+        // Empty subtitle: no empty paragraph.
+        $this->assertSame( 1, substr_count( $html, 'qaf-card-subtitle' ) );
     }
 
-    public function test_hover_effect() {
-        $view = new QAF_View_Cards( array(
-            'id'           => 1,
-            'form_id'      => 1,
-            'hover_effect' => 'lift',
-        ) );
-        
-        $this->assertEquals( 'lift', $view->get_hover_effect() );
+    public function test_body_fields_as_description_list() {
+        $html = $this->cards()->render( $this->entries() );
+
+        $this->assertStringContainsString( '<dl class="qaf-card-fields"><div class="qaf-card-field"><dt>message</dt><dd>Hello</dd></div></dl>', $html );
+        $this->assertStringNotContainsString( '<dt>city</dt>', $html );
     }
 
-    public function test_card_actions() {
-        $view = new QAF_View_Cards( array(
-            'id'           => 1,
-            'form_id'      => 1,
-            'card_actions' => array(
-                array( 'action' => 'view', 'label' => 'View Details' ),
-                array( 'action' => 'edit', 'label' => 'Edit Entry' ),
-            ),
-        ) );
-        
-        $actions = $view->get_card_actions();
-        $this->assertCount( 2, $actions );
+    public function test_columns_and_size_classes() {
+        $html = $this->cards( array( 'columns' => 4, 'card_size' => 'large' ) )->render( $this->entries() );
+
+        $this->assertStringContainsString( 'qaf-cards-grid qaf-cards-large qaf-cols-4', $html );
     }
 
-    public function test_show_badges() {
-        $view = new QAF_View_Cards( array(
-            'id'          => 1,
-            'form_id'     => 1,
-            'badge_field' => 'status',
-            'badge_colors' => array(
-                'new'      => 'blue',
-                'approved' => 'green',
-                'rejected' => 'red',
-            ),
-        ) );
-        
-        $this->assertTrue( $view->has_badges() );
-        $colors = $view->get_badge_colors();
-        $this->assertEquals( 'green', $colors['approved'] );
+    public function test_default_grid() {
+        $this->assertStringContainsString( 'qaf-cards-medium qaf-cols-3', $this->cards()->render( $this->entries() ) );
     }
 
-    public function test_masonry_layout() {
-        $view = new QAF_View_Cards( array(
-            'id'       => 1,
-            'form_id'  => 1,
-            'masonry'  => true,
-        ) );
-        
-        $this->assertTrue( $view->is_masonry() );
+    public function test_starred_card() {
+        $html = $this->cards()->render( $this->entries() );
+
+        $this->assertStringContainsString( 'class="qaf-card qaf-starred qaf-clickable" data-entry-id="2"', $html );
+        $this->assertStringContainsString( 'aria-pressed="true" aria-label="Unstar"', $html );
+        $this->assertStringContainsString( 'aria-pressed="false" aria-label="Star"', $html );
     }
 
-    public function test_card_click_action() {
-        $view = new QAF_View_Cards( array(
-            'id'          => 1,
-            'form_id'     => 1,
-            'click_action' => 'modal',
-        ) );
-        
-        $this->assertEquals( 'modal', $view->get_click_action() );
+    public function test_card_actions_are_named() {
+        $html = $this->cards()->render( $this->entries() );
+
+        $this->assertStringContainsString( 'aria-label="View entry 1"', $html );
+        $this->assertStringContainsString( 'aria-label="Delete entry 2"', $html );
     }
 
-    public function test_truncate_content() {
-        $view = new QAF_View_Cards( array(
-            'id'               => 1,
-            'form_id'          => 1,
-            'content_truncate' => 150,
-        ) );
-        
-        $this->assertEquals( 150, $view->get_content_truncate() );
+    public function test_card_meta_time() {
+        $html = $this->cards()->render( $this->entries() );
+
+        $this->assertStringContainsString( '<time datetime="2026-11-13 10:00:00">', $html );
     }
 
-    public function test_responsive_columns() {
-        $view = new QAF_View_Cards( array(
-            'id'       => 1,
-            'form_id'  => 1,
-            'columns'  => array(
-                'xs' => 1,
-                'sm' => 2,
-                'md' => 3,
-                'lg' => 4,
-            ),
-        ) );
-        
-        $cols = $view->get_responsive_columns();
-        $this->assertEquals( 1, $cols['xs'] );
-        $this->assertEquals( 4, $cols['lg'] );
+    public function test_html_in_values_is_escaped() {
+        $entries = array( new QAF_Test_View_Entry( 3, array( 'name' => '<script>x</script>' ) ) );
+        $html    = $this->cards()->render( $entries );
+
+        $this->assertStringNotContainsString( '<script>x', $html );
     }
 
-    public function test_gap_size() {
-        $view = new QAF_View_Cards( array(
-            'id'      => 1,
-            'form_id' => 1,
-            'gap'     => '20px',
-        ) );
-        
-        $this->assertEquals( '20px', $view->get_gap() );
-    }
+    public function test_empty_state() {
+        $html = $this->cards()->render( array() );
 
-    public function test_card_border_radius() {
-        $view = new QAF_View_Cards( array(
-            'id'            => 1,
-            'form_id'       => 1,
-            'border_radius' => '8px',
-        ) );
-        
-        $this->assertEquals( '8px', $view->get_border_radius() );
-    }
-
-    public function test_accessibility_attributes() {
-        $attrs = $this->view->get_card_attributes();
-        
-        $this->assertArrayHasKey( 'role', $attrs );
-        $this->assertEquals( 'article', $attrs['role'] );
-    }
-
-    public function test_animation() {
-        $view = new QAF_View_Cards( array(
-            'id'                => 1,
-            'form_id'           => 1,
-            'animation'         => 'fade-up',
-            'animation_delay'   => 100,
-            'animation_stagger' => true,
-        ) );
-        
-        $this->assertEquals( 'fade-up', $view->get_animation() );
-        $this->assertTrue( $view->has_stagger_animation() );
-    }
-
-    public function test_lazy_load_images() {
-        $view = new QAF_View_Cards( array(
-            'id'        => 1,
-            'form_id'   => 1,
-            'lazy_load' => true,
-        ) );
-        
-        $this->assertTrue( $view->uses_lazy_loading() );
-    }
-
-    public function test_no_image_fallback() {
-        $view = new QAF_View_Cards( array(
-            'id'              => 1,
-            'form_id'         => 1,
-            'fallback_image'  => '/placeholder.png',
-            'fallback_color'  => '#f0f0f0',
-        ) );
-        
-        $this->assertEquals( '/placeholder.png', $view->get_fallback_image() );
-        $this->assertEquals( '#f0f0f0', $view->get_fallback_color() );
+        $this->assertStringContainsString( 'role="status"', $html );
+        $this->assertStringContainsString( 'No entries found.', $html );
+        $this->assertStringNotContainsString( 'role="list"', $html );
     }
 }

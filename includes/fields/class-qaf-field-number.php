@@ -225,6 +225,27 @@ class QAF_Field_Number extends QAF_Field {
 
         $num = floatval( $value );
 
+        // format=integer and step are enforced by the browser; a scripted or
+        // no-JS submission reached the server unchecked and was silently rounded.
+        if ( $this->config['format'] === 'integer' && floor( $num ) != $num ) {
+            $this->add_error( __( 'Please enter a whole number.', 'quill-accessible-forms' ) );
+            return;
+        }
+
+        $step = $this->config['step'];
+        if ( is_numeric( $step ) && (float) $step > 0 ) {
+            $base  = $this->config['min'] !== '' ? floatval( $this->config['min'] ) : 0.0;
+            $steps = ( $num - $base ) / (float) $step;
+            if ( abs( $steps - round( $steps ) ) > 1e-9 ) {
+                $this->add_error( sprintf(
+                    /* translators: %s: step size */
+                    __( 'Please enter a value in steps of %s.', 'quill-accessible-forms' ),
+                    $step
+                ) );
+                return;
+            }
+        }
+
         if ( $this->config['min'] !== '' && $num < floatval( $this->config['min'] ) ) {
             $this->add_error( sprintf(
                 __( 'Please enter a value greater than or equal to %s.', 'quill-accessible-forms' ),

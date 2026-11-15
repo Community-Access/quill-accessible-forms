@@ -144,7 +144,7 @@ class QAF_Field_Email extends QAF_Field {
         $attrs = array(
             'type'         => 'email',
             'id'           => $this->get_html_id(),
-            'name'         => 'qaf_fields[' . $this->get_id() . ']',
+            'name'         => $this->get_input_name(),
             'value'        => esc_attr( $value ),
             'class'        => 'qaf-input qaf-input-email',
             'placeholder'  => $this->config['placeholder'] ?: 'email@example.com',
@@ -191,7 +191,7 @@ class QAF_Field_Email extends QAF_Field {
             $confirm_attrs = array(
                 'type'         => 'email',
                 'id'           => $confirm_id,
-                'name'         => 'qaf_fields[' . $this->get_id() . '_confirm]',
+                'name'         => $this->get_input_name( '_confirm' ),
                 'class'        => 'qaf-input qaf-input-email-confirm',
                 'placeholder'  => $this->config['placeholder'] ?: 'email@example.com',
                 'autocomplete' => 'email',
@@ -225,7 +225,7 @@ class QAF_Field_Email extends QAF_Field {
 
         // Check allowed domains
         if ( ! empty( $this->config['allowed_domains'] ) ) {
-            $allowed = array_filter( array_map( 'trim', explode( "\n", $this->config['allowed_domains'] ) ) );
+            $allowed = $this->domain_list( $this->config['allowed_domains'] );
             if ( ! empty( $allowed ) && ! in_array( $domain, $allowed, true ) ) {
                 $this->add_error( __( 'Please use an email address from an allowed domain.', 'quill-accessible-forms' ) );
                 return;
@@ -234,7 +234,7 @@ class QAF_Field_Email extends QAF_Field {
 
         // Check blocked domains
         if ( ! empty( $this->config['blocked_domains'] ) ) {
-            $blocked = array_filter( array_map( 'trim', explode( "\n", $this->config['blocked_domains'] ) ) );
+            $blocked = $this->domain_list( $this->config['blocked_domains'] );
             if ( in_array( $domain, $blocked, true ) ) {
                 $this->add_error( __( 'This email domain is not allowed.', 'quill-accessible-forms' ) );
                 return;
@@ -255,14 +255,32 @@ class QAF_Field_Email extends QAF_Field {
 
         // Check confirmation
         if ( ! empty( $this->config['confirm_email'] ) ) {
-            $confirm_value = isset( $_POST['qaf_fields'][ $this->get_id() . '_confirm' ] ) 
-                ? sanitize_email( wp_unslash( $_POST['qaf_fields'][ $this->get_id() . '_confirm' ] ) )
-                : '';
+            // qaf_field_<id>_confirm, or qaf_fields[<id>_confirm] from a page rendered before.
+            $posted        = self::posted( $this->get_id(), '_confirm' );
+            $confirm_value = is_scalar( $posted ) ? sanitize_email( (string) $posted ) : '';
 
             if ( strtolower( $value ) !== strtolower( $confirm_value ) ) {
                 $this->add_error( __( 'Email addresses do not match.', 'quill-accessible-forms' ) );
             }
         }
+    }
+
+    /**
+     * Normalise a domain list setting
+     *
+     * The admin UI stores one domain per line; JSON, BFL and REST imports send
+     * an array. explode() on an array was a TypeError on every submission.
+     *
+     * @param string|array $raw Domain list.
+     * @return array Lowercase domains, blanks removed.
+     */
+    private function domain_list( $raw ) {
+        $items = is_array( $raw ) ? $raw : preg_split( '/[\r\n,]+/', (string) $raw );
+        $items = array_map( function( $d ) {
+            return strtolower( trim( (string) $d ) );
+        }, $items );
+
+        return array_values( array_filter( $items, 'strlen' ) );
     }
 
     /**

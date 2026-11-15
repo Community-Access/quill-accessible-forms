@@ -30,6 +30,14 @@ class QAF_Spam_Settings {
 	const ASK_ALWAYS      = 'always';
 	const ASK_NEVER       = 'never';
 
+	/** Wrong answers before Send Anyway is offered: the default, and the range a site may choose. */
+	const SEND_ANYWAY_DEFAULT = 3;
+	const SEND_ANYWAY_MIN     = 1;
+	const SEND_ANYWAY_MAX     = 10;
+
+	/** The most questions a site's own bank keeps. */
+	const BANK_MAX = 200;
+
 	/** @var array|null Values, when given (tests) instead of read from the option. */
 	private $values;
 
@@ -81,6 +89,7 @@ class QAF_Spam_Settings {
 			),
 			'challenge_bank'     => '',
 			'form_modes'         => array(),
+			'send_anyway_after'  => self::SEND_ANYWAY_DEFAULT,
 		);
 	}
 
@@ -130,6 +139,9 @@ class QAF_Spam_Settings {
 		if ( isset( $in['altcha_max_number'] ) ) {
 			$out['altcha_max_number'] = max( 1000, min( 1000000, (int) $in['altcha_max_number'] ) );
 		}
+		if ( isset( $in['send_anyway_after'] ) ) {
+			$out['send_anyway_after'] = max( self::SEND_ANYWAY_MIN, min( self::SEND_ANYWAY_MAX, (int) $in['send_anyway_after'] ) );
+		}
 		if ( isset( $in['oopspam_api_key'] ) ) {
 			$out['oopspam_api_key'] = preg_replace( '/[^A-Za-z0-9_\-]/', '', (string) $in['oopspam_api_key'] );
 		}
@@ -140,7 +152,7 @@ class QAF_Spam_Settings {
 			$lines = preg_split( '/\r\n|\r|\n/', (string) $in['challenge_bank'] );
 			$lines = array_slice( array_filter( array_map( function ( $l ) {
 				return trim( sanitize_text_field( $l ) );
-			}, $lines ) ), 0, 200 );
+			}, $lines ) ), 0, self::BANK_MAX );
 			$out['challenge_bank'] = implode( "\n", $lines );
 		}
 		if ( isset( $in['form_modes'] ) && is_array( $in['form_modes'] ) ) {
@@ -199,6 +211,33 @@ class QAF_Spam_Settings {
 			$in['oopspam_api_key'] = '';
 		}
 		return self::sanitize( $in, true );
+	}
+
+	/**
+	 * Save every value (the REST write route). The option's own sanitize
+	 * callback runs again inside update_option(), which changes nothing,
+	 * because sanitize() of a sanitized array is the same array.
+	 *
+	 * @param array $values Values: every key, as all() gives them.
+	 * @return array What was saved.
+	 */
+	public static function save( $values ) {
+		$clean = self::sanitize( $values );
+		update_option( self::OPTION, $clean );
+		return $clean;
+	}
+
+	/**
+	 * A short fingerprint of the saved values, for a writer's conflict check:
+	 * GET qaf/v1/spam gives it, and a write that names an older one is
+	 * refused. Keyed with the site's secret, so it says nothing about the
+	 * OOPSpam key it covers.
+	 *
+	 * @param array $values Values, as all() gives them.
+	 * @return string 16 hex characters.
+	 */
+	public static function revision( $values ) {
+		return substr( hash_hmac( 'sha256', (string) json_encode( self::sanitize( $values ) ), self::secret() ), 0, 16 );
 	}
 
 	/** @return string[] */

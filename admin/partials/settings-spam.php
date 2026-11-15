@@ -183,6 +183,11 @@ $qaf_descriptions = array(
 		<textarea id="qaf-spam-bank" name="<?php echo esc_attr( $qaf_n ); ?>[challenge_bank]" rows="6" cols="60" class="large-text" aria-describedby="qaf-spam-bank-desc"><?php echo esc_textarea( $qaf_v['challenge_bank'] ); ?></textarea>
 		<br /><span class="description" id="qaf-spam-bank-desc"><?php esc_html_e( 'One question per line, then a bar and each right answer, also separated by bars. For example: What color is the sky on a clear day? | blue. Ask what anyone using the form would know, not facts about your site.', 'quill-accessible-forms' ); ?></span>
 	</p>
+	<p>
+		<label for="qaf-spam-send-anyway"><?php esc_html_e( 'Offer Send Anyway after this many wrong answers', 'quill-accessible-forms' ); ?></label>
+		<input type="number" id="qaf-spam-send-anyway" name="<?php echo esc_attr( $qaf_n ); ?>[send_anyway_after]" value="<?php echo esc_attr( (int) $qaf_v['send_anyway_after'] ); ?>" min="<?php echo esc_attr( QAF_Spam_Settings::SEND_ANYWAY_MIN ); ?>" max="<?php echo esc_attr( QAF_Spam_Settings::SEND_ANYWAY_MAX ); ?>" class="small-text" aria-describedby="qaf-spam-send-anyway-desc" />
+		<br /><span class="description" id="qaf-spam-send-anyway-desc"><?php esc_html_e( 'Whoever takes Send Anyway is never turned away: the form is held for you to look at.', 'quill-accessible-forms' ); ?></span>
+	</p>
 	<p><?php
 		/* translators: 1: questions asked, 2: answered, 3: wrong answers, 4: sent anyway. */
 		echo esc_html( sprintf( __( 'This week: asked %1$d times, %2$d answered, %3$d wrong answers, %4$d sent anyway.', 'quill-accessible-forms' ), $qaf_spam_week['asked'], $qaf_spam_week['passed'], $qaf_spam_week['failed'], $qaf_spam_week['sent_anyway'] ) );
