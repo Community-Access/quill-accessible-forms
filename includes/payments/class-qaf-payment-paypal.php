@@ -43,6 +43,13 @@ class QAF_Payment_PayPal {
 	private $http;
 
 	/**
+	 * The connection this instance serves (`paypal` or `paypal:<name>`).
+	 *
+	 * @var string
+	 */
+	private $ref;
+
+	/**
 	 * Access tokens for this request only; never stored.
 	 *
 	 * @var array
@@ -54,8 +61,9 @@ class QAF_Payment_PayPal {
 	 *
 	 * @param QAF_Payment_HTTP|null $http Transport.
 	 */
-	public function __construct( $http = null ) {
+	public function __construct( $http = null, $ref = 'paypal' ) {
 		$this->http = $http ? $http : new QAF_Payment_HTTP();
+		$this->ref  = $ref;
 	}
 
 	/**
@@ -78,8 +86,8 @@ class QAF_Payment_PayPal {
 		if ( isset( $this->tokens[ $env ] ) ) {
 			return $this->tokens[ $env ];
 		}
-		$id     = QAF_Payment_Settings::get_public( 'paypal', $env, 'client_id' );
-		$secret = QAF_Payment_Settings::get_secret( 'paypal', $env, 'secret' );
+		$id     = QAF_Payment_Settings::get_public( $this->ref, $env, 'client_id' );
+		$secret = QAF_Payment_Settings::get_secret( $this->ref, $env, 'secret' );
 		if ( $id === '' || $secret === '' ) {
 			return '';
 		}
@@ -152,7 +160,7 @@ class QAF_Payment_PayPal {
 	 * @return array array( 'ok', 'message' ).
 	 */
 	public function verify_credentials( $env ) {
-		$problem = QAF_Payment_Settings::shape_problem( 'paypal', $env );
+		$problem = QAF_Payment_Settings::shape_problem( $this->ref, $env );
 		if ( $problem !== '' ) {
 			return array( 'ok' => false, 'message' => $problem );
 		}
@@ -172,7 +180,7 @@ class QAF_Payment_PayPal {
 	 * @return array array( 'ok', 'message' ).
 	 */
 	public function verify_webhook( $env ) {
-		$id = QAF_Payment_Settings::get_secret( 'paypal', $env, 'webhook_id' );
+		$id = QAF_Payment_Settings::get_secret( $this->ref, $env, 'webhook_id' );
 		if ( $id === '' ) {
 			return array( 'ok' => false, 'message' => __( 'No webhook ID is saved.', 'quill-accessible-forms' ) );
 		}
@@ -180,7 +188,7 @@ class QAF_Payment_PayPal {
 		if ( $reply['status'] !== 200 || ! is_array( $reply['json'] ) ) {
 			return array( 'ok' => false, 'message' => __( 'PayPal does not know that webhook ID in this environment.', 'quill-accessible-forms' ) );
 		}
-		if ( untrailingslashit( (string) ( $reply['json']['url'] ?? '' ) ) !== untrailingslashit( QAF_Payment_Settings::webhook_url( 'paypal' ) ) ) {
+		if ( untrailingslashit( (string) ( $reply['json']['url'] ?? '' ) ) !== untrailingslashit( QAF_Payment_Settings::webhook_url( $this->ref ) ) ) {
 			return array( 'ok' => false, 'message' => __( 'That PayPal webhook sends its events to a different address.', 'quill-accessible-forms' ) );
 		}
 		$names = array();
@@ -204,11 +212,11 @@ class QAF_Payment_PayPal {
 		foreach ( self::EVENTS as $name ) {
 			$types[] = array( 'name' => $name );
 		}
-		$reply = $this->call( $env, 'POST', '/v1/notifications/webhooks', array( 'url' => QAF_Payment_Settings::webhook_url( 'paypal' ), 'event_types' => $types ) );
+		$reply = $this->call( $env, 'POST', '/v1/notifications/webhooks', array( 'url' => QAF_Payment_Settings::webhook_url( $this->ref ), 'event_types' => $types ) );
 		if ( $reply['status'] !== 201 || ! is_string( $reply['json']['id'] ?? null ) ) {
 			return array( 'ok' => false, 'message' => self::message( $reply ) );
 		}
-		QAF_Payment_Settings::set_secret( 'paypal', $env, 'webhook_id', $reply['json']['id'] );
+		QAF_Payment_Settings::set_secret( $this->ref, $env, 'webhook_id', $reply['json']['id'] );
 		return array( 'ok' => true, 'message' => __( 'PayPal will send payment events to this site.', 'quill-accessible-forms' ) );
 	}
 
@@ -394,7 +402,7 @@ class QAF_Payment_PayPal {
 		}
 		$env = '';
 		foreach ( QAF_Payment_Settings::ENVIRONMENTS as $candidate ) {
-			$webhook_id = QAF_Payment_Settings::get_secret( 'paypal', $candidate, 'webhook_id' );
+			$webhook_id = QAF_Payment_Settings::get_secret( $this->ref, $candidate, 'webhook_id' );
 			if ( $webhook_id === '' ) {
 				continue;
 			}

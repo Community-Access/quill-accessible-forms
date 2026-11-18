@@ -1,7 +1,15 @@
 <?php
 /**
  * The site's payment settings: which environment, which keys, and whether
- * each provider has been checked.
+ * each connection has been checked.
+ *
+ * Every setting is kept per **connection**: one set of credentials for one
+ * provider. A connection is named by its reference, the provider alone
+ * (`stripe`, `paypal`, `square`) for that provider's default connection, or
+ * the provider, a colon and a slug (`stripe:events`) for a named one, as
+ * QAF_Payment_Connections lists them. A site from before connections keeps
+ * all its settings: they were stored under the provider's name, which is the
+ * default connection's reference.
  *
  * Three WordPress options hold them:
  *
@@ -39,13 +47,25 @@ class QAF_Payment_Settings {
 	const SECRET_KEYS = array(
 		'stripe' => array( 'secret_key', 'webhook_secret' ),
 		'paypal' => array( 'secret', 'webhook_id' ),
+		'square' => array( 'access_token', 'signature_key', 'subscription_id' ),
 	);
 
 	/** Public names, per provider. */
 	const PUBLIC_KEYS = array(
 		'stripe' => array( 'publishable_key' ),
 		'paypal' => array( 'client_id' ),
+		'square' => array( 'application_id', 'location_id', 'location_currency' ),
 	);
+
+	/**
+	 * The provider a connection reference belongs to: `stripe:events` is Stripe's.
+	 *
+	 * @param string $ref Reference.
+	 * @return string Provider.
+	 */
+	public static function provider_of( $ref ) {
+		return explode( ':', (string) $ref, 2 )[0];
+	}
 
 	/**
 	 * The site's environment: test unless someone chose live.
@@ -110,7 +130,7 @@ class QAF_Payment_Settings {
 	 * @param string $value    Value.
 	 */
 	public static function set_public( $provider, $env, $name, $value ) {
-		if ( ! in_array( $name, self::PUBLIC_KEYS[ $provider ] ?? array(), true ) || ! in_array( $env, self::ENVIRONMENTS, true ) ) {
+		if ( ! in_array( $name, self::PUBLIC_KEYS[ self::provider_of( $provider ) ] ?? array(), true ) || ! in_array( $env, self::ENVIRONMENTS, true ) ) {
 			return;
 		}
 		$s                               = self::all_public();
@@ -127,7 +147,7 @@ class QAF_Payment_Settings {
 	 * @return string Constant name.
 	 */
 	public static function constant_name( $provider, $env, $name ) {
-		return strtoupper( 'QAF_' . $provider . '_' . $env . '_' . $name );
+		return strtoupper( 'QAF_' . str_replace( array( ':', '-' ), '_', $provider ) . '_' . $env . '_' . $name );
 	}
 
 	/**
@@ -181,7 +201,7 @@ class QAF_Payment_Settings {
 	 * @param string $value    Value; '' clears it.
 	 */
 	public static function set_secret( $provider, $env, $name, $value ) {
-		if ( ! in_array( $name, self::SECRET_KEYS[ $provider ] ?? array(), true ) || ! in_array( $env, self::ENVIRONMENTS, true ) ) {
+		if ( ! in_array( $name, self::SECRET_KEYS[ self::provider_of( $provider ) ] ?? array(), true ) || ! in_array( $env, self::ENVIRONMENTS, true ) ) {
 			return;
 		}
 		$s = get_option( self::OPTION_SECRETS, array() );
@@ -203,14 +223,20 @@ class QAF_Payment_Settings {
 	 * @return string Hex digest, or '' when the material is incomplete.
 	 */
 	public static function fingerprint( $provider, $env, $what ) {
-		if ( $provider === 'stripe' ) {
+		$ref = $provider;
+		$p   = self::provider_of( $ref );
+		if ( $p === 'stripe' ) {
 			$parts = $what === 'webhook'
-				? array( self::get_secret( 'stripe', $env, 'webhook_secret' ) )
-				: array( self::get_public( 'stripe', $env, 'publishable_key' ), self::get_secret( 'stripe', $env, 'secret_key' ) );
+				? array( self::get_secret( $ref, $env, 'webhook_secret' ) )
+				: array( self::get_public( $ref, $env, 'publishable_key' ), self::get_secret( $ref, $env, 'secret_key' ) );
+		} elseif ( $p === 'square' ) {
+			$parts = $what === 'webhook'
+				? array( self::get_secret( $ref, $env, 'signature_key' ), self::get_public( $ref, $env, 'location_id' ) )
+				: array( self::get_public( $ref, $env, 'application_id' ), self::get_public( $ref, $env, 'location_id' ), self::get_secret( $ref, $env, 'access_token' ) );
 		} else {
 			$parts = $what === 'webhook'
-				? array( self::get_secret( 'paypal', $env, 'webhook_id' ), self::get_public( 'paypal', $env, 'client_id' ) )
-				: array( self::get_public( 'paypal', $env, 'client_id' ), self::get_secret( 'paypal', $env, 'secret' ) );
+				? array( self::get_secret( $ref, $env, 'webhook_id' ), self::get_public( $ref, $env, 'client_id' ) )
+				: array( self::get_public( $ref, $env, 'client_id' ), self::get_secret( $ref, $env, 'secret' ) );
 		}
 		foreach ( $parts as $p ) {
 			if ( $p === '' ) {
@@ -279,9 +305,23 @@ class QAF_Payment_Settings {
 	 * @return string '' when fine, else the problem.
 	 */
 	public static function shape_problem( $provider, $env ) {
-		if ( $provider === 'stripe' ) {
-			$pk = self::get_public( 'stripe', $env, 'publishable_key' );
-			$sk = self::get_secret( 'stripe', $env, 'secret_key' );
+		$ref = $provider;
+		if ( self::provider_of( $ref ) === 'square' ) {
+			$app = self::get_public( $ref, $env, 'application_id' );
+			if ( $app === '' || self::get_public( $ref, $env, 'location_id' ) === '' || self::get_secret( $ref, $env, 'access_token' ) === '' ) {
+				return __( 'The application ID, the location ID and the access token are all needed.', 'quill-accessible-forms' );
+			}
+			// Square's sandbox application IDs start with sandbox-; production ones do not.
+			if ( ( strpos( $app, 'sandbox-' ) === 0 ) !== ( $env === 'test' ) ) {
+				return $env === 'test'
+					? __( 'The application ID is not a sandbox one. It should start with sandbox-.', 'quill-accessible-forms' )
+					: __( 'The application ID is a sandbox one; live payments need the production application ID.', 'quill-accessible-forms' );
+			}
+			return '';
+		}
+		if ( self::provider_of( $ref ) === 'stripe' ) {
+			$pk = self::get_public( $ref, $env, 'publishable_key' );
+			$sk = self::get_secret( $ref, $env, 'secret_key' );
 			if ( $pk === '' || $sk === '' ) {
 				return __( 'The publishable key and the secret key are both needed.', 'quill-accessible-forms' );
 			}
@@ -295,7 +335,7 @@ class QAF_Payment_Settings {
 			}
 			return '';
 		}
-		if ( self::get_public( 'paypal', $env, 'client_id' ) === '' || self::get_secret( 'paypal', $env, 'secret' ) === '' ) {
+		if ( self::get_public( $ref, $env, 'client_id' ) === '' || self::get_secret( $ref, $env, 'secret' ) === '' ) {
 			return __( 'The client ID and the secret are both needed.', 'quill-accessible-forms' );
 		}
 		return '';
@@ -320,15 +360,17 @@ class QAF_Payment_Settings {
 	 * @return bool Ready.
 	 */
 	public static function webhook_ready( $provider, $env ) {
-		if ( $provider === 'stripe' && strpos( self::get_secret( 'stripe', $env, 'webhook_secret' ), 'whsec_' ) !== 0 ) {
+		if ( self::provider_of( $provider ) === 'stripe' && strpos( self::get_secret( $provider, $env, 'webhook_secret' ), 'whsec_' ) !== 0 ) {
 			return false;
 		}
 		return self::verified( $provider, $env, 'webhook' );
 	}
 
 	/**
-	 * The readiness reply of contract version 1. Booleans only: no key, no
-	 * token, no provider reply, ever.
+	 * The readiness reply of contract version 2: each provider's default
+	 * connection under `providers`, as version 1 had it, and every connection
+	 * under `connections`. Names and booleans only: no key, no token, no
+	 * location ID, no provider reply, ever.
 	 *
 	 * @return array Reply.
 	 */
@@ -341,10 +383,21 @@ class QAF_Payment_Settings {
 				'webhook_ready' => self::webhook_ready( $p, $env ),
 			);
 		}
+		$connections = array();
+		foreach ( QAF_Payment_Connections::all() as $c ) {
+			$connections[] = array(
+				'id'            => $c['id'],
+				'name'          => $c['name'],
+				'test_mode'     => $env === 'test',
+				'configured'    => self::configured( $c['id'], $env ),
+				'webhook_ready' => self::webhook_ready( $c['id'], $env ),
+			);
+		}
 		return array(
 			'contract_version' => QAF_Payment_Config::CONTRACT_VERSION,
 			'test_mode'        => $env === 'test',
 			'providers'        => $providers,
+			'connections'      => $connections,
 		);
 	}
 
@@ -366,6 +419,7 @@ class QAF_Payment_Settings {
 	 * @return string URL.
 	 */
 	public static function webhook_url( $provider ) {
-		return rest_url( 'qaf/v1/payments/webhook/' . $provider );
+		// A named connection's colon becomes a tilde: the path stays one plain segment.
+		return rest_url( 'qaf/v1/payments/webhook/' . str_replace( ':', '~', $provider ) );
 	}
 }

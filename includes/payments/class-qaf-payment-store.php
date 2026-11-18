@@ -79,8 +79,8 @@ interface QAF_Payment_Store {
  */
 class QAF_Payment_DB_Store implements QAF_Payment_Store {
 
-	/** Schema version of the two tables. */
-	const DB_VERSION = '1';
+	/** Schema version of the two tables: 2 widened provider to a connection reference and added offered. */
+	const DB_VERSION = '2';
 
 	/** Columns find() may search. */
 	const FINDABLE = array( 'token_hash', 'submission', 'provider_ref', 'capture_ref', 'entry_id' );
@@ -124,7 +124,8 @@ class QAF_Payment_DB_Store implements QAF_Payment_Store {
 			entry_id bigint(20) unsigned NOT NULL,
 			token_hash char(64) NOT NULL,
 			submission varchar(100) NOT NULL DEFAULT '',
-			provider varchar(20) NOT NULL DEFAULT '',
+			provider varchar(60) NOT NULL DEFAULT '',
+			offered varchar(255) NOT NULL DEFAULT '',
 			environment varchar(10) NOT NULL,
 			status varchar(20) NOT NULL,
 			amount_minor bigint(20) NOT NULL,
@@ -147,7 +148,7 @@ class QAF_Payment_DB_Store implements QAF_Payment_Store {
 		) $charset;" );
 		dbDelta( "CREATE TABLE $events (
 			id bigint(20) unsigned NOT NULL AUTO_INCREMENT,
-			provider varchar(20) NOT NULL,
+			provider varchar(60) NOT NULL,
 			event_id varchar(100) NOT NULL,
 			received_at datetime NOT NULL,
 			PRIMARY KEY  (id),

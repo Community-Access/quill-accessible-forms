@@ -50,7 +50,8 @@ class QAF_Payment_Checkout {
 		$err_id   = $html_id . '-error';
 		$names    = array();
 		foreach ( $config['providers'] as $p ) {
-			$names[] = $p === 'stripe' ? __( 'card (through Stripe)', 'quill-accessible-forms' ) : 'PayPal';
+			$names[] = $p === 'stripe' ? __( 'card (through Stripe)', 'quill-accessible-forms' )
+				: ( $p === 'square' ? __( 'card (through Square)', 'quill-accessible-forms' ) : 'PayPal' );
 		}
 		/* translators: %s: list of ways to pay, such as "card (through Stripe) or PayPal". */
 		$how = sprintf( __( 'You pay by %s after you send the form.', 'quill-accessible-forms' ), implode( __( ' or ', 'quill-accessible-forms' ), $names ) );
@@ -127,7 +128,9 @@ class QAF_Payment_Checkout {
 	 * Load the checkout script and styles, and Stripe.js when the form offers
 	 * Stripe. Stripe requires Stripe.js to load from js.stripe.com itself;
 	 * PayPal's script is loaded by the checkout only when the payer picks it,
-	 * because its address names the client ID, currency and intent.
+	 * because its address names the client ID, currency and intent, and
+	 * Square's (from web.squarecdn.com, or its sandbox) likewise, because the
+	 * address depends on test or live mode.
 	 *
 	 * @param array $model Form model.
 	 */
@@ -160,6 +163,8 @@ class QAF_Payment_Checkout {
 			'choose'       => __( 'How do you want to pay?', 'quill-accessible-forms' ),
 			'card'         => __( 'Card, through Stripe', 'quill-accessible-forms' ),
 			'paypal'       => __( 'PayPal', 'quill-accessible-forms' ),
+			'square'       => __( 'Card, through Square', 'quill-accessible-forms' ),
+			'cardProblem'  => __( 'The card details are not complete. Check each one and try again.', 'quill-accessible-forms' ),
 			'cardDetails'  => __( 'Card details', 'quill-accessible-forms' ),
 			/* translators: %s: amount with currency. */
 			'payButton'    => __( 'Pay %s', 'quill-accessible-forms' ),

@@ -79,19 +79,39 @@ abstract class QAF_Payment_Test_Case extends QAF_Unit_Test_Case {
 		QAF_Payment_Service::set_instance( null );
 	}
 
-	/** Give a provider test keys and mark them checked, as Check Connection would. */
+	const SQUARE_APP   = 'sandbox-sq0idb-placeholder';
+	const SQUARE_LOC   = 'LPLACEHOLDER01';
+	const SQUARE_TOKEN = 'EAAA-square-placeholder-token';
+	const SQUARE_SIG   = 'square-signature-key-placeholder';
+
+	/**
+	 * Give a connection test keys and mark them checked, as Check Connection
+	 * would. A named connection (`stripe:events`) is added to the site first.
+	 */
 	protected function make_ready( $provider, $env = 'test', $webhook = true ) {
-		if ( $provider === 'stripe' ) {
-			QAF_Payment_Settings::set_public( 'stripe', $env, 'publishable_key', $env === 'test' ? self::STRIPE_PK : 'pk_live_placeholder000000000000' );
-			QAF_Payment_Settings::set_secret( 'stripe', $env, 'secret_key', $env === 'test' ? self::STRIPE_SK : 'sk_live_placeholder000000000000' );
+		$ref  = $provider;
+		$kind = QAF_Payment_Settings::provider_of( $ref );
+		if ( strpos( $ref, ':' ) !== false && ! QAF_Payment_Connections::exists( $ref ) ) {
+			QAF_Payment_Connections::add( $kind, explode( ':', $ref, 2 )[1], ucfirst( $kind ) . ': ' . explode( ':', $ref, 2 )[1] );
+		}
+		if ( $kind === 'stripe' ) {
+			QAF_Payment_Settings::set_public( $ref, $env, 'publishable_key', $env === 'test' ? self::STRIPE_PK : 'pk_live_placeholder000000000000' );
+			QAF_Payment_Settings::set_secret( $ref, $env, 'secret_key', $env === 'test' ? self::STRIPE_SK : 'sk_live_placeholder000000000000' );
 			if ( $webhook ) {
-				QAF_Payment_Settings::set_secret( 'stripe', $env, 'webhook_secret', $env === 'test' ? self::STRIPE_WH : 'whsec_liveplaceholder00000000000' );
+				QAF_Payment_Settings::set_secret( $ref, $env, 'webhook_secret', $env === 'test' ? self::STRIPE_WH : 'whsec_liveplaceholder00000000000' );
+			}
+		} elseif ( $kind === 'square' ) {
+			QAF_Payment_Settings::set_public( $ref, $env, 'application_id', $env === 'test' ? self::SQUARE_APP : 'sq0idp-live-placeholder' );
+			QAF_Payment_Settings::set_public( $ref, $env, 'location_id', self::SQUARE_LOC );
+			QAF_Payment_Settings::set_secret( $ref, $env, 'access_token', self::SQUARE_TOKEN . $env );
+			if ( $webhook ) {
+				QAF_Payment_Settings::set_secret( $ref, $env, 'signature_key', self::SQUARE_SIG . $env );
 			}
 		} else {
-			QAF_Payment_Settings::set_public( 'paypal', $env, 'client_id', self::PAYPAL_ID . $env );
-			QAF_Payment_Settings::set_secret( 'paypal', $env, 'secret', self::PAYPAL_SEC . $env );
+			QAF_Payment_Settings::set_public( $ref, $env, 'client_id', self::PAYPAL_ID . $env );
+			QAF_Payment_Settings::set_secret( $ref, $env, 'secret', self::PAYPAL_SEC . $env );
 			if ( $webhook ) {
-				QAF_Payment_Settings::set_secret( 'paypal', $env, 'webhook_id', self::PAYPAL_HOOK . $env );
+				QAF_Payment_Settings::set_secret( $ref, $env, 'webhook_id', self::PAYPAL_HOOK . $env );
 			}
 		}
 		QAF_Payment_Settings::record_check( $provider, $env, 'credentials', true, 'ok' );
@@ -144,14 +164,26 @@ abstract class QAF_Payment_Test_Case extends QAF_Unit_Test_Case {
 		} ) );
 	}
 
-	/** A service with a memory store and fake gateways. */
+	/** A service with a memory store and fake gateways, for every connection. */
 	protected function service( $fake, $now = null ) {
 		$service = new QAF_Payment_Service( new QAF_Payment_Memory_Store(), array(
 			'stripe' => new QAF_Payment_Stripe( $fake->http(), $now ),
 			'paypal' => new QAF_Payment_PayPal( $fake->http() ),
-		) );
+		), function ( $ref ) use ( $fake, $now ) {
+			$kind = QAF_Payment_Settings::provider_of( $ref );
+			if ( $kind === 'square' ) {
+				return new QAF_Payment_Square( $fake->http(), $ref );
+			}
+			return $kind === 'paypal' ? new QAF_Payment_PayPal( $fake->http(), $ref ) : new QAF_Payment_Stripe( $fake->http(), $now, $ref );
+		} );
 		QAF_Payment_Service::set_instance( $service );
 		return $service;
+	}
+
+	/** Square's signature header for a payload sent to a connection's webhook URL. */
+	protected static function square_sign( $payload, $ref = 'square', $key = null ) {
+		$key = $key ?? self::SQUARE_SIG . 'test';
+		return base64_encode( hash_hmac( 'sha256', QAF_Payment_Settings::webhook_url( $ref ) . $payload, $key, true ) );
 	}
 
 	/** A Stripe-Signature header for a payload. */

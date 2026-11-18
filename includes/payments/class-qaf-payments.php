@@ -2,7 +2,7 @@
 /**
  * Payments: loads the parts and hooks them in.
  *
- * Contract version 1 with QUILL is in docs/payments-admin-guide.md and in
+ * Contract version 2 with QUILL is in docs/payments-admin-guide.md and in
  * QUILL's docs/design/forms-payments-plugin-contract.md.
  *
  * @package QAF
@@ -14,6 +14,8 @@ if ( ! defined( 'ABSPATH' ) ) {
 
 require_once __DIR__ . '/class-qaf-payment-money.php';
 require_once __DIR__ . '/class-qaf-payment-config.php';
+require_once __DIR__ . '/class-qaf-payment-connections.php';
+require_once __DIR__ . '/class-qaf-payment-routing.php';
 require_once __DIR__ . '/class-qaf-payment-pricing.php';
 require_once __DIR__ . '/class-qaf-payment-states.php';
 require_once __DIR__ . '/class-qaf-payment-settings.php';
@@ -21,6 +23,7 @@ require_once __DIR__ . '/class-qaf-payment-http.php';
 require_once __DIR__ . '/class-qaf-payment-store.php';
 require_once __DIR__ . '/class-qaf-payment-stripe.php';
 require_once __DIR__ . '/class-qaf-payment-paypal.php';
+require_once __DIR__ . '/class-qaf-payment-square.php';
 require_once __DIR__ . '/class-qaf-payment-service.php';
 require_once __DIR__ . '/class-qaf-payment-rest.php';
 require_once __DIR__ . '/class-qaf-payment-checkout.php';

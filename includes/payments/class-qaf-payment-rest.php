@@ -2,14 +2,19 @@
 /**
  * The payment routes under qaf/v1.
  *
- * - GET  payments/settings: readiness for QUILL (contract version 1). Site
+ * - GET  payments/settings: readiness for QUILL (contract version 2). Site
  *   administrators, or anyone given qaf_manage_payments, only.
+ * - POST payments/pay: a Square payment, from the card token Square's card
+ *   field made. Token-gated like start.
+ * - POST payments/refund: a Square refund, through the connection that took
+ *   the payment. Payment managers only.
  * - POST payments/start, payments/finish, payments/status: the checkout on a
  *   published form. Open to visitors, but each needs the one-time token the
  *   site gave that visitor's own submission; without it they do nothing.
- * - POST payments/webhook/stripe and payments/webhook/paypal: provider
- *   events. Open, because providers do not sign in; every delivery is
- *   verified with the provider's signature before anything is read from it.
+ * - POST payments/webhook/{connection}: provider events, one URL per
+ *   connection (`stripe`, `stripe~events`). Open, because providers do not
+ *   sign in; every delivery is verified with that connection's signature
+ *   before anything is read from it.
  *
  * @package QAF
  */
@@ -49,7 +54,7 @@ class QAF_Payment_REST {
 				'provider' => array(
 					'required' => true,
 					'type'     => 'string',
-					'enum'     => QAF_Payment_Config::PROVIDERS,
+					'pattern'  => '^(stripe|paypal|square)(:[a-z0-9][a-z0-9-]{0,39})?$',
 				),
 			),
 		) );
@@ -65,7 +70,37 @@ class QAF_Payment_REST {
 			'permission_callback' => '__return_true',
 			'args'                => $token,
 		) );
-		register_rest_route( self::NAMESPACE, '/payments/webhook/(?P<provider>stripe|paypal)', array(
+		register_rest_route( self::NAMESPACE, '/payments/pay', array(
+			'methods'             => 'POST',
+			'callback'            => array( $this, 'pay' ),
+			'permission_callback' => '__return_true',
+			'args'                => $token + array(
+				'source'       => array(
+					'required' => true,
+					'type'     => 'string',
+				),
+				'verification' => array(
+					'type'    => 'string',
+					'default' => '',
+				),
+			),
+		) );
+		register_rest_route( self::NAMESPACE, '/payments/refund', array(
+			'methods'             => 'POST',
+			'callback'            => array( $this, 'refund' ),
+			'permission_callback' => array( __CLASS__, 'can_manage' ),
+			'args'                => array(
+				'entry_id' => array(
+					'required' => true,
+					'type'     => 'integer',
+				),
+				'amount'   => array(
+					'required' => true,
+					'type'     => 'string',
+				),
+			),
+		) );
+		register_rest_route( self::NAMESPACE, '/payments/webhook/(?P<provider>(?:stripe|paypal|square)(?:~[a-z0-9][a-z0-9-]{0,39})?)', array(
 			'methods'             => 'POST',
 			'callback'            => array( $this, 'webhook' ),
 			'permission_callback' => '__return_true',
@@ -116,6 +151,39 @@ class QAF_Payment_REST {
 			return $attempt;
 		}
 		return rest_ensure_response( QAF_Payment_Service::instance()->start( $attempt, (string) $request->get_param( 'provider' ) ) );
+	}
+
+	/**
+	 * POST payments/pay (Square, with the card field's token).
+	 *
+	 * @param WP_REST_Request $request Request.
+	 * @return mixed Reply.
+	 */
+	public function pay( $request ) {
+		$attempt = $this->attempt( $request );
+		if ( is_wp_error( $attempt ) ) {
+			return $attempt;
+		}
+		return rest_ensure_response( QAF_Payment_Service::instance()->pay( $attempt, (string) $request->get_param( 'source' ), (string) $request->get_param( 'verification' ) ) );
+	}
+
+	/**
+	 * POST payments/refund: amount in major units, as text ("12.50").
+	 *
+	 * @param WP_REST_Request $request Request.
+	 * @return mixed Reply.
+	 */
+	public function refund( $request ) {
+		$service = QAF_Payment_Service::instance();
+		$attempt = $service->store()->find( 'entry_id', (string) (int) $request->get_param( 'entry_id' ) );
+		if ( ! $attempt ) {
+			return new WP_Error( 'qaf_payment_refund', __( 'That entry has no payment.', 'quill-accessible-forms' ), array( 'status' => 404 ) );
+		}
+		$minor = QAF_Payment_Money::to_minor( (string) $request->get_param( 'amount' ), $attempt['currency'] );
+		if ( $minor === null || $minor <= 0 ) {
+			return new WP_Error( 'qaf_payment_refund', __( 'Give the amount to refund, such as 12.50.', 'quill-accessible-forms' ), array( 'status' => 400 ) );
+		}
+		return rest_ensure_response( $service->refund( $attempt, $minor ) );
 	}
 
 	/**

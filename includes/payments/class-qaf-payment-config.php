@@ -1,6 +1,6 @@
 <?php
 /**
- * A form's payment configuration (payment contract version 1).
+ * A form's payment configuration (payment contract version 2).
  *
  * The configuration lives in the form model at `extensions.payments`, and a
  * form's single `payment` field says where its amount comes from in
@@ -8,6 +8,11 @@
  * price, calculation, number or currency field. QUILL checks the same rules
  * before it publishes; the plugin checks them again on publication and again
  * at checkout, because a form can reach the site from anywhere.
+ *
+ * Version 2 adds Square, and lets a form name the site's payment
+ * connections (QAF_Payment_Connections): `connections` offers several to the
+ * payer, in order; `rules` and `otherwise` pick one from the answers
+ * (QAF_Payment_Routing). A form uses one way or the other, never both.
  *
  * Nothing in this block is secret. Provider keys never belong in a model.
  *
@@ -24,13 +29,13 @@ if ( ! defined( 'ABSPATH' ) ) {
 class QAF_Payment_Config {
 
 	/** The contract this plugin implements. */
-	const CONTRACT_VERSION = 1;
+	const CONTRACT_VERSION = 2;
 
 	/** The model key: `model.extensions.payments`. */
 	const EXTENSION_KEY = 'payments';
 
 	/** Providers, in the order a new form offers them. */
-	const PROVIDERS = array( 'stripe', 'paypal' );
+	const PROVIDERS = array( 'stripe', 'paypal', 'square' );
 
 	/** One-time payment, or a donation the giver sets. */
 	const MODES = array( 'payment', 'donation' );
@@ -46,6 +51,12 @@ class QAF_Payment_Config {
 
 	/** Stripe's lower limit for a full statement descriptor. */
 	const DESCRIPTOR_MIN = 5;
+
+	/** Square's statement_description_identifier limit. */
+	const DESCRIPTOR_MAX_SQUARE = 20;
+
+	/** The kinds of condition a rule may have. */
+	const RULE_KINDS = array( 'amount_over', 'amount_under', 'field', 'currency', 'from', 'until' );
 
 	/**
 	 * The raw payments block, or null when the form has none.
@@ -110,15 +121,65 @@ class QAF_Payment_Config {
 	public static function get( $model ) {
 		$raw       = self::raw( $model );
 		$raw       = is_array( $raw ) ? $raw : array();
-		$providers = array_values( array_intersect( (array) ( $raw['providers'] ?? array() ), self::PROVIDERS ) );
+		$refs      = self::references( $model );
+		$providers = array();
+		foreach ( $refs as $ref ) {
+			$providers[] = QAF_Payment_Settings::provider_of( $ref );
+		}
+		$providers = $providers ? array_values( array_unique( $providers ) ) : array( 'stripe' );
+		$rules     = array();
+		foreach ( (array) ( $raw['rules'] ?? array() ) as $rule ) {
+			if ( is_array( $rule ) && is_array( $rule['when'] ?? null ) && QAF_Payment_Connections::valid( $rule['use'] ?? null ) ) {
+				$rules[] = array( 'when' => $rule['when'], 'use' => $rule['use'] );
+			}
+		}
+		$by_rule = array_key_exists( 'rules', $raw ) || array_key_exists( 'otherwise', $raw );
 		return array(
-			'providers'            => $providers ? $providers : array( 'stripe' ),
+			'providers'            => $providers,
+			// The connections the payer may choose from; with rules, the one the rules pick.
+			'connections'          => $by_rule ? array() : ( $refs ? $refs : array( 'stripe' ) ),
+			'rules'                => $rules,
+			'otherwise'            => QAF_Payment_Connections::valid( $raw['otherwise'] ?? null ) ? $raw['otherwise'] : '',
+			'by_rule'              => $by_rule,
 			'currency'             => strtolower( (string) ( $raw['currency'] ?? 'usd' ) ),
 			'mode'                 => (string) ( $raw['mode'] ?? 'payment' ),
 			'capture'              => (string) ( $raw['capture'] ?? 'automatic' ),
 			'test_mode'            => ( $raw['test_mode'] ?? true ) !== false,
 			'statement_descriptor' => is_string( $raw['statement_descriptor'] ?? null ) ? $raw['statement_descriptor'] : '',
 		);
+	}
+
+	/**
+	 * Every connection a form's payment can go to, first mention first:
+	 * its `connections`, or its rules' and `otherwise`, or (a version 1 form)
+	 * each listed provider's default connection.
+	 *
+	 * @param array|null $model Model.
+	 * @return array References.
+	 */
+	public static function references( $model ) {
+		$raw = self::raw( $model );
+		if ( ! is_array( $raw ) ) {
+			return array();
+		}
+		$refs = array();
+		if ( array_key_exists( 'rules', $raw ) || array_key_exists( 'otherwise', $raw ) ) {
+			foreach ( (array) ( $raw['rules'] ?? array() ) as $rule ) {
+				$refs[] = is_array( $rule ) ? ( $rule['use'] ?? null ) : null;
+			}
+			$refs[] = $raw['otherwise'] ?? null;
+		} elseif ( array_key_exists( 'connections', $raw ) ) {
+			$refs = (array) $raw['connections'];
+		} else {
+			$refs = (array) ( $raw['providers'] ?? array() );
+		}
+		$out = array();
+		foreach ( $refs as $ref ) {
+			if ( QAF_Payment_Connections::valid( $ref ) && ! in_array( $ref, $out, true ) ) {
+				$out[] = $ref;
+			}
+		}
+		return $out;
 	}
 
 	/**
@@ -145,12 +206,14 @@ class QAF_Payment_Config {
 		}
 		if ( self::is_object( $raw ) ) {
 			self::config_errors( $raw, $base, $err );
+			self::routing_errors( $raw, $base, $err );
+			self::square_errors( $model, $raw, $base, $err );
 		}
 		foreach ( array_slice( $fields, 1 ) as $entry ) {
 			$err( $entry['path'], __( 'Only one payment field is allowed per form; this is the second.', 'quill-accessible-forms' ) );
 		}
-		if ( $fields && ! ( self::is_object( $raw ) && is_array( $raw['providers'] ?? null ) && $raw['providers'] ) ) {
-			$err( $base, __( 'A form with a payment field needs a payments block naming at least one provider.', 'quill-accessible-forms' ) );
+		if ( $fields && ! self::references( $model ) ) {
+			$err( $base, __( 'A form with a payment field needs a payments block naming at least one provider or connection.', 'quill-accessible-forms' ) );
 		}
 		$currency = is_string( $raw['currency'] ?? null ) ? strtolower( $raw['currency'] ) : 'usd';
 		$by_id    = array();
@@ -192,7 +255,7 @@ class QAF_Payment_Config {
 				foreach ( array_values( $providers ) as $i => $p ) {
 					if ( ! is_string( $p ) || ! in_array( $p, self::PROVIDERS, true ) ) {
 						/* translators: %s: the provider name as written. */
-						$err( $base . '/providers/' . $i, sprintf( __( '"%s" is not a payment provider (stripe, paypal).', 'quill-accessible-forms' ), is_scalar( $p ) ? $p : gettype( $p ) ) );
+						$err( $base . '/providers/' . $i, sprintf( __( '"%s" is not a payment provider (stripe, paypal, square).', 'quill-accessible-forms' ), is_scalar( $p ) ? $p : gettype( $p ) ) );
 					} elseif ( isset( $seen[ $p ] ) ) {
 						/* translators: %s: provider. */
 						$err( $base . '/providers/' . $i, sprintf( __( 'The provider "%s" is listed twice.', 'quill-accessible-forms' ), $p ) );
@@ -240,6 +303,101 @@ class QAF_Payment_Config {
 					$err( $base . '/statement_descriptor', __( 'The statement descriptor needs at least one letter.', 'quill-accessible-forms' ) );
 				}
 			}
+		}
+	}
+
+	/**
+	 * Rules for `connections`, `rules` and `otherwise`.
+	 *
+	 * @param array    $raw  Block.
+	 * @param string   $base Path.
+	 * @param callable $err  Reporter.
+	 */
+	private static function routing_errors( $raw, $base, $err ) {
+		$bad = __( 'is not a connection: use stripe, paypal or square, or one of them, a colon and the connection\'s short name.', 'quill-accessible-forms' );
+		if ( array_key_exists( 'connections', $raw ) ) {
+			$list = $raw['connections'];
+			if ( ! is_array( $list ) || ! $list ) {
+				$err( $base . '/connections', __( 'connections must be a list naming at least one.', 'quill-accessible-forms' ) );
+			} else {
+				$seen = array();
+				foreach ( array_values( $list ) as $i => $ref ) {
+					if ( ! QAF_Payment_Connections::valid( $ref ) ) {
+						$err( $base . '/connections/' . $i, '"' . ( is_scalar( $ref ) ? $ref : gettype( $ref ) ) . '" ' . $bad );
+					} elseif ( isset( $seen[ $ref ] ) ) {
+						/* translators: %s: connection. */
+						$err( $base . '/connections/' . $i, sprintf( __( 'The connection "%s" is listed twice.', 'quill-accessible-forms' ), $ref ) );
+					} else {
+						$seen[ $ref ] = true;
+					}
+				}
+			}
+		}
+		$by_rule = array_key_exists( 'rules', $raw ) || array_key_exists( 'otherwise', $raw );
+		if ( ! $by_rule ) {
+			return;
+		}
+		if ( array_key_exists( 'connections', $raw ) ) {
+			$err( $base . '/rules', __( 'Choose the connection by the payer\'s selection or by rule, not both.', 'quill-accessible-forms' ) );
+		}
+		if ( ! QAF_Payment_Connections::valid( $raw['otherwise'] ?? null ) ) {
+			$err( $base . '/otherwise', __( 'Rules need an otherwise: the connection that takes every payment no rule catches.', 'quill-accessible-forms' ) );
+		}
+		$rules = $raw['rules'] ?? array();
+		if ( ! is_array( $rules ) ) {
+			$err( $base . '/rules', __( 'rules must be a list.', 'quill-accessible-forms' ) );
+			return;
+		}
+		foreach ( array_values( $rules ) as $i => $rule ) {
+			$path = $base . '/rules/' . $i;
+			$when = is_array( $rule ) ? ( $rule['when'] ?? null ) : null;
+			if ( ! is_array( $when ) || ! $when || array_diff( array_keys( $when ), array_merge( self::RULE_KINDS, array( 'equals' ) ) ) ) {
+				$err( $path . '/when', __( 'A rule\'s when is one of amount_over, amount_under, field and equals, currency, or from and until.', 'quill-accessible-forms' ) );
+			} elseif ( ! QAF_Payment_Routing::when_valid( $when ) ) {
+				$err( $path . '/when', __( 'This rule\'s condition is not one the site can check: an amount is a plain decimal, a date is YYYY-MM-DD, a currency is three letters, and a field rule needs equals.', 'quill-accessible-forms' ) );
+			}
+			if ( ! QAF_Payment_Connections::valid( is_array( $rule ) ? ( $rule['use'] ?? null ) : null ) ) {
+				$err( $path . '/use', __( 'Each rule\'s use names a connection.', 'quill-accessible-forms' ) );
+			}
+		}
+	}
+
+	/**
+	 * Square's own limits, when the form can pay through Square.
+	 *
+	 * @param array    $model Model.
+	 * @param array    $raw   Block.
+	 * @param string   $base  Path.
+	 * @param callable $err   Reporter.
+	 */
+	private static function square_errors( $model, $raw, $base, $err ) {
+		$squares = array();
+		foreach ( self::references( $model ) as $ref ) {
+			if ( QAF_Payment_Settings::provider_of( $ref ) === 'square' ) {
+				$squares[] = $ref;
+			}
+		}
+		if ( ! $squares ) {
+			return;
+		}
+		$currency = is_string( $raw['currency'] ?? null ) ? strtolower( $raw['currency'] ) : 'usd';
+		if ( preg_match( '/^[a-z]{3}$/', $currency ) && ! QAF_Payment_Money::is_supported( 'square', $currency ) ) {
+			/* translators: %s: currency code. */
+			$err( $base . '/currency', sprintf( __( '%s is not a currency this site takes through Square.', 'quill-accessible-forms' ), strtoupper( $currency ) ) );
+		} else {
+			// A Square location charges only in its own country's currency, which Check Connection read.
+			$env = QAF_Payment_Settings::mode();
+			foreach ( $squares as $ref ) {
+				$at = QAF_Payment_Settings::get_public( $ref, $env, 'location_currency' );
+				if ( $at !== '' && $at !== $currency ) {
+					/* translators: 1: connection name, 2: currency code, 3: currency code. */
+					$err( $base . '/currency', sprintf( __( '%1$s takes %2$s only, and this form charges %3$s.', 'quill-accessible-forms' ), QAF_Payment_Connections::name( $ref ), strtoupper( $at ), strtoupper( $currency ) ) );
+				}
+			}
+		}
+		$d = $raw['statement_descriptor'] ?? '';
+		if ( is_string( $d ) && strlen( $d ) > self::DESCRIPTOR_MAX_SQUARE ) {
+			$err( $base . '/statement_descriptor', __( 'Square takes a statement descriptor of at most 20 characters.', 'quill-accessible-forms' ) );
 		}
 	}
 
@@ -326,6 +484,7 @@ class QAF_Payment_Config {
 	 * @return string Name.
 	 */
 	public static function provider_name( $provider ) {
-		return $provider === 'paypal' ? 'PayPal' : 'Stripe';
+		$names = array( 'stripe' => 'Stripe', 'paypal' => 'PayPal', 'square' => 'Square' );
+		return $names[ QAF_Payment_Settings::provider_of( $provider ) ] ?? 'Stripe';
 	}
 }

@@ -17,12 +17,16 @@ class QAF_Payment_Rest_Test extends QAF_Payment_Test_Case {
 		$routes = $GLOBALS['qaf_test_routes'];
 		$this->assertSame( 'GET', $routes['qaf/v1/payments/settings']['methods'] );
 		$this->assertSame( array( 'QAF_Payment_REST', 'can_manage' ), $routes['qaf/v1/payments/settings']['permission_callback'] );
-		foreach ( array( 'start', 'finish', 'status' ) as $r ) {
+		foreach ( array( 'start', 'finish', 'status', 'pay' ) as $r ) {
 			$this->assertSame( 'POST', $routes[ 'qaf/v1/payments/' . $r ]['methods'] );
 			$this->assertTrue( $routes[ 'qaf/v1/payments/' . $r ]['args']['token']['required'] );
 		}
-		$this->assertArrayHasKey( 'qaf/v1/payments/webhook/(?P<provider>stripe|paypal)', $routes );
-		$this->assertCount( 5, $routes, 'no route writes payment settings: QUILL never sends keys' );
+		$this->assertSame( array( 'QAF_Payment_REST', 'can_manage' ), $routes['qaf/v1/payments/refund']['permission_callback'] );
+		$hook = 'qaf/v1/payments/webhook/(?P<provider>(?:stripe|paypal|square)(?:~[a-z0-9][a-z0-9-]{0,39})?)';
+		$this->assertArrayHasKey( $hook, $routes );
+		$this->assertSame( 1, preg_match( '#^payments/webhook/' . substr( $hook, strlen( 'qaf/v1/payments/webhook/' ) ) . '$#', 'payments/webhook/stripe~events' ) );
+		$this->assertSame( 0, preg_match( '#^payments/webhook/' . substr( $hook, strlen( 'qaf/v1/payments/webhook/' ) ) . '$#', 'payments/webhook/venmo' ) );
+		$this->assertCount( 7, $routes, 'no route writes payment settings: QUILL never sends keys' );
 	}
 
 	public function test_only_administrators_or_payment_managers_read_readiness() {
@@ -38,7 +42,7 @@ class QAF_Payment_Rest_Test extends QAF_Payment_Test_Case {
 	public function test_the_settings_reply_is_the_contract_shape() {
 		$this->make_ready( 'stripe' );
 		$reply = ( new QAF_Payment_REST() )->settings();
-		$this->assertSame( array( 'contract_version', 'test_mode', 'providers' ), array_keys( $reply ) );
+		$this->assertSame( array( 'contract_version', 'test_mode', 'providers', 'connections' ), array_keys( $reply ) );
 		$this->assertTrue( $reply['providers']['stripe']['configured'] );
 	}
 

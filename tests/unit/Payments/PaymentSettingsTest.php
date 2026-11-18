@@ -13,12 +13,15 @@ require_once QAF_TESTS_DIR . 'payments-test-helpers.php';
 class QAF_Payment_Settings_Test extends QAF_Payment_Test_Case {
 
 	public function test_a_new_site_is_in_test_mode_and_nothing_is_ready() {
+		$none = array( 'configured' => false, 'webhook_ready' => false );
 		$this->assertSame( array(
-			'contract_version' => 1,
+			'contract_version' => 2,
 			'test_mode'        => true,
-			'providers'        => array(
-				'stripe' => array( 'configured' => false, 'webhook_ready' => false ),
-				'paypal' => array( 'configured' => false, 'webhook_ready' => false ),
+			'providers'        => array( 'stripe' => $none, 'paypal' => $none, 'square' => $none ),
+			'connections'      => array(
+				array( 'id' => 'stripe', 'name' => 'Stripe', 'test_mode' => true ) + $none,
+				array( 'id' => 'paypal', 'name' => 'PayPal', 'test_mode' => true ) + $none,
+				array( 'id' => 'square', 'name' => 'Square', 'test_mode' => true ) + $none,
 			),
 		), QAF_Payment_Settings::readiness() );
 	}
@@ -70,7 +73,7 @@ class QAF_Payment_Settings_Test extends QAF_Payment_Test_Case {
 		foreach ( array( self::STRIPE_SK, self::STRIPE_WH, self::STRIPE_PK, self::PAYPAL_SEC, self::PAYPAL_HOOK, self::PAYPAL_ID ) as $secret ) {
 			$this->assertStringNotContainsString( $secret, $json );
 		}
-		$this->assertSame( '{"contract_version":1,"test_mode":true,"providers":{"stripe":{"configured":true,"webhook_ready":true},"paypal":{"configured":true,"webhook_ready":true}}}', $json );
+		$this->assertStringStartsWith( '{"contract_version":2,"test_mode":true,"providers":{"stripe":{"configured":true,"webhook_ready":true},"paypal":{"configured":true,"webhook_ready":true},"square":{"configured":false,"webhook_ready":false}},"connections":[{"id":"stripe","name":"Stripe","test_mode":true,"configured":true,"webhook_ready":true},', $json );
 	}
 
 	public function test_secrets_are_kept_apart_and_never_autoloaded() {

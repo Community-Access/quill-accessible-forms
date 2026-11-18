@@ -51,6 +51,8 @@ class QAF_Payment_Money {
 			'aud', 'brl', 'cad', 'chf', 'czk', 'dkk', 'eur', 'gbp', 'hkd', 'huf', 'ils', 'jpy', 'mxn',
 			'myr', 'nok', 'nzd', 'php', 'pln', 'sek', 'sgd', 'thb', 'usd',
 		),
+		// One per seller country; a location takes only its own (checked at Check Connection).
+		'square' => array( 'aud', 'cad', 'eur', 'gbp', 'jpy', 'usd' ),
 	);
 
 	/**
