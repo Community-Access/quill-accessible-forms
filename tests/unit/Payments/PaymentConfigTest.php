@@ -29,7 +29,7 @@ class QAF_Payment_Config_Test extends QAF_Payment_Test_Case {
 	}
 
 	public function test_providers_must_be_known_unique_and_present() {
-		$e = self::paths( self::paid_form( 25, array(), array( 'providers' => array( 'stripe', 'stripe', 'square' ) ) ) );
+		$e = self::paths( self::paid_form( 25, array(), array( 'providers' => array( 'stripe', 'stripe', 'venmo' ) ) ) );
 		$this->assertArrayHasKey( '/extensions/payments/providers/1', $e );
 		$this->assertArrayHasKey( '/extensions/payments/providers/2', $e );
 		$e = self::paths( self::paid_form( 25, array(), array( 'providers' => array() ) ) );

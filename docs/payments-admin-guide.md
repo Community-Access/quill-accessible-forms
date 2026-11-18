@@ -1,8 +1,9 @@
 # Taking payments: a guide for site owners
 
 This guide is for the person who runs the WordPress site. It covers
-connecting Stripe and PayPal, test mode, webhooks, going live, the payments
-report, and what the plugin does to keep money and keys safe. If you write
+connecting Stripe, PayPal and Square, more than one account per provider,
+test mode, webhooks, going live, the payments report, and what the plugin
+does to keep money and keys safe. If you write
 forms in QUILL or QUILL Lite, their own guides have a chapter called
 "Taking payments with your forms" that picks up where this one stops.
 
@@ -96,9 +97,54 @@ If you make the webhook yourself, use the address on the page, subscribe to
 the webhook ID, save, and press Check Connection again. The check confirms
 the ID exists, points at this site, and asks for those events.
 
+## Connecting Square
+
+1. In the Square Developer Dashboard, open your application (or create one)
+   and switch to **Sandbox**. Copy the sandbox **application ID** (it starts
+   with `sandbox-`) and the sandbox **access token**. Under Locations, copy
+   the **location ID** the money should go to.
+2. On **Payments**, fill in "Square, sandbox keys" and save.
+3. Press **Check Connection: Square sandbox**. The site asks Square for that
+   location with that token, and checks the location is active and can take
+   cards. It also notes the location's currency: a Square location charges
+   only in its own country's currency (US dollars, Canadian dollars, pounds,
+   Australian dollars, yen or euros), and a form in another currency is
+   refused when it is published.
+4. Press **Create Webhook: Square sandbox**. The site subscribes its webhook
+   address to `payment.updated` and `refund.updated` and keeps the
+   subscription's signature key, which proves each event came from Square.
+
+Square's own card field draws the card number, date, security code and
+postal code inside the form, from Square's servers; the card goes from the
+payer's browser to Square and never through this site. Check its fields
+with your screen reader before going live, as for any provider.
+
+## More than one account: connections
+
+Each provider starts with one **main connection**. To take money into more
+than one account, add **named connections** under **Connections**: choose
+the provider, give it a short name (`donations` makes `stripe:donations`)
+and a name people read ("Stripe: Donations"). Each named connection has its
+own keys, for sandbox and live, its own Check Connection and its own webhook
+address, and appears in the Readiness table on its own row.
+
+A form in QUILL names the connections it may use. It either lets the payer
+choose between them, or picks one by rule from the answers: by amount, by a
+choice ("Fund: Building"), by currency, or by a date window, always with an
+otherwise. If a rule's connection is not ready when someone pays, the site
+passes over that rule to the next, so a payment always has somewhere to go.
+
+Every connection's keys say which forms use it, so you can see what a change
+affects before you save it. A connection that a form uses cannot be removed:
+the site says which forms, so you can change them first. Renaming keeps the
+short name, so forms keep working.
+
+The whole site is in one mode, test or live, and so are all its connections:
+a form never mixes a test connection and a live one.
+
 ## The Readiness table
 
-The top of the page has a small table: one row per provider, with its keys
+The top of the page has a small table: one row per connection, with its keys
 and its webhook in words. "Ready" means the provider accepted exactly the
 keys saved now. Change a key and the row goes back to "Not checked since the
 keys were saved" until you check again. A typed key on its own is never
@@ -106,8 +152,9 @@ reported as ready.
 
 QUILL reads the same information from the site (the route is
 `GET /wp-json/qaf/v1/payments/settings`) when you use Verify Payment Setup or
-publish a paid form. It gets only yes or no for each provider and the
-site's mode, never a key.
+publish a paid form. It gets only yes or no for each connection, each
+connection's name, and the site's mode, never a key, a token or a location
+ID.
 
 ## Trying it out
 
@@ -157,8 +204,11 @@ the payment in the Stripe or PayPal dashboard; then the webhook moves it to
 
 ## Refunds
 
-Refunds are made in the Stripe or PayPal dashboard, not here and not in
-QUILL. The provider tells the site, and the entry becomes "Partly refunded"
+Stripe and PayPal refunds are made in their dashboards, not here and not in
+QUILL. A Square payment can be refunded in the Square Dashboard, or through
+`POST /wp-json/qaf/v1/payments/refund` (payment managers only), which sends
+the refund through the Refunds API of the connection that took the payment.
+Either way the money goes back from the account that took it. The provider tells the site, and the entry becomes "Partly refunded"
 or "Refunded". A partial refund is never shown as a full one, and a late
 event can never turn a refunded entry back into a paid one.
 
@@ -166,7 +216,7 @@ event can never turn a refunded entry back into a paid one.
 
 "Recent payments" lists the latest payments, newest first, as a table with
 a header row: entry, form, amount (with any refund), status in words,
-provider, mode, transaction ID and when it last changed. You can filter by
+the connection that took it, mode, transaction ID and when it last changed. You can filter by
 status and by form ID. Above the table, "Totals for the payments shown"
 gives, per currency, how many were paid, what was taken, what was refunded,
 what you kept, and what is authorized but not yet captured.
@@ -184,11 +234,14 @@ what you kept, and what is authorized but not yet captured.
 - `qaf_form_submitted` still fires when the answers are saved, before
   payment. Do not fulfil an order from it.
 - The routes under `qaf/v1/payments/` are: `settings` (GET, administrators
-  only), `start`, `finish` and `status` (POST, used by the checkout, each
-  needing the one-time token the site gave that submission), and
-  `webhook/stripe` and `webhook/paypal` (POST, provider-signed).
+  only), `start`, `finish`, `status` and `pay` (POST, used by the checkout,
+  each needing the one-time token the site gave that submission), `refund`
+  (POST, payment managers only, Square), and `webhook/{connection}` (POST,
+  provider-signed; a named connection's colon is a tilde in the address,
+  `webhook/stripe~donations`).
 - Entries in `GET /qaf/v1/entries` carry a `payment` object with
-  `provider`, `status`, `amount` (decimal text in major units, such as
+  `provider`, `connection` (such as `stripe:donations`), `connection_name`,
+  `status`, `amount` (decimal text in major units, such as
   "25.00"), `currency`, `receipt_url` and `transaction_id`. An entry with no
   `payment` object has an unknown payment, never a paid one.
 

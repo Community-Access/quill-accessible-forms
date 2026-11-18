@@ -2,7 +2,9 @@
  * QUILL Accessible Forms: the checkout after a paid form is sent.
  *
  * The site has already saved the answers and worked out the amount; this
- * script only lets the payer choose a provider and pay. It never decides
+ * script only lets the payer choose how to pay (when the form offers more
+ * than one connection) and pay: Stripe's Payment Element, PayPal's buttons,
+ * or Square's card field. It never decides
  * whether a payment succeeded: every result is checked by the site, which
  * asks the provider itself (payments/status) or hears from the provider's
  * signed webhook.
@@ -64,6 +66,10 @@
 		});
 	}
 
+	function kind(prov) {
+		return prov.provider || String(prov.id).split(':')[0];
+	}
+
 	function loadScript(src) {
 		return new Promise(function (resolve, reject) {
 			var s = document.createElement('script');
@@ -107,7 +113,7 @@
 			var fs = el('fieldset', { 'class': 'qaf-checkout-choice' });
 			fs.appendChild(el('legend', {}, t.choose));
 			p.providers.forEach(function (prov, i) {
-				var id = base + '-' + prov.id;
+				var id = base + '-' + String(prov.id).replace(/[^a-z0-9-]/g, '-');
 				var wrap = el('div', { 'class': 'qaf-checkout-option' });
 				var input = el('input', { type: 'radio', name: base + '-provider', id: id, value: prov.id });
 				if (i === 0) {
@@ -119,7 +125,7 @@
 					}
 				});
 				wrap.appendChild(input);
-				wrap.appendChild(el('label', { 'for': id }, prov.id === 'stripe' ? t.card : t.paypal));
+				wrap.appendChild(el('label', { 'for': id }, prov.name || (kind(prov) === 'stripe' ? t.card : kind(prov) === 'square' ? t.square : t.paypal)));
 				fs.appendChild(wrap);
 			});
 			section.appendChild(fs);
@@ -186,8 +192,10 @@
 		this.current = prov;
 		this.clear();
 		this.panel.textContent = '';
-		if (prov.id === 'stripe') {
+		if (kind(prov) === 'stripe') {
 			this.stripe(prov);
+		} else if (kind(prov) === 'square') {
+			this.square(prov);
 		} else {
 			this.paypal(prov);
 		}
@@ -200,7 +208,7 @@
 			return;
 		}
 		this.say(t.loading);
-		post('start', { token: this.payment.token, provider: 'stripe' }).then(function (reply) {
+		post('start', { token: this.payment.token, provider: prov.id }).then(function (reply) {
 			if (reply.status && reply.status.done) {
 				self.show(reply.status);
 				return;
@@ -266,7 +274,7 @@
 			return window.paypal.Buttons({
 				createOrder: function () {
 					self.clear();
-					return post('start', { token: p.token, provider: 'paypal' }).then(function (reply) {
+					return post('start', { token: p.token, provider: prov.id }).then(function (reply) {
 						if (reply.status && reply.status.done) {
 							self.show(reply.status);
 							throw new Error('done');
@@ -297,6 +305,78 @@
 			});
 		}).catch(function () {
 			self.fail(t.noScript);
+		});
+	};
+
+	/**
+	 * Square: its Web Payments SDK draws the card field (an iframe from
+	 * Square) and turns the card into a one-time token; the site then makes
+	 * the payment with it and checks the result itself.
+	 */
+	Checkout.prototype.square = function (prov) {
+		var self = this;
+		var p = this.payment;
+		this.say(t.loading);
+		var src = p.test_mode ? 'https://sandbox.web.squarecdn.com/v1/square.js' : 'https://web.squarecdn.com/v1/square.js';
+		var ready = window.Square ? Promise.resolve() : loadScript(src);
+		ready.then(function () {
+			return post('start', { token: p.token, provider: prov.id });
+		}).then(function (reply) {
+			if (reply.status && reply.status.done) {
+				self.show(reply.status);
+				return null;
+			}
+			if (!window.Square) {
+				throw new Error(t.noScript);
+			}
+			var payments = window.Square.payments(reply.application_id, reply.location_id);
+			return payments.card().then(function (card) {
+				var group = el('div', { 'class': 'qaf-checkout-card', role: 'group', 'aria-label': t.cardDetails });
+				var mount = el('div', { 'class': 'qaf-checkout-element', id: 'qaf-square-' + self.formId });
+				group.appendChild(mount);
+				self.panel.appendChild(group);
+				var pay = el('button', { type: 'button', 'class': 'qaf-button qaf-button-primary qaf-checkout-pay' }, fmt(t.payButton, p.spoken));
+				self.panel.appendChild(pay);
+				return card.attach(mount).then(function () {
+					self.say(t.loaded);
+					pay.addEventListener('click', function () {
+						if (self.busy) {
+							return;
+						}
+						self.busy = true;
+						pay.disabled = true;
+						self.clear();
+						self.say(t.working);
+						card.tokenize().then(function (result) {
+							if (result.status !== 'OK') {
+								var said = (result.errors || []).map(function (e) {
+									return e.message;
+								}).filter(Boolean).join(' ');
+								throw new Error(said || t.cardProblem);
+							}
+							// Strong customer authentication, where the card's bank asks for it.
+							var details = { amount: String(p.amount), currencyCode: p.currency, intent: 'CHARGE', billingContact: {} };
+							return payments.verifyBuyer(result.token, details).then(function (v) {
+								return { source: result.token, verification: (v && v.token) || '' };
+							}, function () {
+								return { source: result.token, verification: '' };
+							});
+						}).then(function (made) {
+							return post('pay', { token: p.token, source: made.source, verification: made.verification });
+						}).then(function (status) {
+							self.busy = false;
+							pay.disabled = false;
+							self.show(status);
+						}).catch(function (err) {
+							self.busy = false;
+							pay.disabled = false;
+							self.fail(err.message || t.network);
+						});
+					});
+				});
+			});
+		}).catch(function (err) {
+			self.fail((err && err.message) || t.noScript);
 		});
 	};
 

@@ -202,7 +202,8 @@ class QAF_Payment_Service_Test extends QAF_Payment_Test_Case {
 		$p       = self::stripe_event( 'evt_x', 'payment_intent.succeeded', self::pi( array( 'status' => 'succeeded' ) ) );
 		$this->assertSame( 400, $service->webhook( 'stripe', $p, array() )['code'] );
 		$this->assertSame( 400, $service->webhook( 'stripe', $p, array( 'stripe-signature' => self::stripe_sign( $p, 'whsec_guess' ) ) )['code'] );
-		$this->assertSame( 404, $service->webhook( 'square', $p, array() )['code'] );
+		$this->assertSame( 404, $service->webhook( 'venmo', $p, array() )['code'] );
+		$this->assertSame( 404, $service->webhook( 'stripe~nobody', $p, array() )['code'], 'a connection the site does not have' );
 	}
 
 	public function test_manual_capture_stays_authorized_until_captured() {
@@ -282,7 +283,9 @@ class QAF_Payment_Service_Test extends QAF_Payment_Test_Case {
 		$this->assertSame( 200, $service->webhook( 'paypal', $event, $headers )['code'] );
 		$this->assertSame( 1, self::fired( 'qaf_payment_paid' ) );
 		$this->assertSame( array(
-			'provider'       => 'paypal',
+			'provider'        => 'paypal',
+			'connection'      => 'paypal',
+			'connection_name' => 'PayPal',
 			'status'         => 'paid',
 			'amount'         => '25.00',
 			'currency'       => 'USD',

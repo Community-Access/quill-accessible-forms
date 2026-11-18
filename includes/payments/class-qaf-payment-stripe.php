@@ -44,6 +44,13 @@ class QAF_Payment_Stripe {
 	private $http;
 
 	/**
+	 * The connection this instance serves (`stripe` or `stripe:<name>`).
+	 *
+	 * @var string
+	 */
+	private $ref;
+
+	/**
 	 * Clock, for tests.
 	 *
 	 * @var callable
@@ -56,9 +63,10 @@ class QAF_Payment_Stripe {
 	 * @param QAF_Payment_HTTP|null $http Transport.
 	 * @param callable|null         $now  Clock returning a Unix time.
 	 */
-	public function __construct( $http = null, $now = null ) {
+	public function __construct( $http = null, $now = null, $ref = 'stripe' ) {
 		$this->http = $http ? $http : new QAF_Payment_HTTP();
 		$this->now  = $now ? $now : 'time';
+		$this->ref  = $ref;
 	}
 
 	/**
@@ -73,7 +81,7 @@ class QAF_Payment_Stripe {
 	 */
 	private function call( $env, $method, $path, $body = null, $idem = '' ) {
 		$headers = array(
-			'Authorization'  => 'Bearer ' . QAF_Payment_Settings::get_secret( 'stripe', $env, 'secret_key' ),
+			'Authorization'  => 'Bearer ' . QAF_Payment_Settings::get_secret( $this->ref, $env, 'secret_key' ),
 			'Stripe-Version' => self::API_VERSION,
 		);
 		if ( $method === 'POST' ) {
@@ -109,7 +117,7 @@ class QAF_Payment_Stripe {
 	 * @return array array( 'ok' => bool, 'message' => string ).
 	 */
 	public function verify_credentials( $env ) {
-		$problem = QAF_Payment_Settings::shape_problem( 'stripe', $env );
+		$problem = QAF_Payment_Settings::shape_problem( $this->ref, $env );
 		if ( $problem !== '' ) {
 			return array( 'ok' => false, 'message' => $problem );
 		}
@@ -131,7 +139,7 @@ class QAF_Payment_Stripe {
 	 * @return array array( 'ok' => bool, 'message' => string ).
 	 */
 	public function create_webhook( $env ) {
-		$body = array( 'url' => QAF_Payment_Settings::webhook_url( 'stripe' ), 'description' => 'QUILL Accessible Forms' );
+		$body = array( 'url' => QAF_Payment_Settings::webhook_url( $this->ref ), 'description' => 'QUILL Accessible Forms' );
 		foreach ( self::EVENTS as $i => $event ) {
 			$body[ 'enabled_events[' . $i . ']' ] = $event;
 		}
@@ -143,7 +151,7 @@ class QAF_Payment_Stripe {
 		if ( ( $json['livemode'] ?? null ) !== ( $env === 'live' ) ) {
 			return array( 'ok' => false, 'message' => __( 'Stripe created the endpoint in the other environment.', 'quill-accessible-forms' ) );
 		}
-		QAF_Payment_Settings::set_secret( 'stripe', $env, 'webhook_secret', $json['secret'] );
+		QAF_Payment_Settings::set_secret( $this->ref, $env, 'webhook_secret', $json['secret'] );
 		return array( 'ok' => true, 'message' => __( 'Stripe will send payment events to this site.', 'quill-accessible-forms' ) );
 	}
 
@@ -373,7 +381,7 @@ class QAF_Payment_Stripe {
 		$header = (string) ( $headers['stripe-signature'] ?? '' );
 		$env    = '';
 		foreach ( QAF_Payment_Settings::ENVIRONMENTS as $candidate ) {
-			if ( $this->signature_valid( $payload, $header, QAF_Payment_Settings::get_secret( 'stripe', $candidate, 'webhook_secret' ) ) ) {
+			if ( $this->signature_valid( $payload, $header, QAF_Payment_Settings::get_secret( $this->ref, $candidate, 'webhook_secret' ) ) ) {
 				$env = $candidate;
 				break;
 			}
@@ -386,8 +394,8 @@ class QAF_Payment_Stripe {
 			return array( 'ok' => false, 'code' => 400 );
 		}
 		// A correctly signed event proves the signing secret is the right one.
-		if ( ! QAF_Payment_Settings::verified( 'stripe', $env, 'webhook' ) ) {
-			QAF_Payment_Settings::record_check( 'stripe', $env, 'webhook', true, __( 'A signed event from Stripe arrived and was verified.', 'quill-accessible-forms' ) );
+		if ( ! QAF_Payment_Settings::verified( $this->ref, $env, 'webhook' ) ) {
+			QAF_Payment_Settings::record_check( $this->ref, $env, 'webhook', true, __( 'A signed event from Stripe arrived and was verified.', 'quill-accessible-forms' ) );
 		}
 		$type   = (string) ( $event['type'] ?? '' );
 		$object = is_array( $event['data']['object'] ?? null ) ? $event['data']['object'] : array();

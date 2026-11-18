@@ -52,6 +52,8 @@ class QAF_Payment_Money_Test extends QAF_Payment_Test_Case {
 		$this->assertTrue( QAF_Payment_Money::is_supported( 'stripe', 'INR' ) );
 		$this->assertFalse( QAF_Payment_Money::is_supported( 'paypal', 'inr' ) );
 		$this->assertTrue( QAF_Payment_Money::is_supported( 'paypal', 'usd' ) );
-		$this->assertFalse( QAF_Payment_Money::is_supported( 'square', 'usd' ) );
+		$this->assertTrue( QAF_Payment_Money::is_supported( 'square', 'usd' ) );
+		$this->assertFalse( QAF_Payment_Money::is_supported( 'square', 'mxn' ) );
+		$this->assertFalse( QAF_Payment_Money::is_supported( 'venmo', 'usd' ) );
 	}
 }

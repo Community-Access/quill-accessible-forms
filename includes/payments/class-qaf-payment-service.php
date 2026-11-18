@@ -8,8 +8,10 @@
  * 2. open(): after the entry is saved, record an attempt (pending) and give
  *    the page a one-time token for it. The token is the only handle the
  *    page has; the site keeps only its hash.
- * 3. start(): the payer picks a provider; the site creates (or resumes) the
- *    Payment Intent or the PayPal order for the attempt's own amount.
+ * 3. start(): the payer picks a connection (or the form's rules picked one,
+ *    QAF_Payment_Routing); the site creates (or resumes) the Payment Intent
+ *    or the PayPal order for the attempt's own amount. Square makes its
+ *    payment in pay(), from the card token its card field returns.
  * 4. finish() / refresh(): the site asks the provider what happened, and
  *    webhook() hears it from the provider directly. Either way the change
  *    goes through settle(), which applies only the transitions
@@ -39,11 +41,18 @@ class QAF_Payment_Service {
 	private $store;
 
 	/**
-	 * Gateways by provider.
+	 * Gateways by connection reference, made as they are first needed.
 	 *
 	 * @var array
 	 */
 	private $gateways;
+
+	/**
+	 * Makes a gateway for a connection, for tests: function( $ref ).
+	 *
+	 * @var callable|null
+	 */
+	private $factory;
 
 	/**
 	 * The shared service.
@@ -56,14 +65,13 @@ class QAF_Payment_Service {
 	 * Constructor.
 	 *
 	 * @param QAF_Payment_Store|null $store    Store.
-	 * @param array|null             $gateways 'stripe' and 'paypal' gateways.
+	 * @param array|null             $gateways Gateways by connection reference.
+	 * @param callable|null          $factory  Makes any other connection's gateway.
 	 */
-	public function __construct( $store = null, $gateways = null ) {
+	public function __construct( $store = null, $gateways = null, $factory = null ) {
 		$this->store    = $store ? $store : new QAF_Payment_DB_Store();
-		$this->gateways = $gateways ? $gateways : array(
-			'stripe' => new QAF_Payment_Stripe(),
-			'paypal' => new QAF_Payment_PayPal(),
-		);
+		$this->gateways = $gateways ? $gateways : array();
+		$this->factory  = $factory;
 	}
 
 	/**
@@ -97,13 +105,33 @@ class QAF_Payment_Service {
 	}
 
 	/**
-	 * A gateway.
+	 * A connection's gateway.
 	 *
-	 * @param string $provider Provider.
-	 * @return QAF_Payment_Stripe|QAF_Payment_PayPal Gateway.
+	 * @param string $ref Connection reference.
+	 * @return QAF_Payment_Stripe|QAF_Payment_PayPal|QAF_Payment_Square Gateway.
 	 */
-	public function gateway( $provider ) {
-		return $this->gateways[ $provider ];
+	public function gateway( $ref ) {
+		if ( ! isset( $this->gateways[ $ref ] ) ) {
+			if ( $this->factory ) {
+				$this->gateways[ $ref ] = call_user_func( $this->factory, $ref );
+			} else {
+				$provider               = QAF_Payment_Settings::provider_of( $ref );
+				$this->gateways[ $ref ] = $provider === 'square' ? new QAF_Payment_Square( null, $ref )
+					: ( $provider === 'paypal' ? new QAF_Payment_PayPal( null, $ref ) : new QAF_Payment_Stripe( null, null, $ref ) );
+			}
+		}
+		return $this->gateways[ $ref ];
+	}
+
+	/**
+	 * Whether a connection can take payment now in an environment.
+	 *
+	 * @param string $ref Reference.
+	 * @param string $env Environment.
+	 * @return bool Ready.
+	 */
+	private static function ready( $ref, $env ) {
+		return QAF_Payment_Connections::exists( $ref ) && QAF_Payment_Settings::ready( $ref, $env );
 	}
 
 	/**
@@ -121,17 +149,21 @@ class QAF_Payment_Service {
 	}
 
 	/**
-	 * The providers that can take this form's payment now, in the form's order.
+	 * The connections that can take this form's payment now, in the form's
+	 * order, before its rules (if any) are applied.
 	 *
 	 * @param array $config Payment configuration.
-	 * @return array Providers.
+	 * @return array References.
 	 */
 	public static function available( $config ) {
-		$env = QAF_Payment_Settings::mode();
-		$out = array();
-		foreach ( $config['providers'] as $p ) {
-			if ( QAF_Payment_Settings::ready( $p, $env ) ) {
-				$out[] = $p;
+		$env  = QAF_Payment_Settings::mode();
+		$refs = $config['by_rule'] ?? false
+			? array_merge( array_column( $config['rules'], 'use' ), array( $config['otherwise'] ) )
+			: ( $config['connections'] ?? $config['providers'] );
+		$out  = array();
+		foreach ( array_unique( $refs ) as $ref ) {
+			if ( $ref !== '' && self::ready( $ref, $env ) ) {
+				$out[] = $ref;
 			}
 		}
 		return $out;
@@ -160,7 +192,11 @@ class QAF_Payment_Service {
 		}
 		// A test form on a live site, or a live form on a test site, is refused:
 		// neither may quietly become the other.
-		if ( $config['test_mode'] !== QAF_Payment_Settings::is_test() || ! self::available( $config ) ) {
+		if ( $config['test_mode'] !== QAF_Payment_Settings::is_test() ) {
+			return self::unavailable();
+		}
+		$plan['offered'] = QAF_Payment_Routing::offered( $config, $model, $plan );
+		if ( ! $plan['offered'] ) {
 			return self::unavailable();
 		}
 		return $plan;
@@ -217,6 +253,7 @@ class QAF_Payment_Service {
 			'amount_minor' => (int) $plan['minor'],
 			'currency'     => strtolower( $plan['currency'] ),
 			'capture'      => $plan['config']['capture'] === 'manual' ? 'manual' : 'automatic',
+			'offered'      => implode( ',', (array) ( $plan['offered'] ?? array() ) ),
 		);
 		$id = $this->store->insert( $row );
 		return array( 'attempt' => $this->store->get( $id ), 'token' => $token );
@@ -261,14 +298,29 @@ class QAF_Payment_Service {
 	public function for_page( $attempt, $token, $config ) {
 		$env       = $attempt['environment'];
 		$providers = array();
-		foreach ( self::available( $config ) as $p ) {
-			$providers[] = array(
-				'id'   => $p,
-				'name' => QAF_Payment_Config::provider_name( $p ),
-				'key'  => $p === 'stripe'
-					? QAF_Payment_Settings::get_public( 'stripe', $env, 'publishable_key' )
-					: QAF_Payment_Settings::get_public( 'paypal', $env, 'client_id' ),
+		foreach ( self::offered_refs( $attempt, $config ) as $ref ) {
+			if ( ! self::ready( $ref, $env ) ) {
+				continue;
+			}
+			$p     = QAF_Payment_Settings::provider_of( $ref );
+			$named = strpos( $ref, ':' ) !== false;
+			$row   = array(
+				'id'       => $ref,
+				'provider' => $p,
+				// "Card (Stripe)", "PayPal", or the site's own name for a named connection.
+				'name'     => $named ? QAF_Payment_Connections::name( $ref ) : ( $p === 'paypal' ? 'PayPal' : sprintf(
+					/* translators: %s: Stripe or Square. */
+					__( 'Card (%s)', 'quill-accessible-forms' ),
+					QAF_Payment_Config::provider_name( $p )
+				) ),
 			);
+			if ( $p === 'square' ) {
+				$row['key']      = QAF_Payment_Settings::get_public( $ref, $env, 'application_id' );
+				$row['location'] = QAF_Payment_Settings::get_public( $ref, $env, 'location_id' );
+			} else {
+				$row['key'] = QAF_Payment_Settings::get_public( $ref, $env, $p === 'stripe' ? 'publishable_key' : 'client_id' );
+			}
+			$providers[] = $row;
 		}
 		return array(
 			'token'     => $token,
@@ -328,6 +380,20 @@ class QAF_Payment_Service {
 	}
 
 	/**
+	 * The connections an attempt may be paid through: those chosen when the
+	 * form was sent (its rules ran then, on the answers), or, for an attempt
+	 * from before connections, the form's own list.
+	 *
+	 * @param array $attempt Attempt.
+	 * @param array $config  Configuration.
+	 * @return array References.
+	 */
+	private static function offered_refs( $attempt, $config ) {
+		$stored = array_values( array_filter( explode( ',', (string) ( $attempt['offered'] ?? '' ) ) ) );
+		return $stored ? $stored : self::available( $config );
+	}
+
+	/**
 	 * Start (or resume) payment with a provider.
 	 *
 	 * @param array  $attempt  Attempt.
@@ -340,10 +406,13 @@ class QAF_Payment_Service {
 		if ( is_wp_error( $config ) ) {
 			return $config;
 		}
-		if ( ! in_array( $provider, $config['providers'], true ) ) {
+		$form_refs = ! empty( $config['by_rule'] )
+			? array_merge( array_column( $config['rules'], 'use' ), array( $config['otherwise'] ) )
+			: $config['connections'];
+		if ( ! in_array( $provider, $form_refs, true ) || ! in_array( $provider, self::offered_refs( $attempt, $config ), true ) ) {
 			return new WP_Error( 'qaf_payment_provider', __( 'This form does not take that way of paying.', 'quill-accessible-forms' ), array( 'status' => 400 ) );
 		}
-		if ( $attempt['environment'] !== QAF_Payment_Settings::mode() || ! QAF_Payment_Settings::ready( $provider, $attempt['environment'] ) ) {
+		if ( $attempt['environment'] !== QAF_Payment_Settings::mode() || ! self::ready( $provider, $attempt['environment'] ) ) {
 			return self::unavailable();
 		}
 		if ( ! in_array( $attempt['status'], array( 'pending', 'failed', 'cancelled' ), true ) ) {
@@ -352,8 +421,9 @@ class QAF_Payment_Service {
 		if ( $attempt['provider_ref'] !== '' ) {
 			// A Stripe intent is resumed while it can still be paid. Anything
 			// else starts afresh, with a new idempotency key for the new try.
-			$reuse = $provider === 'stripe' && $attempt['provider'] === 'stripe' && $attempt['status'] !== 'cancelled';
-			if ( ! $reuse && $attempt['provider'] === 'stripe' ) {
+			$was_stripe = QAF_Payment_Settings::provider_of( $attempt['provider'] ) === 'stripe';
+			$reuse      = $was_stripe && $provider === $attempt['provider'] && $attempt['status'] !== 'cancelled';
+			if ( ! $reuse && $was_stripe ) {
 				// Leaving a Stripe intent behind: first make sure it was not
 				// paid meanwhile, then cancel it, so it can never be confirmed
 				// later beside the new payment.
@@ -363,7 +433,7 @@ class QAF_Payment_Service {
 				}
 				$attempt = $this->store->get( $attempt['id'] );
 				if ( $attempt['status'] !== 'cancelled' ) {
-					$cancel = $this->gateway( 'stripe' )->cancel( $attempt );
+					$cancel = $this->gateway( $attempt['provider'] )->cancel( $attempt );
 					if ( empty( $cancel['ok'] ) ) {
 						return new WP_Error( 'qaf_payment_start', __( 'The card payment you started could not be stopped, so another way of paying cannot be offered. Please finish the card payment, or try again in a moment.', 'quill-accessible-forms' ), array( 'status' => 409 ) );
 					}
@@ -382,12 +452,75 @@ class QAF_Payment_Service {
 		$this->store->update( $attempt['id'], array( 'provider' => $provider, 'provider_ref' => $result['ref'], 'capture_ref' => '' ) );
 		$attempt = $this->settle( $this->store->get( $attempt['id'] ), $result['status'] === 'failed' ? 'pending' : $result['status'] );
 		$out     = array( 'status' => self::status_for_page( $attempt ) );
-		if ( $provider === 'stripe' ) {
+		$kind    = QAF_Payment_Settings::provider_of( $provider );
+		if ( $kind === 'stripe' ) {
 			$out['client_secret'] = $result['client_secret'];
+		} elseif ( $kind === 'square' ) {
+			$out['application_id'] = $result['application_id'];
+			$out['location_id']    = $result['location_id'];
 		} else {
 			$out['order_id'] = $result['ref'];
 		}
 		return $out;
+	}
+
+	/**
+	 * Make a Square payment with the card token the page's card field made.
+	 *
+	 * @param array  $attempt      Attempt, started with a Square connection.
+	 * @param string $source       The Web Payments SDK token.
+	 * @param string $verification Buyer verification token, or ''.
+	 * @param array  $config       Payment configuration (config_for() when null).
+	 * @return array|WP_Error Page status.
+	 */
+	public function pay( $attempt, $source, $verification = '', $config = null ) {
+		if ( QAF_Payment_Settings::provider_of( $attempt['provider'] ) !== 'square' || ! is_string( $source ) || $source === '' ) {
+			return new WP_Error( 'qaf_payment_state', __( 'There is no card payment to make.', 'quill-accessible-forms' ), array( 'status' => 409 ) );
+		}
+		if ( ! in_array( $attempt['status'], array( 'pending', 'failed', 'cancelled' ), true ) ) {
+			return self::status_for_page( $attempt );
+		}
+		$config = $config === null ? $this->config_for( $attempt ) : $config;
+		if ( is_wp_error( $config ) ) {
+			return $config;
+		}
+		if ( ! self::ready( $attempt['provider'], $attempt['environment'] ) ) {
+			return self::unavailable();
+		}
+		$result = $this->gateway( $attempt['provider'] )->pay( $attempt, $source, (string) $verification, $config['statement_descriptor'] );
+		if ( empty( $result['ok'] ) ) {
+			// A new card token needs a new idempotency key, or Square refuses it.
+			$this->store->update( $attempt['id'], array( 'tries' => (int) $attempt['tries'] + 1 ) );
+			$attempt = $this->settle( $this->store->get( $attempt['id'] ), 'failed' );
+			return self::status_for_page( $attempt, (string) $result['message'] );
+		}
+		$this->store->update( $attempt['id'], array( 'provider_ref' => $result['ref'] ) );
+		$fields = $result['receipt_url'] !== '' ? array( 'receipt_url' => $result['receipt_url'] ) : array();
+		$attempt = $this->settle( $this->store->get( $attempt['id'] ), $result['status'], $fields );
+		return self::status_for_page( $attempt );
+	}
+
+	/**
+	 * Refund through the connection that took the payment. Square only:
+	 * Stripe and PayPal refunds are made in their dashboards, and arrive here
+	 * by webhook.
+	 *
+	 * @param array $attempt Attempt.
+	 * @param int   $minor   Amount, minor units.
+	 * @return array|WP_Error array( 'message' ).
+	 */
+	public function refund( $attempt, $minor ) {
+		if ( QAF_Payment_Settings::provider_of( $attempt['provider'] ) !== 'square' ) {
+			return new WP_Error( 'qaf_payment_refund', __( 'Refund this payment in the Stripe or PayPal dashboard; the entry follows by webhook.', 'quill-accessible-forms' ), array( 'status' => 400 ) );
+		}
+		if ( ! in_array( $attempt['status'], array( 'paid', 'partially_refunded' ), true ) ) {
+			return new WP_Error( 'qaf_payment_refund', __( 'Only a paid payment can be refunded.', 'quill-accessible-forms' ), array( 'status' => 409 ) );
+		}
+		$result = $this->gateway( $attempt['provider'] )->refund( $attempt, $minor );
+		if ( empty( $result['ok'] ) ) {
+			return new WP_Error( 'qaf_payment_refund', $result['message'], array( 'status' => 502 ) );
+		}
+		return array( 'message' => $result['message'] );
 	}
 
 	/**
@@ -397,10 +530,10 @@ class QAF_Payment_Service {
 	 * @return array|WP_Error Page status.
 	 */
 	public function finish( $attempt ) {
-		if ( $attempt['provider'] !== 'paypal' || $attempt['provider_ref'] === '' ) {
+		if ( QAF_Payment_Settings::provider_of( $attempt['provider'] ) !== 'paypal' || $attempt['provider_ref'] === '' ) {
 			return new WP_Error( 'qaf_payment_state', __( 'There is no PayPal payment to finish.', 'quill-accessible-forms' ), array( 'status' => 409 ) );
 		}
-		$result = $this->gateway( 'paypal' )->finish( $attempt );
+		$result = $this->gateway( $attempt['provider'] )->finish( $attempt );
 		return $this->apply_result( $attempt, $result );
 	}
 
@@ -509,7 +642,8 @@ class QAF_Payment_Service {
 	 * @return array array( 'code' => HTTP status, 'body' => reply ).
 	 */
 	public function webhook( $provider, $payload, $headers ) {
-		if ( ! isset( $this->gateways[ $provider ] ) ) {
+		$provider = str_replace( '~', ':', (string) $provider );
+		if ( ! QAF_Payment_Connections::exists( $provider ) ) {
 			return array( 'code' => 404, 'body' => array( 'received' => false ) );
 		}
 		$event = $this->gateway( $provider )->read_webhook( $payload, $headers );
@@ -526,7 +660,9 @@ class QAF_Payment_Service {
 		if ( ! $attempt || $attempt['environment'] !== $event['env'] ) {
 			return array( 'code' => 200, 'body' => array( 'received' => true, 'applied' => false ) );
 		}
-		$applied = $provider === 'stripe' ? $this->apply_stripe( $attempt, $event ) : $this->apply_paypal( $attempt, $event );
+		$kind    = QAF_Payment_Settings::provider_of( $provider );
+		$applied = $kind === 'stripe' ? $this->apply_stripe( $attempt, $event )
+			: ( $kind === 'square' ? $this->apply_square( $attempt, $event ) : $this->apply_paypal( $attempt, $event ) );
 		return array( 'code' => 200, 'body' => array( 'received' => true, 'applied' => $applied ) );
 	}
 
@@ -538,9 +674,10 @@ class QAF_Payment_Service {
 	 * @return array|null Attempt.
 	 */
 	private function locate( $provider, $event ) {
-		if ( $provider === 'stripe' ) {
+		if ( QAF_Payment_Settings::provider_of( $provider ) !== 'paypal' ) {
+			// Stripe and Square: the payment's own ID, taken by this very connection.
 			$a = $this->store->find( 'provider_ref', $event['ref'] );
-			return ( $a && $a['provider'] === 'stripe' ) ? $a : null;
+			return ( $a && $a['provider'] === $provider ) ? $a : null;
 		}
 		$a = null;
 		if ( ! empty( $event['attempt_id'] ) ) {
@@ -552,7 +689,7 @@ class QAF_Payment_Service {
 		if ( ! $a && $event['capture_ref'] !== '' ) {
 			$a = $this->store->find( 'capture_ref', $event['capture_ref'] );
 		}
-		if ( ! $a || $a['provider'] !== 'paypal' ) {
+		if ( ! $a || $a['provider'] !== $provider ) {
 			return null;
 		}
 		// An event naming another order than the attempt's is not about it.
@@ -592,6 +729,29 @@ class QAF_Payment_Service {
 	}
 
 	/**
+	 * Apply a Square event, after checking amount, currency and location.
+	 *
+	 * @param array $attempt Attempt.
+	 * @param array $event   Event.
+	 * @return bool Applied.
+	 */
+	private function apply_square( $attempt, $event ) {
+		if ( $event['status'] === 'refetch' ) {
+			return ! is_wp_error( $this->refresh( $attempt ) );
+		}
+		$location = QAF_Payment_Settings::get_public( $attempt['provider'], $attempt['environment'], 'location_id' );
+		if ( $event['amount_minor'] !== (int) $attempt['amount_minor'] || $event['currency'] !== strtolower( $attempt['currency'] ) || $event['location_id'] !== $location ) {
+			return false;
+		}
+		$fields = array( 'refunded_minor' => (int) $event['refunded_minor'] );
+		if ( $event['receipt_url'] !== '' ) {
+			$fields['receipt_url'] = $event['receipt_url'];
+		}
+		$after = $this->settle( $attempt, $event['status'], $fields );
+		return $after['status'] === $event['status'];
+	}
+
+	/**
 	 * Apply a PayPal event, after checking amount and currency.
 	 *
 	 * @param array $attempt Attempt.
@@ -626,20 +786,24 @@ class QAF_Payment_Service {
 	 * (which means unknown, never paid).
 	 *
 	 * @param int $entry_id Entry ID.
-	 * @return array|null provider, status, amount, currency, receipt_url, transaction_id.
+	 * @return array|null provider, status, amount, currency, receipt_url, transaction_id,
+	 *                    connection, connection_name.
 	 */
 	public function for_entry( $entry_id ) {
 		$a = $this->store->find( 'entry_id', (string) (int) $entry_id );
 		if ( ! $a ) {
 			return null;
 		}
+		$ref = (string) $a['provider'];
 		return array(
-			'provider'       => (string) $a['provider'],
+			'provider'        => QAF_Payment_Settings::provider_of( $ref ),
+			'connection'      => $ref,
+			'connection_name' => $ref === '' ? '' : QAF_Payment_Connections::name( $ref ),
 			'status'         => (string) $a['status'],
 			'amount'         => QAF_Payment_Money::to_major( $a['amount_minor'], $a['currency'] ),
 			'currency'       => strtoupper( $a['currency'] ),
 			'receipt_url'    => (string) $a['receipt_url'],
-			'transaction_id' => (string) ( $a['capture_ref'] !== '' && $a['provider'] === 'paypal' ? $a['capture_ref'] : $a['provider_ref'] ),
+			'transaction_id'  => (string) ( $a['capture_ref'] !== '' && QAF_Payment_Settings::provider_of( $ref ) === 'paypal' ? $a['capture_ref'] : $a['provider_ref'] ),
 		);
 	}
 }
