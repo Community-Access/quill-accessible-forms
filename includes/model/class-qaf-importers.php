@@ -306,20 +306,87 @@ class QAF_Importers {
      * @throws InvalidArgumentException For an unknown source or unreadable export.
      */
     public static function import( $source, $text ) {
+        $data = null;
         switch ( $source ) {
             case 'gravity-forms':
-                return self::gravity_forms( self::decode( $text, $source ) );
+                $data   = self::decode( $text, $source );
+                $result = self::gravity_forms( self::strip_entries( $data ) );
+                break;
             case 'wpforms':
-                return self::wpforms( self::decode( $text, $source ) );
+                $data   = self::decode( $text, $source );
+                $result = self::wpforms( self::strip_entries( $data ) );
+                break;
             case 'contact-form-7':
-                $data = json_decode( $text, true );
-                return self::contact_form_7( is_array( $data ) && isset( $data['form'] ) ? $data : array( 'form' => (string) $text ) );
+                $data   = json_decode( $text, true );
+                $result = self::contact_form_7( is_array( $data ) && isset( $data['form'] ) ? self::strip_entries( $data ) : array( 'form' => (string) $text ) );
+                break;
             case 'ninja-forms':
-                return self::ninja_forms( self::decode( $text, $source ) );
+                $data   = self::decode( $text, $source );
+                $result = self::ninja_forms( self::strip_entries( $data ) );
+                break;
             case 'google-forms':
-                return self::google_forms( self::decode( $text, $source ) );
+                $data   = self::decode( $text, $source );
+                $result = self::google_forms( self::strip_entries( $data ) );
+                break;
+            default:
+                throw new InvalidArgumentException( 'Unknown import source: ' . $source );
         }
-        throw new InvalidArgumentException( 'Unknown import source: ' . $source );
+        // Forms only, never responses: an export that carries entries (some
+        // tools add them, and a hand-made file may) has them left behind,
+        // and the report says how many.
+        $entries = is_array( $data ) ? self::count_entries( $data ) : 0;
+        if ( $entries ) {
+            $result['report']->dropped( 'export', sprintf( 'The export holds %d entries (people\'s answers). QAF imports the form only; the entries were left behind.', $entries ) );
+        }
+        return $result;
+    }
+
+    /** Keys other builders' exports use for submitted entries. */
+    const ENTRY_KEYS = array( 'entries', 'leads', 'submissions', 'responses' );
+
+    /**
+     * Entries anywhere an export keeps them: at the top, or on a form.
+     *
+     * @param array $data Export.
+     * @return int How many.
+     */
+    public static function count_entries( $data ) {
+        $n = 0;
+        foreach ( self::ENTRY_KEYS as $k ) {
+            if ( isset( $data[ $k ] ) && is_array( $data[ $k ] ) ) {
+                $n += count( $data[ $k ] );
+            }
+        }
+        foreach ( $data as $v ) {
+            if ( is_array( $v ) && ( isset( $v['fields'] ) || isset( $v['form'] ) ) ) {
+                foreach ( self::ENTRY_KEYS as $k ) {
+                    if ( isset( $v[ $k ] ) && is_array( $v[ $k ] ) ) {
+                        $n += count( $v[ $k ] );
+                    }
+                }
+            }
+        }
+        return $n;
+    }
+
+    /**
+     * An export without its entries, so no mapping can ever read one.
+     *
+     * @param array $data Export.
+     * @return array Export.
+     */
+    private static function strip_entries( $data ) {
+        foreach ( self::ENTRY_KEYS as $k ) {
+            unset( $data[ $k ] );
+        }
+        foreach ( $data as $key => $v ) {
+            if ( is_array( $v ) && ( isset( $v['fields'] ) || isset( $v['form'] ) ) ) {
+                foreach ( self::ENTRY_KEYS as $k ) {
+                    unset( $data[ $key ][ $k ] );
+                }
+            }
+        }
+        return $data;
     }
 
     /**

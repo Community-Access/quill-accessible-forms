@@ -30,6 +30,17 @@ class QAF_Admin {
                 'default'           => QAF_Settings::get_instance()->get_defaults(),
             )
         );
+
+        // Spam (Settings > Spam): saved in the same form, as its own option.
+        register_setting(
+            'qaf_settings',
+            QAF_Spam_Settings::OPTION,
+            array(
+                'type'              => 'array',
+                'sanitize_callback' => array( 'QAF_Spam_Settings', 'sanitize_option' ),
+                'default'           => QAF_Spam_Settings::defaults(),
+            )
+        );
     }
 
     /**
@@ -132,6 +143,18 @@ class QAF_Admin {
             'qaf-settings',
             array( $this, 'render_settings_page' )
         );
+
+        // Preview: opened from the builder's Preview link, so it is kept out
+        // of the menu (removed from the list, still a page).
+        add_submenu_page(
+            'qaf-forms',
+            __( 'Preview Form', 'quill-accessible-forms' ),
+            __( 'Preview', 'quill-accessible-forms' ),
+            'manage_options',
+            'qaf-form-preview',
+            array( $this, 'render_form_preview_page' )
+        );
+        remove_submenu_page( 'qaf-forms', 'qaf-form-preview' );
     }
 
     /**
@@ -338,6 +361,11 @@ class QAF_Admin {
                     'oneType'          => __( '1 type.', 'quill-accessible-forms' ),
                     'published'        => __( 'Published. The form is live.', 'quill-accessible-forms' ),
                     'statusFailed'     => __( 'The form was not saved.', 'quill-accessible-forms' ),
+                    // Sections and columns, and the Accessibility Coach.
+                    'layoutFailed'     => __( 'That change was not saved.', 'quill-accessible-forms' ),
+                    'coachRunning'     => __( 'Checking the form.', 'quill-accessible-forms' ),
+                    'coachFailed'      => __( 'The Accessibility Coach could not check the form.', 'quill-accessible-forms' ),
+                    'coachGone'        => __( 'That question is no longer on the canvas. Check again.', 'quill-accessible-forms' ),
                     // phpcs:enable
                 ),
             ) );
@@ -514,6 +542,8 @@ class QAF_Admin {
      * Render settings page
      */
     public function render_settings_page() {
+        // The settings page's tabs: arrow keys, Home and End, as a tab list should.
+        wp_enqueue_script( 'qaf-settings-tabs', QAF_PLUGIN_URL . 'admin/js/qaf-settings-tabs.js', array(), QAF_VERSION, true );
         include QAF_PLUGIN_DIR . 'admin/partials/settings-page.php';
     }
 
@@ -529,5 +559,13 @@ class QAF_Admin {
      */
     public function render_import_export_page() {
         include QAF_PLUGIN_DIR . 'admin/partials/import-export.php';
+    }
+
+    /**
+     * Render the Preview screen: the form as a visitor sees it, which sends nothing.
+     */
+    public function render_form_preview_page() {
+        $builder = new QAF_Form_Builder();
+        $builder->render_preview( isset( $_GET['form_id'] ) ? absint( $_GET['form_id'] ) : 0 );
     }
 }

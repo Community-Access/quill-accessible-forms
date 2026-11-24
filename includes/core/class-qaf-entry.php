@@ -116,6 +116,34 @@ class QAF_Entry {
     public $is_read = false;
 
     /**
+     * The spam check that held this entry (honeypot, links, akismet...), or null.
+     *
+     * @var string|null
+     */
+    public $spam_check = null;
+
+    /**
+     * Why it was held, as a sentence: "6 links (the limit is 3)".
+     *
+     * @var string|null
+     */
+    public $spam_reason = null;
+
+    /**
+     * The holding check's score, when it has one.
+     *
+     * @var float|null
+     */
+    public $spam_score = null;
+
+    /**
+     * Every doubt and note, as JSON (see QAF_Spam_Decision::storage()).
+     *
+     * @var string|null
+     */
+    public $spam_details = null;
+
+    /**
      * Created timestamp
      *
      * @var string
@@ -151,6 +179,32 @@ class QAF_Entry {
     protected $form = null;
 
     /**
+     * Whether the held-as-spam note was written (only before the schema upgrade).
+     *
+     * @var bool
+     */
+    protected $spam_note_written = false;
+
+    /**
+     * The spam details as an array.
+     *
+     * @return array
+     */
+    public function get_spam_details() {
+        $d = $this->spam_details ? json_decode( (string) $this->spam_details, true ) : null;
+        return is_array( $d ) ? $d : array();
+    }
+
+    /**
+     * Set the spam details from an array.
+     *
+     * @param array $details Details.
+     */
+    public function set_spam_details( $details ) {
+        $this->spam_details = $details ? wp_json_encode( $details ) : null;
+    }
+
+    /**
      * Constructor
      *
      * @param int|object $entry Entry ID or database row object.
@@ -177,6 +231,8 @@ class QAF_Entry {
                     $this->$key = (bool) $value;
                 } elseif ( $key === 'payment_amount' ) {
                     $this->$key = (float) $value;
+                } elseif ( $key === 'spam_score' ) {
+                    $this->$key = null === $value ? null : (float) $value;
                 } else {
                     $this->$key = $value;
                 }
@@ -254,6 +310,18 @@ class QAF_Entry {
 
         $format = array( '%d', '%d', '%s', '%s', '%s', '%s', '%s', '%s', '%s', '%s', '%s', '%d', '%d', '%s' );
 
+        // Why it was held as spam, once the tables have the columns. Before
+        // the schema upgrade has run the entry is still saved, and the reason
+        // is kept as a note instead, so nothing is lost either way.
+        $spam_columns = class_exists( 'QAF_Activator' ) && QAF_Activator::schema_ready();
+        if ( $spam_columns ) {
+            $data['spam_check']   = $this->spam_check ?: null;
+            $data['spam_reason']  = null === $this->spam_reason ? null : substr( (string) $this->spam_reason, 0, 255 );
+            $data['spam_score']   = null === $this->spam_score ? null : (float) $this->spam_score;
+            $data['spam_details'] = $this->spam_details ?: null;
+            array_push( $format, '%s', '%s', '%f', '%s' );
+        }
+
         if ( $this->id > 0 ) {
             // Update
             $result = $wpdb->update( $table, $data, array( 'id' => $this->id ), $format, array( '%d' ) );
@@ -280,6 +348,11 @@ class QAF_Entry {
 
         // Save field values
         $this->save_field_values();
+
+        if ( ! $spam_columns && $this->spam_reason && 'spam' === $this->status && empty( $this->spam_note_written ) ) {
+            $this->spam_note_written = true;
+            $this->add_note( sprintf( __( 'Held as spam: %s', 'quill-accessible-forms' ), $this->spam_reason ), 'status_change' );
+        }
 
         /**
          * Fires after an entry is saved
@@ -591,6 +664,9 @@ class QAF_Entry {
             'payment_transaction_id' => $this->payment_transaction_id,
             'is_starred'             => $this->is_starred,
             'is_read'                => $this->is_read,
+            'spam_check'             => $this->spam_check,
+            'spam_reason'            => $this->spam_reason,
+            'spam_score'             => $this->spam_score,
             'created_at'             => $this->created_at,
             'updated_at'             => $this->updated_at,
             'fields'                 => $this->field_values,

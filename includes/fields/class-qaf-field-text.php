@@ -194,7 +194,7 @@ class QAF_Field_Text extends QAF_Field {
         $attrs = array(
             'type'        => $this->config['input_type'] ?: 'text',
             'id'          => $this->get_html_id(),
-            'name'        => 'qaf_fields[' . $this->get_id() . ']',
+            'name'        => $this->get_input_name(),
             'value'       => esc_attr( $value ),
             'class'       => 'qaf-input qaf-input-text',
             'placeholder' => $this->config['placeholder'],

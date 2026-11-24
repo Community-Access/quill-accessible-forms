@@ -558,6 +558,8 @@ CSV
      * Test BFL generation with choices
      */
     public function test_generate_bfl_with_choices(): void {
+        // Three values over ten rows: few enough repeats to read as a choice
+        // (five rows, three values does not, by analyze_choices()'s ratios).
         $csv = $this->create_csv( <<<CSV
 Status
 Active
@@ -565,6 +567,11 @@ Inactive
 Pending
 Active
 Inactive
+Active
+Pending
+Active
+Inactive
+Active
 CSV
         );
 

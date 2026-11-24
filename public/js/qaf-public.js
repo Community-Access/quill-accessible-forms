@@ -45,6 +45,8 @@
             this.bindMultiPage(form);
             this.bindFileUploads(form);
             this.bindRatingFields(form);
+            this.bindRichText(form);
+            this.bindRepeaters(form);
             this.initCollapsibleSections(form);
             this.initCascadingDropdowns(form);
 
@@ -60,10 +62,14 @@
             // A form saved with a model runs the model's rules
             this.initModel(form);
 
-            // Mark form as loaded (for honeypot timing)
-            const loadedField = form.querySelector('input[name="_qaf_form_loaded"]');
-            if (loadedField) {
-                loadedField.value = Math.floor(Date.now() / 1000);
+            // A visit id for this page load: a question the site asks
+            // (spam checks) is tied to it. The start time stays as the
+            // server signed it, for the time to fill check.
+            const visitField = form.querySelector('input[name="qaf_visit"]');
+            if (visitField && !visitField.value) {
+                visitField.value = (window.crypto && crypto.randomUUID)
+                    ? crypto.randomUUID()
+                    : String(Date.now()) + '-' + String(Math.random()).slice(2);
             }
         },
 
@@ -101,12 +107,177 @@
          * @param {HTMLFormElement} form 
          */
         bindFormEvents: function(form) {
-            if (form.classList.contains('qaf-ajax-form')) {
+            // A preview always stays on the page, whatever its submission setting.
+            if (form.classList.contains('qaf-ajax-form') || form.dataset.qafPreview) {
                 form.addEventListener('submit', (e) => {
                     e.preventDefault();
                     this.handleSubmit(form);
                 });
             }
+        },
+
+        /**
+         * A rich-text field types into a contenteditable box; what is sent is
+         * its hidden textarea, named qaf_field_<id> like every other field.
+         * Copy the box into the textarea (on every change, and again just
+         * before the answers are gathered), and make the toolbar act on it.
+         * @param {HTMLFormElement} form
+         */
+        syncRichText: function(form) {
+            form.querySelectorAll('.qaf-rich-text-wrapper').forEach(wrapper => {
+                const editor = wrapper.querySelector('.qaf-rich-text-editor');
+                const store = wrapper.querySelector('textarea.qaf-rich-text-value');
+                if (editor && store) {
+                    store.value = editor.innerHTML;
+                }
+            });
+        },
+
+        bindRichText: function(form) {
+            form.querySelectorAll('.qaf-rich-text-wrapper').forEach(wrapper => {
+                const editor = wrapper.querySelector('.qaf-rich-text-editor');
+                const store = wrapper.querySelector('textarea.qaf-rich-text-value');
+                if (!editor || !store) return;
+                editor.addEventListener('input', () => { store.value = editor.innerHTML; });
+                wrapper.querySelectorAll('.qaf-toolbar-btn[data-command]').forEach(btn => {
+                    btn.addEventListener('click', () => {
+                        editor.focus();
+                        if (document.execCommand) {
+                            document.execCommand(btn.dataset.command, false, btn.dataset.value || null);
+                        }
+                        store.value = editor.innerHTML;
+                    });
+                });
+            });
+        },
+
+        /**
+         * Repeating groups. Each entry is a list item holding a group named
+         * by the repeater's legend and the entry's title ("Children Row 2").
+         * Add, Remove, Copy and the move buttons keep focus where the person
+         * is (the new entry's first question; after a removal, the entry that
+         * took its place, or Add), and say what happened in the repeater's
+         * own status region. A limit is said, not hidden: the button stays in
+         * the tab order with aria-disabled.
+         * @param {HTMLFormElement} form
+         */
+        bindRepeaters: function(form) {
+            const i18n = (window.qafPublic && window.qafPublic.i18n) || {};
+            const fill = (text, args) => String(text || '').replace(/%(\d+)\$[sd]/g, (m, n) => (args[n - 1] !== undefined ? args[n - 1] : m));
+            const focusable = 'input:not([type="hidden"]), select, textarea, [contenteditable="true"], button';
+            form.querySelectorAll('fieldset[data-max-rows]').forEach(group => {
+                const list = group.querySelector('.qaf-repeater-rows');
+                const template = group.querySelector('template.qaf-repeater-template');
+                const addBtn = group.querySelector('.qaf-repeater-add');
+                const status = group.querySelector('.qaf-repeater-status');
+                if (!list || !template || !addBtn) return;
+                const min = parseInt(group.dataset.minRows, 10) || 0;
+                const max = parseInt(group.dataset.maxRows, 10) || Infinity;
+                const legend = group.querySelector('.qaf-legend-text');
+                const name = legend ? legend.textContent.trim() : '';
+                const rows = () => Array.from(list.children).filter(el => el.classList.contains('qaf-repeater-row'));
+                const say = (text) => {
+                    if (!status) return;
+                    status.textContent = '';
+                    setTimeout(() => { status.textContent = text; }, 60);
+                };
+                const number = /(\s)(\d+|\{\{NUMBER\}\})(?=\s|$)/;
+                const renumber = () => {
+                    const all = rows();
+                    all.forEach((row, i) => {
+                        const n = String(i + 1);
+                        const title = row.querySelector('.qaf-repeater-row-title');
+                        if (title) title.textContent = title.textContent.replace(number, '$1' + n);
+                        row.querySelectorAll('.qaf-repeater-row-header [aria-label]').forEach(b => {
+                            b.setAttribute('aria-label', b.getAttribute('aria-label').replace(number, '$1' + n));
+                        });
+                        row.querySelectorAll('.qaf-repeater-remove').forEach(b => {
+                            if (all.length <= min) b.setAttribute('aria-disabled', 'true'); else b.removeAttribute('aria-disabled');
+                        });
+                    });
+                    if (all.length >= max) addBtn.setAttribute('aria-disabled', 'true'); else addBtn.removeAttribute('aria-disabled');
+                };
+                const firstIn = (row) => {
+                    const content = row.querySelector('.qaf-repeater-row-content') || row;
+                    return content.querySelector(focusable) || row.querySelector(focusable);
+                };
+                const makeRow = () => {
+                    const next = rows().reduce((m, r) => Math.max(m, (parseInt(r.dataset.index, 10) + 1) || 0), 0);
+                    const holder = document.createElement('div');
+                    holder.innerHTML = template.innerHTML.split('{{INDEX}}').join(String(next)).split('{{NUMBER}}').join(String(rows().length + 1));
+                    return holder.firstElementChild;
+                };
+                const add = (after) => {
+                    if (rows().length >= max) {
+                        say(fill(i18n.repeaterFull || '%1$s already has %2$d entries, the most it takes.', [name, max]));
+                        return null;
+                    }
+                    const row = makeRow();
+                    if (!row) return null;
+                    if (after && after.nextSibling) list.insertBefore(row, after.nextSibling); else list.appendChild(row);
+                    renumber();
+                    const at = rows().indexOf(row) + 1;
+                    say(fill(i18n.repeaterAdded || 'Entry %2$d of %3$d added to %1$s.', [name, at, rows().length]));
+                    return row;
+                };
+                group.addEventListener('click', (e) => {
+                    const btn = e.target.closest('button');
+                    if (!btn || !group.contains(btn)) return;
+                    const row = btn.closest('.qaf-repeater-row');
+                    if (btn === addBtn) {
+                        e.preventDefault();
+                        const made = add(null);
+                        const target = made && firstIn(made);
+                        if (target) target.focus();
+                        return;
+                    }
+                    if (!row) return;
+                    if (btn.classList.contains('qaf-repeater-remove')) {
+                        e.preventDefault();
+                        const all = rows();
+                        if (all.length <= min) {
+                            say(fill(i18n.repeaterMin || '%1$s needs at least %2$d entries.', [name, min]));
+                            return;
+                        }
+                        const at = all.indexOf(row);
+                        const then = all[at + 1] || all[at - 1] || null;
+                        row.remove();
+                        renumber();
+                        const target = then ? firstIn(then) : addBtn;
+                        (target || addBtn).focus();
+                        say(fill(i18n.repeaterRemoved || 'Entry %2$d removed from %1$s. %3$d left.', [name, at + 1, rows().length]));
+                    } else if (btn.classList.contains('qaf-repeater-copy')) {
+                        e.preventDefault();
+                        const made = add(row);
+                        if (!made) return;
+                        const fields = 'input, select, textarea';
+                        const from = row.querySelector('.qaf-repeater-row-content').querySelectorAll(fields);
+                        const to = made.querySelector('.qaf-repeater-row-content').querySelectorAll(fields);
+                        from.forEach((el, i) => {
+                            if (!to[i]) return;
+                            if (el.type === 'checkbox' || el.type === 'radio') to[i].checked = el.checked; else to[i].value = el.value;
+                        });
+                        const target = firstIn(made);
+                        if (target) target.focus();
+                    } else if (btn.classList.contains('qaf-repeater-move-up') || btn.classList.contains('qaf-repeater-move-down')) {
+                        e.preventDefault();
+                        const up = btn.classList.contains('qaf-repeater-move-up');
+                        const other = up ? row.previousElementSibling : row.nextElementSibling;
+                        if (!other || !other.classList.contains('qaf-repeater-row')) return;
+                        if (up) list.insertBefore(row, other); else list.insertBefore(other, row);
+                        renumber();
+                        btn.focus();
+                        say(fill(i18n.repeaterMoved || 'Entry moved to position %2$d of %3$d in %1$s.', [name, rows().indexOf(row) + 1, rows().length]));
+                    } else if (btn.classList.contains('qaf-repeater-toggle')) {
+                        e.preventDefault();
+                        const open = btn.getAttribute('aria-expanded') !== 'false';
+                        btn.setAttribute('aria-expanded', open ? 'false' : 'true');
+                        const content = document.getElementById(btn.getAttribute('aria-controls'));
+                        if (content) content.hidden = open;
+                    }
+                });
+                renumber();
+            });
         },
 
         /**
@@ -116,6 +287,7 @@
          * @returns {Object}
          */
         collectValues: function(form) {
+            this.syncRichText(form);
             const formData = new FormData(form);
             const data = {
                 fields: {}
@@ -137,7 +309,9 @@
                     return;
                 }
 
-                // Field classes currently render: qaf_fields[field_id]
+                // Pages rendered before every field was named qaf_field_<id>
+                // (text, email and textarea used qaf_fields[field_id]); still
+                // read, for a form left open while the plugin was updated.
                 if (key.startsWith('qaf_fields[')) {
                     const fieldId = key.match(/qaf_fields\[([^\]]+)\]/)?.[1];
                     if (fieldId) {
@@ -153,13 +327,21 @@
                     return;
                 }
 
-                // Composite field classes render: qaf_field_<id>[sub]
+                // Every field renders qaf_field_<id>: plain, qaf_field_<id>[]
+                // for several values (checkboxes, multiselect), or
+                // qaf_field_<id>[sub] for a part of a composite field.
                 if (key.startsWith('qaf_field_')) {
-                    const match = key.match(/^qaf_field_([^\[]+)(?:\[(.+)\])?$/);
+                    const match = key.match(/^qaf_field_([^\[]+)(\[\])?(?:\[(.+)\])?$/);
                     const fieldId = match?.[1];
-                    const subKey = match?.[2];
+                    const many = !!match?.[2];
+                    const subKey = match?.[3];
                     if (fieldId) {
-                        if (subKey) {
+                        if (many) {
+                            if (!Array.isArray(data.fields[fieldId])) {
+                                data.fields[fieldId] = [];
+                            }
+                            data.fields[fieldId].push(value);
+                        } else if (subKey) {
                             if (!data.fields[fieldId] || typeof data.fields[fieldId] !== 'object' || Array.isArray(data.fields[fieldId])) {
                                 data.fields[fieldId] = {};
                             }
@@ -200,19 +382,41 @@
                 submitBtn.disabled = true;
             }
 
+            // The admin's Preview: the answers are checked, and nothing is sent.
+            if (form.dataset.qafPreview) {
+                this.announce(instanceId, qafPublic.i18n.previewChecked || 'Preview: your answers passed the checks. Nothing was sent or saved.', 'polite');
+                return;
+            }
+
             this.announce(instanceId, qafPublic.i18n.submitting, 'polite');
 
             try {
+                // Proof of work (when the site uses it) is solved in the
+                // background from page load; wait a little for it.
+                if (window.QAFSpam) {
+                    await window.QAFSpam.ready(form);
+                }
                 const data = this.collectValues(form);
-                // Get nonce
-                const nonce = form.querySelector('input[name="_qaf_token"]')?.value;
+                // The spam checks read these; collectValues leaves out
+                // names that start with an underscore.
+                ['_qaf_token', '_qaf_form_loaded', '_qaf_form_sig'].forEach((name) => {
+                    const input = form.querySelector('input[name="' + name + '"]');
+                    if (input) {
+                        data[name] = input.value;
+                    }
+                });
+
+                // The REST nonce identifies a signed-in person. It is the
+                // wp_rest nonce, never the form token, which WordPress would
+                // refuse; and a visitor who is not signed in sends none.
+                const headers = { 'Content-Type': 'application/json' };
+                if (qafPublic.loggedIn && qafPublic.nonce) {
+                    headers['X-WP-Nonce'] = qafPublic.nonce;
+                }
 
                 const response = await fetch(form.action, {
                     method: 'POST',
-                    headers: {
-                        'Content-Type': 'application/json',
-                        'X-WP-Nonce': nonce
-                    },
+                    headers: headers,
                     body: JSON.stringify({
                         ...data,
                         form_id: formId
@@ -220,6 +424,13 @@
                 });
 
                 const result = await response.json();
+
+                // A question from the spam checks: nothing was saved yet,
+                // and the answers stay on the page.
+                if (response.ok && result && result.challenge) {
+                    this.showChallenge(form, result);
+                    return;
+                }
 
                 if (response.ok && result.success) {
                     this.handleSuccess(form, result);
@@ -232,6 +443,10 @@
                     message: qafPublic.i18n.networkError
                 });
             } finally {
+                // A proof of work counts once: start the next one.
+                if (window.QAFSpam) {
+                    window.QAFSpam.refresh(form, null);
+                }
                 form.classList.remove('qaf-form-submitting');
                 if (submitBtn) {
                     submitBtn.disabled = false;
@@ -249,8 +464,9 @@
             const wrapper = form.closest('.qaf-form-wrapper');
             const messagesDiv = wrapper?.querySelector('.qaf-messages');
 
-            // Clear form
+            // Clear form, and any question the spam checks asked
             form.reset();
+            form.querySelectorAll('.qaf-challenge').forEach((el) => el.remove());
 
             // Show success message
             let message = result.message || qafPublic.i18n.successMessage;
@@ -298,6 +514,62 @@
             form.dispatchEvent(new CustomEvent('qaf:submitted', {
                 detail: result
             }));
+        },
+
+        /**
+         * Show a question from the spam checks, as a field like any other:
+         * the site builds the markup (a label, the question as its
+         * description or as the legend of radio buttons, a polite error
+         * region); this puts it before the submit button, moves focus to
+         * it, and wires Send Anyway when it is offered.
+         * @param {HTMLFormElement} form
+         * @param {Object} result
+         */
+        showChallenge: function(form, result) {
+            const instanceId = form.id;
+            form.querySelectorAll('.qaf-challenge').forEach((el) => el.remove());
+
+            const holder = document.createElement('div');
+            holder.innerHTML = result.challenge.html;
+            const block = holder.firstElementChild;
+            if (!block) {
+                return;
+            }
+            const submitWrapper = form.querySelector('.qaf-submit-wrapper');
+            form.insertBefore(block, submitWrapper || null);
+
+            const anyway = block.querySelector('[data-qaf-send-anyway]');
+            if (anyway) {
+                anyway.addEventListener('click', () => {
+                    const field = block.querySelector('input[name="qaf_send_anyway"]');
+                    if (field) {
+                        field.value = anyway.dataset.qafSendAnyway;
+                    }
+                    if (typeof form.requestSubmit === 'function') {
+                        form.requestSubmit();
+                    } else {
+                        this.handleSubmit(form);
+                    }
+                });
+            }
+
+            const first = block.querySelector('input[name="qaf_challenge_answer"]');
+            if (first) {
+                first.focus();
+            }
+
+            // Said once: a wrong answer through the question's own error
+            // region (filled after the block is in place, so it is
+            // announced), anything else through the form's announcer.
+            const error = block.dataset.qafError;
+            const region = block.querySelector('.qaf-challenge-error');
+            if (error && region) {
+                setTimeout(() => {
+                    region.textContent = result.message || error;
+                }, 150);
+            } else {
+                this.announce(instanceId, result.message || '', 'polite');
+            }
         },
 
         /**

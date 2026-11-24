@@ -36,6 +36,7 @@ This guide covers everything from installation to advanced features:
 | [Autocomplete Providers](autocomplete-providers-guide.md) | Address autocomplete, static datasets, Google Places, fallbacks |
 | [Field Type Conversion](field-type-conversion-guide.md) | Converting fields while preserving properties and conditional logic |
 | [Accessibility Coach](accessibility-coach-guide.md) | Real-time accessibility scoring and guidance |
+| [Spam](spam-guide.md) | Holding doubtful forms instead of losing them, the checks, Akismet and OOPSpam, text questions, Spam and Not Spam |
 | [CSV Import](csv-import-guide.md) | Generate forms from CSV files with intelligent type detection |
 | [QAF Form Language Guide](qaf-form-language-guide.md) | Beginner-first QAF form language tutorial with recipes |
 | [Field Types Guide](field-types-guide.md) | Field-by-field beginner walkthrough |

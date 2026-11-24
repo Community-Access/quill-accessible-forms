@@ -228,7 +228,12 @@ class QAF_Field_User_Login extends QAF_Field {
      *
      * @return bool True if valid.
      */
-    public function validate() {
+    public function validate( $value = null ) {
+        // QAF_Field::validate() takes the value; honour it when the caller passes one.
+        if ( func_num_args() > 0 ) {
+            $this->set_value( $value );
+        }
+
         $value = trim( $this->get_value() );
         $min_length = (int) ( $this->config['min_length'] ?? 3 );
         $max_length = (int) ( $this->config['max_length'] ?? 60 );

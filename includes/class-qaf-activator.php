@@ -18,6 +18,39 @@ if ( ! defined( 'ABSPATH' ) ) {
 class QAF_Activator {
 
     /**
+     * Schema version. Raise it whenever create_tables() changes, and
+     * maybe_upgrade() brings existing sites up to it without reactivating.
+     *
+     * 2 (2026-11): entries keep why they were held as spam (spam_check,
+     *   spam_reason, spam_score, spam_details), and qaf_rate_events holds one
+     *   row per send for the rate limiter, which until now queried a column
+     *   qaf_rate_limits never had.
+     */
+    const SCHEMA_VERSION = 2;
+
+    /**
+     * Bring the tables up to SCHEMA_VERSION on a site that was updated
+     * without being activated again. Cheap when nothing is due: one
+     * autoloaded option read.
+     */
+    public static function maybe_upgrade() {
+        if ( (int) get_option( 'qaf_schema_version', 0 ) >= self::SCHEMA_VERSION ) {
+            return;
+        }
+        self::create_tables();
+    }
+
+    /**
+     * Whether the tables have the spam columns, so an entry is never lost by
+     * writing a column that is not there yet.
+     *
+     * @return bool
+     */
+    public static function schema_ready() {
+        return (int) get_option( 'qaf_schema_version', 0 ) >= self::SCHEMA_VERSION;
+    }
+
+    /**
      * Plugin activation
      */
     public static function activate() {
@@ -40,7 +73,7 @@ class QAF_Activator {
     /**
      * Create database tables
      */
-    private static function create_tables() {
+    public static function create_tables() {
         global $wpdb;
 
         $charset_collate = $wpdb->get_charset_collate();
@@ -84,6 +117,10 @@ class QAF_Activator {
             payment_transaction_id varchar(255),
             is_starred tinyint(1) DEFAULT 0,
             is_read tinyint(1) DEFAULT 0,
+            spam_check varchar(50) DEFAULT NULL,
+            spam_reason varchar(255) DEFAULT NULL,
+            spam_score decimal(10,3) DEFAULT NULL,
+            spam_details longtext,
             created_at datetime NOT NULL,
             updated_at datetime NOT NULL,
             PRIMARY KEY (id),
@@ -174,6 +211,18 @@ class QAF_Activator {
             KEY window_start (window_start)
         ) $charset_collate;";
 
+        // One row per send, for the rate limiter (schema version 2).
+        $table_rate_events = $wpdb->prefix . 'qaf_rate_events';
+        $sql_rate_events = "CREATE TABLE $table_rate_events (
+            id bigint(20) unsigned NOT NULL AUTO_INCREMENT,
+            form_id bigint(20) unsigned NOT NULL,
+            ip_address varchar(45) NOT NULL,
+            created_at datetime NOT NULL,
+            PRIMARY KEY  (id),
+            KEY ip_time (ip_address, created_at),
+            KEY form_ip_time (form_id, ip_address, created_at)
+        ) $charset_collate;";
+
         // File uploads table
         $table_uploads = $wpdb->prefix . 'qaf_uploads';
         $sql_uploads = "CREATE TABLE $table_uploads (
@@ -203,10 +252,12 @@ class QAF_Activator {
         dbDelta( $sql_views );
         dbDelta( $sql_drafts );
         dbDelta( $sql_rate_limits );
+        dbDelta( $sql_rate_events );
         dbDelta( $sql_uploads );
 
         // Store database version
         update_option( 'qaf_db_version', QAF_VERSION );
+        update_option( 'qaf_schema_version', self::SCHEMA_VERSION );
     }
 
     /**

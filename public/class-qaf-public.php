@@ -191,6 +191,7 @@ class QAF_Public {
         wp_localize_script( $this->plugin_name, 'qafPublic', array(
             'ajaxUrl'  => rest_url( 'qaf/v1/' ),
             'nonce'    => wp_create_nonce( 'wp_rest' ),
+            'loggedIn' => function_exists( 'is_user_logged_in' ) && is_user_logged_in(),
             'google'   => array(
                 'mapsApiKey' => $settings->get( 'google_maps_api_key', '' ),
             ),
@@ -217,6 +218,19 @@ class QAF_Public {
                 'questionHidden' => __( '1 question hidden.', 'quill-accessible-forms' ),
                 /* translators: %s: the quiz score. */
                 'yourScore'      => __( 'Your score: %s.', 'quill-accessible-forms' ),
+                // The admin's Preview: the answers are checked, never sent.
+                'previewChecked' => __( 'Preview: your answers passed the checks. Nothing was sent or saved.', 'quill-accessible-forms' ),
+                // Repeating groups: each entry is a labelled group.
+                /* translators: 1: the group's label, 2: entry number, 3: how many entries. */
+                'repeaterAdded'   => __( 'Entry %2$d of %3$d added to %1$s.', 'quill-accessible-forms' ),
+                /* translators: 1: the group's label, 2: entry number, 3: how many entries are left. */
+                'repeaterRemoved' => __( 'Entry %2$d removed from %1$s. %3$d left.', 'quill-accessible-forms' ),
+                /* translators: 1: the group's label, 2: the most entries. */
+                'repeaterFull'    => __( '%1$s already has %2$d entries, the most it takes.', 'quill-accessible-forms' ),
+                /* translators: 1: the group's label, 2: the fewest entries. */
+                'repeaterMin'     => __( '%1$s needs at least %2$d entries.', 'quill-accessible-forms' ),
+                /* translators: 1: the group's label, 2: new position, 3: how many entries. */
+                'repeaterMoved'   => __( 'Entry moved to position %2$d of %3$d in %1$s.', 'quill-accessible-forms' ),
             ),
         ) );
 
@@ -284,24 +298,37 @@ class QAF_Public {
             return;
         }
 
+        $attributes = array(
+            'formId' => array(
+                'type'    => 'number',
+                'default' => 0,
+            ),
+            'showTitle' => array(
+                'type'    => 'boolean',
+                'default' => true,
+            ),
+            'showDescription' => array(
+                'type'    => 'boolean',
+                'default' => true,
+            ),
+        );
+
         register_block_type( 'qaf/form', array(
             'editor_script'   => 'qaf-block-editor',
             'render_callback' => array( $this, 'render_form_block' ),
-            'attributes'      => array(
-                'formId' => array(
-                    'type'    => 'number',
-                    'default' => 0,
-                ),
-                'showTitle' => array(
-                    'type'    => 'boolean',
-                    'default' => true,
-                ),
-                'showDescription' => array(
-                    'type'    => 'boolean',
-                    'default' => true,
-                ),
-            ),
+            'attributes'      => $attributes,
         ) );
+
+        // The old name, for one release: a baf/form block the migration has
+        // not reached (saved after it ran, or restored from elsewhere) still
+        // shows its form. Not offered in the inserter.
+        if ( ! WP_Block_Type_Registry::get_instance()->is_registered( 'baf/form' ) ) {
+            register_block_type( 'baf/form', array(
+                'render_callback' => array( $this, 'render_form_block' ),
+                'attributes'      => $attributes,
+                'supports'        => array( 'inserter' => false ),
+            ) );
+        }
     }
 
     /**

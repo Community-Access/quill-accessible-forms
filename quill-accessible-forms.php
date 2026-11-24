@@ -235,6 +235,7 @@ final class QUILL_Accessible_Forms {
         require_once QAF_PLUGIN_DIR . 'includes/model/class-qaf-bfl-service.php';
         require_once QAF_PLUGIN_DIR . 'includes/model/class-qaf-field-scoring-panel.php';
         require_once QAF_PLUGIN_DIR . 'includes/model/class-qaf-builder-field-ops.php';
+        require_once QAF_PLUGIN_DIR . 'includes/model/class-qaf-builder-layout-ops.php';
 
         // Field Templates
         require_once QAF_PLUGIN_DIR . 'includes/core/class-qaf-field-templates.php';
@@ -285,6 +286,9 @@ final class QUILL_Accessible_Forms {
         require_once QAF_PLUGIN_DIR . 'includes/views/class-qaf-view-list.php';
         require_once QAF_PLUGIN_DIR . 'includes/views/class-qaf-view-map.php';
         require_once QAF_PLUGIN_DIR . 'includes/views/class-qaf-view-calendar.php';
+
+        // Spam: hold, never drop (QUILL's wordpress.md 13a).
+        require_once QAF_PLUGIN_DIR . 'includes/spam/class-qaf-spam.php';
 
         // Payments (contract version 1 with QUILL): Stripe and PayPal.
         require_once QAF_PLUGIN_DIR . 'includes/payments/class-qaf-payments.php';
@@ -367,6 +371,9 @@ final class QUILL_Accessible_Forms {
         $this->loader->add_action( 'wp_ajax_qaf_save_field_settings', $this->form_builder, 'ajax_save_field_settings' );
         $this->loader->add_action( 'wp_ajax_qaf_convert_question', $this->form_builder, 'ajax_convert_question' );
         $this->loader->add_action( 'wp_ajax_qaf_save_form_status', $this->form_builder, 'ajax_save_form_status' );
+        // Sections and columns on the canvas, and the Accessibility Coach.
+        $this->loader->add_action( 'wp_ajax_qaf_layout_action', $this->form_builder, 'ajax_layout_action' );
+        $this->loader->add_action( 'wp_ajax_qaf_coach_check', $this->form_builder, 'ajax_coach_check' );
         $this->loader->add_action( 'wp_ajax_qaf_import_csv', $this->form_builder, 'ajax_import_csv' );
         
         // Settings API registration
@@ -412,6 +419,7 @@ final class QUILL_Accessible_Forms {
         $api = new QAF_REST_API();
         $this->loader->add_action( 'rest_api_init', $api, 'register_routes' );
         QAF_Payments::init();
+        QAF_Spam::init();
     }
 
     /**
@@ -487,8 +495,23 @@ add_action( 'plugins_loaded', function () {
         QAF_Legacy_REST::init();
     }
 } );
-add_action( 'admin_init', function () {
-    if ( class_exists( 'QAF_Migrator' ) && current_user_can( 'activate_plugins' ) ) {
-        QAF_Migrator::maybe_run();
-    }
-} );
+/**
+ * BAF's data across, once per migration step, on a site whose files were
+ * replaced without activating again. It runs before the tables are brought
+ * up to date below, so they never stand in for the old ones, and on any
+ * request rather than waiting for an administrator, so a visitor's
+ * submission cannot land in an empty new table first. On a migrated site it
+ * costs one autoloaded option read (QAF_Migrator::maybe_run).
+ */
+add_action( 'plugins_loaded', function () {
+    require_once QAF_PLUGIN_DIR . 'includes/class-qaf-migrator.php';
+    QAF_Migrator::maybe_run();
+}, 4 );
+/**
+ * Tables up to the current schema on a site whose files were replaced
+ * without activating again (QAF_Activator::SCHEMA_VERSION).
+ */
+add_action( 'plugins_loaded', function () {
+    require_once QAF_PLUGIN_DIR . 'includes/class-qaf-activator.php';
+    QAF_Activator::maybe_upgrade();
+}, 5 );

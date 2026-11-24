@@ -52,6 +52,70 @@ class QAF_Fake_Migration_Store {
     public function add_cap( $r, $c ) { $this->caps[ $r ][] = $c; }
 }
 
+/** The same storage with what step 2 reaches: cron, posts, widgets, saved forms and users' own capabilities. */
+class QAF_Fake_Migration_Store_Full extends QAF_Fake_Migration_Store {
+    public $cron = array();      // list of array( timestamp, hook, args, schedule )
+    public $posts = array();     // id => content
+    public $forms = array();     // list of array( config, bfl_source ), in wp_qaf_forms
+    public $user_caps = array(); // user id => caps
+
+    public function cron_events( $start ) {
+        $out = array();
+        foreach ( $this->cron as $e ) {
+            if ( strpos( $e['hook'], $start ) === 0 ) {
+                $out[] = $e;
+            }
+        }
+        return $out;
+    }
+    public function move_cron( $event, $hook ) {
+        $this->cron = array_values( array_filter( $this->cron, function ( $e ) use ( $event ) { return $e !== $event; } ) );
+        foreach ( $this->cron as $e ) {
+            if ( $e['hook'] === $hook && $e['args'] === $event['args'] ) {
+                return;
+            }
+        }
+        $this->cron[] = array_merge( $event, array( 'hook' => $hook ) );
+    }
+    private static function swap( $text, $pairs ) {
+        return str_replace( array_keys( $pairs ), array_values( $pairs ), $text );
+    }
+    public function replace_in_posts( $pairs ) {
+        $n = 0;
+        foreach ( $this->posts as $id => $c ) {
+            $new = self::swap( $c, $pairs );
+            if ( $new !== $c ) { $this->posts[ $id ] = $new; $n++; }
+        }
+        return $n;
+    }
+    public function replace_in_options( $start, $pairs ) {
+        $n = 0;
+        foreach ( $this->options as $name => $v ) {
+            if ( strpos( $name, $start ) === 0 && is_string( $v ) ) {
+                $new = self::swap( $v, $pairs );
+                if ( $new !== $v ) { $this->options[ $name ] = $new; $n++; }
+            }
+        }
+        return $n;
+    }
+    public function replace_in_columns( $table, $columns, $pairs ) {
+        $n = 0;
+        foreach ( $this->forms as $i => $row ) {
+            $new = $row;
+            foreach ( $columns as $c ) { $new[ $c ] = self::swap( $row[ $c ], $pairs ); }
+            if ( $new !== $row ) { $this->forms[ $i ] = $new; $n++; }
+        }
+        return $n;
+    }
+    public function user_caps( $start ) {
+        return array_filter( $this->user_caps, function ( $caps ) use ( $start ) {
+            foreach ( $caps as $c ) { if ( strpos( $c, $start ) === 0 ) { return true; } }
+            return false;
+        } );
+    }
+    public function add_user_cap( $id, $cap ) { $this->user_caps[ $id ][] = $cap; }
+}
+
 class QAF_Rename_Compat_Test extends QAF_Unit_Test_Case {
 
     private static function site() {
@@ -193,5 +257,121 @@ class QAF_Rename_Compat_Test extends QAF_Unit_Test_Case {
         foreach ( glob( QAF_PLUGIN_DIR . 'tests/conformance/qaf/canonical/*.qaf' ) as $f ) {
             $this->assertStringStartsWith( 'bfl 1', file_get_contents( $f ), basename( $f ) );
         }
+    }
+
+    /** A BAF site with something in every place step 2 reaches. */
+    private static function full_site() {
+        $s          = new QAF_Fake_Migration_Store_Full();
+        $base       = self::site();
+        foreach ( array( 'tables', 'options', 'meta', 'caps' ) as $k ) {
+            $s->$k = $base->$k;
+        }
+        $widget     = serialize( array( 2 => array( 'content' => '<!-- wp:baf/form {"formId":3} /-->' ), 3 => array( 'text' => '[baf_form id="3"]' ) ) );
+        $s->options['widget_block'] = $widget;
+        $s->options['other_option'] = '[baf_form id="3"]';
+        $s->cron    = array(
+            array( 'timestamp' => 1700000000, 'hook' => 'baf_process_webhook_queue', 'args' => array(), 'schedule' => 'hourly' ),
+            array( 'timestamp' => 1700000100, 'hook' => 'baf_send_async_webhook', 'args' => array( 42 ), 'schedule' => false ),
+            array( 'timestamp' => 1700000200, 'hook' => 'wp_version_check', 'args' => array(), 'schedule' => 'twicedaily' ),
+        );
+        $s->posts   = array(
+            10 => "<!-- wp:baf/form {\"formId\":3} /-->\n<p>Hello</p>",
+            11 => 'Before [baf_form id="4"] and [baf_entries form="4"] after.',
+            12 => '<!-- wp:paragraph --><p>Nothing to do.</p><!-- /wp:paragraph -->',
+        );
+        $s->forms   = array(
+            array( 'config' => '{"extensions":{"baf_legacy":{"options":"x"}}}', 'bfl_source' => "bfl 1\n@extensions {\"baf_legacy\":{\"options\":\"x\"}}" ),
+            array( 'config' => '{"title":"Plain"}', 'bfl_source' => '' ),
+        );
+        $s->user_caps = array( 5 => array( 'subscriber', 'baf_view_entries' ), 6 => array( 'editor' ) );
+        return $s;
+    }
+
+    public function test_step_two_moves_what_refers_to_the_old_names() {
+        $s = self::full_site();
+        QAF_Migrator::run( $s );
+        $done = QAF_Migrator::run_references( $s );
+        $this->assertSame( array( 'cron' => 2, 'posts' => 2, 'widgets' => 1, 'forms' => 1, 'user_caps' => 1 ), $done );
+
+        $hooks = array_column( $s->cron, 'hook' );
+        sort( $hooks );
+        $this->assertSame( array( 'qaf_process_webhook_queue', 'qaf_send_async_webhook', 'wp_version_check' ), $hooks );
+        foreach ( $s->cron as $e ) {
+            if ( 'qaf_send_async_webhook' === $e['hook'] ) {
+                $this->assertSame( array( 1700000100, array( 42 ), false ), array( $e['timestamp'], $e['args'], $e['schedule'] ), 'same time, same arguments, still a single event' );
+            }
+            if ( 'qaf_process_webhook_queue' === $e['hook'] ) {
+                $this->assertSame( 'hourly', $e['schedule'] );
+            }
+        }
+
+        $this->assertStringStartsWith( '<!-- wp:qaf/form {"formId":3} /-->', $s->posts[10] );
+        $this->assertSame( 'Before [qaf_form id="4"] and [qaf_entries form="4"] after.', $s->posts[11] );
+        $this->assertSame( '<!-- wp:paragraph --><p>Nothing to do.</p><!-- /wp:paragraph -->', $s->posts[12] );
+
+        $widgets = unserialize( $s->options['widget_block'] );
+        $this->assertNotFalse( $widgets, 'the serialized widget option is still valid' );
+        $this->assertSame( '<!-- wp:qaf/form {"formId":3} /-->', $widgets[2]['content'] );
+        $this->assertSame( '[qaf_form id="3"]', $widgets[3]['text'] );
+        $this->assertSame( '[baf_form id="3"]', $s->options['other_option'], 'only widget options are rewritten' );
+
+        $this->assertSame( '{"extensions":{"qaf_legacy":{"options":"x"}}}', $s->forms[0]['config'] );
+        $this->assertStringContainsString( '"qaf_legacy"', $s->forms[0]['bfl_source'] );
+        $this->assertSame( '{"title":"Plain"}', $s->forms[1]['config'] );
+
+        $this->assertSame( array( 'subscriber', 'baf_view_entries', 'qaf_view_entries' ), $s->user_caps[5] );
+    }
+
+    public function test_every_replacement_keeps_its_length() {
+        foreach ( array_merge( QAF_Migrator::CONTENT_PAIRS, QAF_Migrator::FORM_PAIRS ) as $from => $to ) {
+            $this->assertSame( strlen( $from ), strlen( $to ), $from . ': a serialized value keeps its length' );
+        }
+    }
+
+    public function test_the_migration_is_versioned_and_runs_each_step_once() {
+        $this->assertSame( 0, QAF_Migrator::stored_version( false, false ), 'a site that never migrated' );
+        $this->assertSame( 1, QAF_Migrator::stored_version( false, array( 'tables' => array() ) ), 'QAF 1.1.0 kept only the report' );
+        $this->assertSame( 2, QAF_Migrator::stored_version( '2', false ) );
+
+        $s     = self::full_site();
+        $steps = array();
+        $done  = QAF_Migrator::migrate( $s, 0, function ( $step, $did ) use ( &$steps ) { $steps[] = $step; } );
+        $this->assertSame( array( 1, 2 ), $steps, 'progress is stored after each step' );
+        $this->assertSame( array( 1, 2 ), array_keys( $done ) );
+        $this->assertSame( QAF_Migrator::VERSION, max( $steps ) );
+
+        $after = array( $s->tables, $s->options, $s->meta, $s->caps, $s->cron, $s->posts, $s->forms, $s->user_caps );
+        $this->assertSame( array(), QAF_Migrator::migrate( $s, QAF_Migrator::VERSION ), 'nothing is due on a migrated site' );
+        QAF_Migrator::run( $s );
+        QAF_Migrator::run_references( $s );
+        $this->assertSame( $after, array( $s->tables, $s->options, $s->meta, $s->caps, $s->cron, $s->posts, $s->forms, $s->user_caps ), 'and forcing it again changes nothing' );
+    }
+
+    public function test_a_site_migrated_by_1_1_0_gets_only_step_two() {
+        $s = self::full_site();
+        QAF_Migrator::run( $s );
+        $log  = $s->log;
+        $done = QAF_Migrator::migrate( $s, 1 );
+        $this->assertSame( array( 2 ), array_keys( $done ) );
+        $this->assertSame( $log, $s->log, 'no table was touched again' );
+        $this->assertSame( 2, $done[2]['posts'] );
+    }
+
+    public function test_the_migration_runs_before_anything_can_make_empty_tables() {
+        $main = file_get_contents( QAF_PLUGIN_DIR . 'quill-accessible-forms.php' );
+        $this->assertMatchesRegularExpression( "/QAF_Migrator::maybe_run\(\);\s*\}, 4 \);/", $main, 'plugins_loaded at 4, on any request' );
+        $this->assertMatchesRegularExpression( "/QAF_Activator::maybe_upgrade\(\);\s*\}, 5 \);/", $main );
+        $this->assertStringNotContainsString( "add_action( 'admin_init', function () {\n    if ( class_exists( 'QAF_Migrator' )", str_replace( "\r\n", "\n", $main ) );
+        $public = file_get_contents( QAF_PLUGIN_DIR . 'public/class-qaf-public.php' );
+        $this->assertStringContainsString( "register_block_type( 'baf/form'", $public, 'an old block still shows its form' );
+        $this->assertStringContainsString( "'inserter' => false", $public );
+    }
+
+    public function test_a_form_file_saved_under_the_old_name_opens() {
+        require_once QAF_PLUGIN_DIR . 'includes/import/class-qaf-form-importer.php';
+        $importer = file_get_contents( QAF_PLUGIN_DIR . 'includes/import/class-qaf-form-importer.php' );
+        $this->assertStringContainsString( "case 'baf':", $importer );
+        $this->assertSame( '{"extensions":{"qaf_legacy":{"a":1}}}', QAF_Form_Importer::renamed_keys( '{"extensions":{"baf_legacy":{"a":1}}}' ) );
+        $this->assertSame( 'bfl 1', QAF_Form_Importer::renamed_keys( 'bfl 1' ) );
     }
 }

@@ -102,6 +102,19 @@ class QAF_REST_API {
             ),
         ) );
 
+        // Spam and Not Spam (QUILL's wordpress.md 13a.5): the entry's status
+        // changes, the spam providers are told, and qaf_entry_marked fires.
+        register_rest_route( self::NAMESPACE, '/entries/(?P<id>[\d]+)/spam', array(
+            'methods'             => WP_REST_Server::CREATABLE,
+            'callback'            => array( $this, 'mark_entry_spam' ),
+            'permission_callback' => array( $this, 'update_entry_permissions_check' ),
+        ) );
+        register_rest_route( self::NAMESPACE, '/entries/(?P<id>[\d]+)/not-spam', array(
+            'methods'             => WP_REST_Server::CREATABLE,
+            'callback'            => array( $this, 'mark_entry_not_spam' ),
+            'permission_callback' => array( $this, 'update_entry_permissions_check' ),
+        ) );
+
         // Form submission endpoint (public)
         register_rest_route( self::NAMESPACE, '/submit/(?P<form_id>[\d]+)', array(
             'methods'             => WP_REST_Server::CREATABLE,
@@ -337,7 +350,7 @@ class QAF_REST_API {
         );
 
         $entries = QAF_Entry::get_for_form( $form_id, $args );
-        $total = QAF_Entry::count_for_form( $form_id, $args['status'] );
+        $total = QAF_Entry::count_for_form( $form_id, '*' === $args['status'] ? '' : $args['status'] );
 
         $data = array();
         foreach ( $entries as $entry ) {
@@ -386,6 +399,28 @@ class QAF_REST_API {
         $field_values = $request->get_param( 'fields' ) ?: array();
         $entry->set_field_values( $field_values );
 
+        // This route is public, so a caller who cannot edit entries goes
+        // through the same spam checks as the form page. Nobody is there to
+        // answer a question, so a doubt holds the entry.
+        if ( ! ( current_user_can( 'qaf_edit_entries' ) || current_user_can( 'manage_options' ) ) ) {
+            $form = new QAF_Form( $entry->form_id );
+            if ( ! $form->id ) {
+                return new WP_Error( 'rest_form_not_found', __( 'Form not found.', 'quill-accessible-forms' ), array( 'status' => 404 ) );
+            }
+            $decision = QAF_Spam::guard()->decide( QAF_Spam_Submission::from_request( $form, $request, is_array( $field_values ) ? $field_values : array(), $entry->ip_address ), false );
+            $early    = $this->spam_reply( $decision );
+            if ( null !== $early ) {
+                return $early;
+            }
+            $this->apply_spam_decision( $entry, $decision );
+            $result = $entry->save();
+            if ( is_wp_error( $result ) ) {
+                return $result;
+            }
+            // The same reply whether it was held or not (WP-R-026).
+            return rest_ensure_response( array( 'success' => true, 'entry_id' => $entry->id ) );
+        }
+
         $result = $entry->save();
 
         if ( is_wp_error( $result ) ) {
@@ -431,6 +466,55 @@ class QAF_REST_API {
     }
 
     /**
+     * Mark an entry as spam.
+     *
+     * @param WP_REST_Request $request Request object.
+     * @return WP_REST_Response|WP_Error Response.
+     */
+    public function mark_entry_spam( $request ) {
+        return $this->mark_entry( $request, 'spam' );
+    }
+
+    /**
+     * Mark an entry as not spam: it goes back to the form's entries.
+     *
+     * @param WP_REST_Request $request Request object.
+     * @return WP_REST_Response|WP_Error Response.
+     */
+    public function mark_entry_not_spam( $request ) {
+        return $this->mark_entry( $request, 'ham' );
+    }
+
+    /**
+     * Spam or Not Spam.
+     *
+     * @param WP_REST_Request $request Request object.
+     * @param string          $as      spam or ham.
+     * @param object|null     $entry   The entry (tests), else read by id.
+     * @return WP_REST_Response|WP_Error|array Response.
+     */
+    public function mark_entry( $request, $as, $entry = null ) {
+        $entry = $entry ?: new QAF_Entry( $request->get_param( 'id' ) );
+
+        if ( ! $entry->id ) {
+            return new WP_Error( 'rest_entry_not_found', __( 'Entry not found.', 'quill-accessible-forms' ), array( 'status' => 404 ) );
+        }
+        if ( 'trash' === $entry->status ) {
+            return new WP_Error( 'rest_entry_in_trash', __( 'This entry is in the trash. Restore it first.', 'quill-accessible-forms' ), array( 'status' => 409 ) );
+        }
+
+        $marked = QAF_Spam::mark_entry( $entry, $as );
+        if ( isset( $marked['error'] ) ) {
+            return $marked['error'];
+        }
+
+        $data             = $this->prepare_entry_response( $entry );
+        $data['told']     = $marked['told'];
+        $data['released'] = $marked['released'];
+        return rest_ensure_response( $data );
+    }
+
+    /**
      * Delete entry
      *
      * @param WP_REST_Request $request Request object.
@@ -467,14 +551,6 @@ class QAF_REST_API {
             return new WP_Error( 'rest_form_not_found', __( 'Form not found or inactive.', 'quill-accessible-forms' ), array( 'status' => 404 ) );
         }
 
-        // Security checks
-        $security = new QAF_Security();
-        $security_check = $security->validate_submission( $form, $request );
-
-        if ( is_wp_error( $security_check ) ) {
-            return $security_check;
-        }
-
         // Create entry
         $entry = new QAF_Entry();
         $entry->form_id    = $form_id;
@@ -484,8 +560,14 @@ class QAF_REST_API {
         $entry->user_agent = isset( $_SERVER['HTTP_USER_AGENT'] ) ? sanitize_text_field( $_SERVER['HTTP_USER_AGENT'] ) : '';
         $entry->source_url = wp_get_referer();
 
-        // Process and validate field values
-        $field_values = $request->get_param( 'fields' ) ?: array();
+        // Process and validate field values. The page script sends
+        // fields[<id>]; a form posted without it sends each input by its own
+        // name (qaf_field_<id>, or qaf_fields[<id>] from a page rendered
+        // before the names were made one). All three are read.
+        $field_values = QAF_Field::submitted_values(
+            method_exists( $request, 'get_params' ) ? $request->get_params() : array( 'fields' => $request->get_param( 'fields' ) ),
+            array_map( function ( $f ) { return $f['id'] ?? ''; }, $form->get_fields() )
+        );
         $sanitizer = new QAF_Sanitizer();
         $sanitized_values = array();
 
@@ -495,17 +577,29 @@ class QAF_REST_API {
             $sanitized_values[ $field_id ] = $sanitizer->sanitize( $value, $field['type'] );
         }
 
+        // Spam checks (QUILL's wordpress.md 13a, WP-R-026 and WP-R-027).
+        // Nothing a check doubts is dropped: it is saved with status spam and
+        // its reason, and the visitor sees the same confirmation. Only the
+        // flood ceiling and an unfinished visible CAPTCHA come back to the
+        // person, said plainly, with their answers still on the page.
+        $submission = QAF_Spam_Submission::from_request( $form, $request, $sanitized_values, $this->get_client_ip() );
+        $decision   = QAF_Spam::guard()->decide( $submission, true );
+        $early      = $this->spam_reply( $decision );
+        if ( null !== $early ) {
+            return $early;
+        }
+
         // A paid form (payment contract version 1): check it again, work out
         // the amount here from the model, and refuse before anything is saved
         // if the site cannot take this payment. Nothing the page sends about
         // money is used: only the visitor's own answers.
         $model        = ( isset( $form->config['form_model'] ) && is_array( $form->config['form_model'] ) ) ? $form->config['form_model'] : null;
         $payment_plan = null;
-        $submission   = '';
+        $paid_key     = '';
         if ( $model && class_exists( 'QAF_Payment_Config' ) && QAF_Payment_Config::applies( $model ) ) {
             $payments   = QAF_Payment_Service::instance();
-            $submission = (string) $request->get_param( 'qaf_submission' );
-            $existing   = $payments->existing( $form_id, $submission );
+            $paid_key   = (string) $request->get_param( 'qaf_submission' );
+            $existing   = $payments->existing( $form_id, $paid_key );
             if ( $existing ) {
                 // The same page sent the same form again: the first entry and
                 // its payment stand, and nothing is charged twice.
@@ -532,19 +626,33 @@ class QAF_REST_API {
         }
 
         $entry->set_field_values( $sanitized_values );
+        $this->apply_spam_decision( $entry, $decision );
         $result = $entry->save();
 
         if ( is_wp_error( $result ) ) {
             return $result;
         }
 
-        /**
-         * Fires after a form is submitted
-         *
-         * @param QAF_Entry $entry The entry object.
-         * @param QAF_Form  $form  The form object.
-         */
-        do_action( 'qaf_form_submitted', $entry, $form );
+        if ( 'spam' === $entry->status ) {
+            /**
+             * Fires when a submission is held as spam instead of submitted.
+             * Notifications and integrations wait: they run when someone
+             * marks it Not Spam (qaf_entry_marked, then qaf_form_submitted).
+             *
+             * @param QAF_Entry         $entry    The held entry.
+             * @param QAF_Form          $form     The form.
+             * @param QAF_Spam_Decision $decision Why.
+             */
+            do_action( 'qaf_entry_held', $entry, $form, $decision );
+        } else {
+            /**
+             * Fires after a form is submitted
+             *
+             * @param QAF_Entry $entry The entry object.
+             * @param QAF_Form  $form  The form object.
+             */
+            do_action( 'qaf_form_submitted', $entry, $form );
+        }
 
         $response = array(
             'success' => true,
@@ -572,6 +680,46 @@ class QAF_REST_API {
         }
 
         return rest_ensure_response( $response );
+    }
+
+    /**
+     * The reply for a decision that saves nothing yet, or null when the
+     * entry is to be saved (held or not).
+     *
+     * @param QAF_Spam_Decision $decision Decision.
+     * @return WP_Error|WP_REST_Response|array|null
+     */
+    private function spam_reply( $decision ) {
+        if ( QAF_Spam_Decision::REFUSE === $decision->action ) {
+            return new WP_Error( 'qaf_daily_limit', $decision->message, array( 'status' => 429 ) );
+        }
+        if ( QAF_Spam_Decision::INCOMPLETE === $decision->action ) {
+            return new WP_Error( 'captcha_missing', $decision->message, array( 'status' => 400 ) );
+        }
+        if ( QAF_Spam_Decision::ASK === $decision->action ) {
+            // A question (13a.6). Nothing is saved yet and nothing is lost:
+            // the answers stay on the page, and the next send carries the
+            // question's id and the answer.
+            return rest_ensure_response( array(
+                'success'   => false,
+                'message'   => $decision->message,
+                'challenge' => $decision->challenge,
+            ) );
+        }
+        return null;
+    }
+
+    /**
+     * Put a decision on an entry: status spam when held, and the reason.
+     *
+     * @param QAF_Entry         $entry    Entry.
+     * @param QAF_Spam_Decision $decision Decision.
+     */
+    private function apply_spam_decision( $entry, $decision ) {
+        $entry->status = $decision->status();
+        foreach ( $decision->storage() as $column => $value ) {
+            $entry->$column = $value;
+        }
     }
 
     /**
@@ -715,6 +863,9 @@ class QAF_REST_API {
             'status'      => $entry->status,
             'is_starred'  => $entry->is_starred,
             'is_read'     => $entry->is_read,
+            // Why the spam checks doubted it, and what people decided; null
+            // when nothing ever doubted it (QUILL's wordpress.md 13a.2 rule 4).
+            'spam'        => QAF_Spam::entry_view( $entry ),
             'fields'      => $entry->get_field_values(),
             'created_at'  => $entry->created_at,
             'updated_at'  => $entry->updated_at,
@@ -852,6 +1003,12 @@ class QAF_REST_API {
             ),
             'starred' => array(
                 'type'    => 'boolean',
+            ),
+            // Entries have their own statuses; the forms' draft, active and
+            // inactive left spam unreachable through this route.
+            'status'  => array(
+                'type' => 'string',
+                'enum' => array( 'active', 'trash', 'spam', 'pending', 'approved', 'rejected', '*' ),
             ),
         ) );
     }

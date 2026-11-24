@@ -40,7 +40,7 @@ class QAF_BFL_Lexer_Test extends QAF_Unit_Test_Case {
         
         foreach ( $field_types as $type ) {
             $tokens = $this->lexer->tokenize( $type );
-            $this->assertTokenExists( $tokens, 'FIELD_TYPE', $type );
+            $this->assertTokenExists( $tokens, 'KEYWORD', $type );
         }
     }
 
@@ -53,40 +53,41 @@ class QAF_BFL_Lexer_Test extends QAF_Unit_Test_Case {
     public function test_tokenize_number() {
         $tokens = $this->lexer->tokenize( '42' );
         
-        $this->assertTokenExists( $tokens, 'NUMBER', 42 );
+        $this->assertTokenExists( $tokens, 'NUMBER', '42' );
     }
 
     public function test_tokenize_identifier() {
-        $tokens = $this->lexer->tokenize( 'my_field' );
-        
+        $tokens = $this->lexer->tokenize( '#my_field' );
+
         $this->assertTokenExists( $tokens, 'IDENTIFIER', 'my_field' );
     }
 
     public function test_tokenize_braces() {
         $tokens = $this->lexer->tokenize( '{ }' );
         
-        $this->assertTokenExists( $tokens, 'LBRACE', '{' );
-        $this->assertTokenExists( $tokens, 'RBRACE', '}' );
+        $this->assertTokenExists( $tokens, 'BRACE_OPEN', '{' );
+        $this->assertTokenExists( $tokens, 'BRACE_CLOSE', '}' );
     }
 
     public function test_tokenize_modifiers() {
         $modifiers = array( 'required', 'readonly', 'hidden' );
         
         foreach ( $modifiers as $modifier ) {
-            $tokens = $this->lexer->tokenize( $modifier );
+            $tokens = $this->lexer->tokenize( '@' . $modifier );
             $this->assertTokenExists( $tokens, 'MODIFIER', $modifier );
         }
     }
 
     public function test_tokenize_simple_form() {
-        $bfl = 'form "Test" { text name { label "Name" } }';
+        $bfl = 'form "Test"' . "\n" . 'text #name "Name" @required';
         $tokens = $this->lexer->tokenize( $bfl );
-        
+
         $this->assertTokenExists( $tokens, 'KEYWORD', 'form' );
         $this->assertTokenExists( $tokens, 'STRING', 'Test' );
-        $this->assertTokenExists( $tokens, 'FIELD_TYPE', 'text' );
+        $this->assertTokenExists( $tokens, 'KEYWORD', 'text' );
         $this->assertTokenExists( $tokens, 'IDENTIFIER', 'name' );
-        $this->assertTokenExists( $tokens, 'PROPERTY', 'label' );
+        $this->assertTokenExists( $tokens, 'STRING', 'Name' );
+        $this->assertTokenExists( $tokens, 'MODIFIER', 'required' );
     }
 
     public function test_tokenize_preserves_line_numbers() {
@@ -101,13 +102,21 @@ class QAF_BFL_Lexer_Test extends QAF_Unit_Test_Case {
     }
 
     public function test_tokenize_comments() {
-        $bfl = "form \"Test\" {\n// This is a comment\ntext name {}\n}";
+        $bfl = "form \"Test\"\n// This is a comment\ntext #name \"Name\"";
         $tokens = $this->lexer->tokenize( $bfl );
-        
-        // Comments should be skipped
-        foreach ( $tokens as $token ) {
-            $this->assertNotEquals( 'COMMENT', $token['type'] );
-        }
+
+        // The lexer keeps the comment as one token, on its own line...
+        $comment = $this->findToken( $tokens, 'COMMENT', '// This is a comment' );
+        $this->assertNotNull( $comment );
+        $this->assertEquals( 2, $comment['line'] );
+
+        // ...and the parser skips it.
+        require_once QAF_PLUGIN_DIR . 'includes/bfl/class-qaf-bfl-parser.php';
+        $parser = new QAF_BFL_Parser();
+        $result = $parser->parse( $bfl );
+        $this->assertEmpty( $result['errors'] );
+        $this->assertCount( 1, $result['form']['fields'] );
+        $this->assertEquals( 'name', $result['form']['fields'][0]['id'] );
     }
 
     public function test_tokenize_multiline_string() {

@@ -19,6 +19,8 @@ if ( ! defined( 'ABSPATH' ) ) {
     exit;
 }
 
+require_once __DIR__ . '/class-qaf-condition-rewriter.php';
+
 /**
  * QAF_Builder_Field_Ops class.
  */
@@ -345,6 +347,7 @@ class QAF_Builder_Field_Ops {
             return null;
         }
         $field   = &$at[0][ $at[1] ];
+        $before  = $field;
         $from    = $field['type'] ?? '';
         $changes = array();
         if ( $from === $type ) {
@@ -399,6 +402,13 @@ class QAF_Builder_Field_Ops {
         if ( isset( $field['placeholder'] ) && ! in_array( $type, self::PLACEHOLDER_TYPES, true ) ) {
             $changes[] = __( 'Its placeholder is kept, though this type does not show one.', 'quill-accessible-forms' );
         }
+        // Conditions that compared it with its old answers: rewritten for
+        // the new kind of answer where that is certain, flagged where not.
+        $after = $field;
+        unset( $field, $at );
+        list( $model, $rewritten, $flagged ) = QAF_Condition_Rewriter::rewrite( $model, $id, $before, $after, self::CHOICE_TYPES );
+        $changes = array_merge( $changes, QAF_Condition_Rewriter::sentences( $rewritten, $flagged ) );
+
         // Its answers change kind (choices to typed, or back): say which conditions read it.
         if ( in_array( $type, self::CHOICE_TYPES, true ) !== in_array( $from, self::CHOICE_TYPES, true ) ) {
             $n = count( self::expressions_naming( $model, $id ) );

@@ -1129,3 +1129,37 @@
         border: 1px solid #000;
     }
 }
+
+/* ==========================================================================
+   Spam checks: the text question (shown only when the site asks one)
+   ========================================================================== */
+
+.qaf-challenge {
+    margin: 1.5em 0;
+    padding: 1em;
+    border: 2px solid currentColor;
+    border-radius: 4px;
+}
+
+.qaf-challenge fieldset {
+    border: 0;
+    margin: 0;
+    padding: 0;
+}
+
+.qaf-challenge-question {
+    font-weight: 600;
+}
+
+.qaf-challenge-choice {
+    margin: 0.25em 0;
+}
+
+.qaf-challenge-error:not(:empty) {
+    margin-top: 0.5em;
+    font-weight: 600;
+}
+
+.qaf-send-anyway {
+    margin-top: 1em;
+}

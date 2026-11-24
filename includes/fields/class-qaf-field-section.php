@@ -299,7 +299,12 @@ class QAF_Field_Section extends QAF_Field {
      *
      * @return bool Always true.
      */
-    public function validate() {
+    public function validate( $value = null ) {
+        // QAF_Field::validate() takes the value; honour it when the caller passes one.
+        if ( func_num_args() > 0 ) {
+            $this->set_value( $value );
+        }
+
         return true;
     }
 

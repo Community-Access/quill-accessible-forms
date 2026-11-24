@@ -80,10 +80,17 @@ require_once QAF_PLUGIN_DIR . 'admin/partials/model-screens.php';
         </div>
         
         <div class="qaf-header-right">
-            <button type="button" class="qaf-btn qaf-btn-secondary" id="qaf-preview-btn">
-                <span aria-hidden="true">👁️</span>
+            <!-- Preview: the form as a visitor sees it, on its own screen, sending nothing. Shown once the form is made. -->
+            <a class="qaf-btn qaf-btn-secondary"
+               id="qaf-preview-btn"
+               href="<?php echo esc_url( admin_url( 'admin.php?page=qaf-form-preview&form_id=' . absint( $form_id ) ) ); ?>"
+               data-preview-base="<?php echo esc_url( admin_url( 'admin.php?page=qaf-form-preview&form_id=' ) ); ?>"
+               target="_blank"
+               rel="noopener"
+               <?php echo $form_id ? '' : 'hidden'; ?>>
                 <?php esc_html_e( 'Preview', 'quill-accessible-forms' ); ?>
-            </button>
+                <span class="qaf-sr-only"><?php esc_html_e( '(opens in a new tab)', 'quill-accessible-forms' ); ?></span>
+            </a>
             <button type="button" class="qaf-btn qaf-btn-secondary" id="qaf-save-draft-btn">
                 <?php esc_html_e( 'Save Draft', 'quill-accessible-forms' ); ?>
             </button>
@@ -128,7 +135,26 @@ require_once QAF_PLUGIN_DIR . 'admin/partials/model-screens.php';
                             <?php esc_html_e( 'Add Field', 'quill-accessible-forms' ); ?>
                             <span class="qaf-shortcut-hint" aria-hidden="true">(F)</span>
                         </button>
+
+                        <!-- Sections and columns: added at the end of the last page; each then has its own actions on its card. -->
+                        <form id="qaf-add-section-form" class="qaf-add-section-form">
+                            <label for="qaf-add-section-label"><?php esc_html_e( 'New section heading', 'quill-accessible-forms' ); ?></label>
+                            <input type="text" id="qaf-add-section-label" class="qaf-input" autocomplete="off">
+                            <button type="submit" class="qaf-btn qaf-btn-dashed" id="qaf-add-section-btn"><?php esc_html_e( 'Add Section', 'quill-accessible-forms' ); ?></button>
+                        </form>
+                        <button type="button" class="qaf-btn qaf-btn-dashed qaf-group-action" id="qaf-add-columns-btn" data-op="add_columns" data-count="2">
+                            <?php esc_html_e( 'Add Two Columns', 'quill-accessible-forms' ); ?>
+                        </button>
                     </div>
+
+                    <!-- The Accessibility Coach: the form's checks, each with the question it concerns. -->
+                    <section class="qaf-model-coach" id="qaf-model-coach" aria-labelledby="qaf-coach-heading">
+                        <h3 id="qaf-coach-heading"><?php esc_html_e( 'Accessibility Coach', 'quill-accessible-forms' ); ?></h3>
+                        <p id="qaf-coach-help"><?php esc_html_e( 'Checks every question for what a screen reader user needs: a label, help where it is hard, choices, headings for sections. Each finding has a button that goes to its question.', 'quill-accessible-forms' ); ?></p>
+                        <button type="button" class="qaf-btn qaf-btn-secondary" id="qaf-coach-run" aria-describedby="qaf-coach-help"><?php esc_html_e( 'Check Accessibility', 'quill-accessible-forms' ); ?></button>
+                        <p id="qaf-coach-status" class="qaf-coach-status" role="status" aria-live="polite" aria-atomic="true"></p>
+                        <div id="qaf-coach-results" class="qaf-coach-results"></div>
+                    </section>
                 </section>
                 
                 <!-- Field Settings Panel -->
